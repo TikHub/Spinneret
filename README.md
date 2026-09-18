@@ -1,18 +1,25 @@
 <h1 align="center">Spinneret</h1>
 
-<p align="center"><em>A control plane for fleets that share scarce, rate-limited credentials and egress.</em></p>
+<p align="center"><em>One server that hands out credentials, exits and configuration to a whole fleet of nodes — written for a large distributed crawler, and it works out which credential just got burned.</em></p>
 
 <div align="center">
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-Your workers ask for a credential and an exit before each request, use them, and report what happened.
-Spinneret turns those reports into cooldowns, bans, health scores and circuit breaking within seconds —
-and distributes versioned configuration and secrets to the same fleet.
+Spinneret shares the things a distributed fleet never has enough of — accounts, API keys, sessions,
+cookie jars, exit addresses — and pushes configuration down to the same nodes. Your nodes ask for a
+credential and an exit before each request, use them, and report the status they got back. Seconds later
+the burnt ones are out of rotation fleet-wide, and the next node to ask gets something else. Nobody edits
+a config file, nobody restarts a worker.
 
-One Go binary, PostgreSQL and Valkey — plus ClickHouse if you want the request explorer, which the
-default stack starts for you. No agent and no sidecar on your workers: a server URL and a token are the
-whole node configuration, and the SDKs are ordinary libraries — plain HTTP works just as well.
+It was built for a large distributed crawler: one pool of accounts, sessions or keys, a few hundred worker
+processes, and no honest answer to "which of these still works". Nothing in it knows what a crawler is, so
+any fleet queueing for the same short list of accounts, keys or exits uses it the same way.
+
+One Go binary, PostgreSQL and Valkey — plus ClickHouse if you want the request explorer. No agent and no
+sidecar on your machines: a node's entire configuration is a server URL and an API token, and the SDKs are
+ordinary libraries, so plain HTTP works just as well. Measured on one instance: **4,499 acquire→report
+cycles per second** at acquire p99 **1.97 ms**, against a pool of 100,000 identities.
 
 [![License](https://img.shields.io/github/license/TikHub/Spinneret?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/releases/latest)
@@ -36,79 +43,229 @@ whole node configuration, and the SDKs are ordinary libraries — plain HTTP wor
 
 ---
 
-## 🧭 What Spinneret is
+## 🧭 The two calls
 
-Some resources are neither fungible nor stateless. A pool of API keys, accounts, sessions, device
-identities or egress addresses is limited in number, limited in rate, and — the part that breaks ordinary
-tooling — changes its own usability as a function of how it was just used. Use one twice in a second and
-it is throttled. Use it on the wrong endpoint and it is challenged. A connection pool has none of these
-properties, and a health check cannot discover them, because the only probe that tells you whether a
-credential is still good is a real request made with it.
+Two calls carry the hot path.
 
-Spinneret is the arbiter for resources of that shape. Workers hold no list. They ask per request and get
-back one credential already rendered for use, optionally one egress route, and a lease: a TTL-bounded,
-renewable, reclaimable claim that tells the scheduler how many workers hold that credential right now.
+**`Acquire(site, client, uri)`** returns an identity, its credential already rendered the way you send
+it — a cookie map, a ready `Cookie` header, headers, query parameters, a JSON fragment, or free-form
+typed values — optionally a proxy, and a lease. The lease has a TTL, can be renewed, and is reclaimed
+within one TTL by the reaper if the node dies holding it. `wait_ms` queues for up to 5 s instead of failing;
+`AcquireBatch` takes up to 50 distinct identities in one round trip.
 
-```text
-Acquire(site, client, uri)   →  identity + credential + proxy + lease
-   ... the worker sends its own request to its own target ...
-Report(lease_id, status, latency, markers)
-                             →  the server classifies, assigns blame, cools down,
-                                bans, scores, trips breakers — fleet-wide, in seconds
-```
+**Your node sends its own request.** Spinneret is never in the data path. It proxies no bytes and signs
+nothing, and there is no login flow and no captcha handling anywhere in it. The only requests it makes on
+its own account are the reachability check it runs through each egress route and the alerts it delivers —
+both to URLs you configure.
 
-A worker reports facts, never verdicts: status code, business code, transport error kind, up to 32
-markers it recognised in the response, latency, size, timestamps. The server classifies the report,
-decides who pays — the credential, the route, both or neither — and applies at most one action per
-subject at a chosen blast radius. All of it is policy written as versioned YAML: published, diffable,
-rollback-able, and in effect seconds later without touching a worker.
+**`Report(lease_id, …)`** carries facts, never verdicts: status code, business code, transport error kind,
+up to 32 markers your node recognised in the response, latency, size. The server classifies it, decides
+who pays — the credential, the route, both or neither — and applies at most one action per subject.
 
-Spinneret is never in the data path. It never sits between your workers and the systems they call,
-proxies no byte, signs nothing, and contains no login flows or captcha handling. Its only outbound
-traffic of its own is the periodic reachability check it makes through each egress route, to a URL you
-configure. It manages the state around your requests; your worker still makes them.
+`GetConfig`, `WatchConfig` and `GetSecret` sit on the same server behind the same token. One URL and one
+token is still the whole node configuration.
+
+All of the behaviour below is YAML policy: versioned, with drafts, diff, publish and rollback, resolved
+endpoint group > client > site > namespace > built-in. Publish, and it is live across the fleet in
+seconds. No redeploy, no worker restart.
 
 ---
 
-## 🎯 Who it is for
+## 🕷 The main case: a large distributed crawler
 
-Spinneret does not know what your workers do. It manages the things they must not waste or misuse: a pool
-of credentials, a pool of exits, and the configuration and secrets that tell a worker how to behave.
-Anywhere a fleet shares an identity pool that is scarce, rate-limited or stateful, the same machinery
-applies.
+Forty machines. One pool of a hundred thousand sessions. Nobody holds a list.
 
-| Application | The features that serve it |
+Monday morning. Throughput halved over the weekend and nothing crashed. Forty workers are pulling cookies
+out of the same Redis set; four of those accounts were banned on Saturday night and are still being handed
+out. You cannot tell me how many requests that costs, and neither can anyone else on the team. One proxy
+subnet started answering with challenge pages at 02:00 and you cannot tell whether the proxies went bad or
+the accounts did, because the only place that knows is a log line on whichever worker happened to draw that
+pair. Someone has already pushed a `sleep(2)` to the hot loop and called it a fix, and the only way to
+change the rotation interval is to redeploy 40 containers.
+
+The pool is shared. What anyone knows about it is not.
+
+With Spinneret every machine is ignorant on purpose: it asks per request, gets one credential and one
+exit, and tells the server what happened. The pool has one state, and it lives in one place.
+
+### Resource management
+
+You have a pool, and the pool has rules that a semaphore cannot express.
+
+Identities live in the server, not in your workers. Each one is a row with an encrypted payload, a type
+that says how to render it, an optional account it belongs to, and a lifecycle state of its own —
+`pending`, `active`, `quarantined`, `banned`, `expired`, `disabled`, `retired`. Proxies are a separate
+namespace pool with kinds (`datacenter`, `residential`, `mobile`, `tunnel`), regions, providers and tags.
+
+The limits are the point, and they are evaluated in one Redis script at acquire time, so they hold across
+every worker on every machine instead of per process:
+
+| You want | The knob |
 | --- | --- |
-| **Fleets calling metered third-party APIs** — a pool of keys with per-key quotas and concurrency ceilings | identity field kinds `string` / `secret_ref` so the key lives in the vault, delivery into `headers` or `query`, several sliding `quota` windows per key per endpoint group, `reuse_interval`, `max_concurrent_leases`, health scores, per-endpoint-group breakers |
-| **Egress governance** — which exit each request leaves through, and retiring one that goes bad | a namespace proxy pool with kinds, regions, providers and tags; modes `none / pool / bind_identity / region_match`; per-route concurrency; periodic health checks; blame separation between route and credential |
-| **Distributed data collection** — many workers, one pool of sessions, targets that push back | identity leasing, cooldown ladders, account-scoped bans, markers as the extension point for a new failure mode, the cooldown heatmap, the request explorer |
-| **Account-bound automation** — each account is a scarce, stateful identity | the accounts entity, ban and cooldown at account scope, sticky sessions, `bind_identity` egress affinity, the seven-state identity machine |
-| **Test and CI fleets sharing a few real accounts** | `max_concurrent_leases: 1` as a distributed mutex with a TTL, the lease reaper that reclaims what a killed job held, `max_lease_lifetime`, `wait_ms` queueing up to 5 s, `AcquireBatch` for up to 50 distinct identities in one round trip |
-| **Fleet configuration and secret distribution** — change behaviour without a redeploy | versioned config items with drafts, publish, rollback and diff; long-poll `WatchConfig`; `${secret:path}` references; an envelope-encrypted vault with KEK rotation; `config:read` and `secret:read` token scopes |
-| **Shared-pool governance across teams** — one pool, several teams, an audit trail | tenants → namespaces → sites, roles `viewer / operator / admin / owner` with per-namespace and per-site bindings, namespace-scoped node tokens, every secret read audited |
+| never two workers on the same account at once | `max_concurrent_leases: 1` — a distributed mutex with a TTL. The reaper sweeps every second, so a killed worker's lease comes back once its TTL is up, not once someone notices |
+| at least 90 s between two uses of one identity | `reuse_interval`, anchored on `acquired` or `released`, scoped to the endpoint group or to the whole site |
+| 60 requests an hour on the expensive endpoint group, and 2,000 a day on the same group | a list of sliding `quota` windows, per identity per endpoint group |
+| the credential itself never sitting in a config file on forty machines | payload fields typed `secret_ref`, resolved out of the envelope-encrypted vault at acquire time, every read audited |
+| a new account eased in instead of run at full rate on day one | `warmup: {duration, quota_factor}` scales its quotas while it is young |
+| a freshly imported account proved before you trust it | `pending` identities get a probe trickle — weight factor `0.1`, at most 2 leases — and their first clean report activates them |
+| every request from one account leaving through the same exit | proxy mode `bind_identity`, with `rebind_tolerance` and `max_rebinds_per_day` so a route failure does not turn into an account that appears in three countries before lunch |
+| 20 accounts for one batch job in one round trip | `AcquireBatch`, up to 50 distinct identities |
+| a caller to wait for a free identity rather than fail | `wait_ms`, up to 5,000 |
 
-### What Spinneret is not
+When the pool has nothing left you get `no_identity_available` with a reason, not a random pick that was
+going to fail. So when you go and ask for more accounts you bring the shortfall count with you.
+
+### Risk-control monitoring
+
+One account gets banned. Thirty-nine machines do not know yet — that is the failure that costs you the
+rest of the pool, because they keep hitting it and the target keeps learning.
+
+**A 200 with an empty list is not a success, and your worker should not be the one deciding that.** It
+reports the markers it recognised — `captcha_page`, `login_redirect`, `empty_list`, whatever names you
+invent — and the signal policy maps status, business code, error kind, markers, URI, method, latency and
+size onto 12 outcomes. A new failure mode is a new marker and a new rule, not a new release.
+
+**Punishment has a blast radius.** Open it too wide and you stop forty working accounts to punish one. An
+action lands at one of six scopes:
+
+| Scope | What it takes out |
+| --- | --- |
+| `identity_endpoint` | that account on that endpoint group only — the usual answer to a rate limit |
+| `identity_site` | that account everywhere on that site |
+| `identity` | that account everywhere |
+| `account` | every identity belonging to the same account, for when one session getting challenged means the account is flagged |
+| `proxy_site` / `proxy` | the exit route, on this site or everywhere |
+
+The actions are cooldown, quarantine, ban and expire. A cooldown takes a `multiplier` that backs it off
+over a failure streak, capped (24 h by default) and reset after an hour of quiet. Repeated bans climb an
+escalation ladder keyed on how many bans that identity collected inside a window. `expire` marks a
+credential stale so your own refresh job replaces it — Spinneret will not mint one for you.
+
+**A bad route looks exactly like a bad credential.** Charge the credential for the route's failure and you
+retire good accounts one at a time, in the wrong order, for weeks. Cross-attribution watches the other
+axis: inside a 10-minute window, one exit failing across three or more distinct identities is the exit's
+fault, and one identity failing across three or more distinct exits is the identity's. The report is
+re-blamed before anything is charged.
+
+Health scores are an EWMA per identity per endpoint group, decaying back toward a baseline over hours, so
+an account that failed twice at 3 a.m. is not still being punished at noon. The default strategy samples
+proportional to the square of the score, so a degrading identity fades out of the rotation before anything
+has to ban it.
+
+Each endpoint group has its own breaker over a sliding window: closed, open, half-open with probe leases.
+Open, and every `Acquire` for that group returns `circuit_open` with a retry hint, so your workers back off
+instead of queueing. That is there because one endpoint group breaking otherwise means the whole fleet
+spends an hour on it. Opening a breaker also reverts the cooldowns it charged during the window that
+tripped it — those identities were never the problem. It is on by default
+(`revert_recent_cooldowns: endpoint`).
+
+You also have to be able to look at it. The heatmap is identity × endpoint group availability on one
+screen, which is where "one group is on fire" and "the site is gone" look completely different. The request
+explorer, on ClickHouse, is every report with its outcome and who was blamed, filterable by identity,
+proxy, outcome, status or endpoint group, with the markers on every row — it is also how you find out that
+your new marker rule has been quietly banning healthy sessions. 11 automatic alert kinds go out over
+HMAC-signed webhooks or four chat platforms, de-duplicated so a flapping breaker does not produce a hundred
+messages. The console updates live over SSE, and Prometheus `/metrics`, `/healthz` and `/readyz` are there
+for everything else.
+
+`unavailable`/`overloaded` and `no_identity_available` are separate reasons on purpose: one means ask again
+later, the other means back off hard. Your client needs to tell them apart.
+
+If you are not sure a policy is right, publish it in `mode: shadow` — it classifies, plans and records,
+and applies nothing.
+
+### Scheduling
+
+`Acquire` runs a single Lua script in Redis. It checks the breaker, samples up to 32 candidates from the
+ready queue, drops what is cooling down, leased, out of quota or inside its reuse interval, weights the
+rest by the square of their health score, assigns an exit and writes the lease — no PostgreSQL in the path.
+
+Four rotation strategies — `weighted_random`, `least_recently_used`, `round_robin`, `best_health` — set
+per endpoint group. A cheap detail endpoint and an expensive listing endpoint almost never want the same
+one, and the rest of rotation resolves per endpoint group too: the expensive ones can run exclusive leases
+with a 90-second reuse interval while the cheap one runs four concurrent leases and no interval.
+
+A multi-step flow that must stay on one session passes a `session_key`. It gets the same identity for
+every step while that identity stays usable, bypassing the reuse interval, because a paginated crawl that
+switches accounts halfway through is a crawl that gets flagged. `Renew` extends the lease,
+`max_lease_lifetime` stops it being held forever, and the reaper cleans up after the process that dies
+holding it.
+
+What Spinneret does not do here: there is no fleet-wide request-rate ceiling per target. Limits are per
+identity and per token, and the breaker is a failure-driven brake, not a rate governor. Keep your queue —
+Spinneret answers **who to go as**, not **what to fetch**.
+
+---
+
+## 🧰 It is not only for crawlers
+
+| What you actually run | What Spinneret is doing |
+| --- | --- |
+| a pool of metered third-party API keys | the key sits in the vault as a `secret_ref` field and is delivered into `headers` or `query` at acquire time, so it never lands in a node's config file; sliding quotas keep each key inside its budget, a rate-limit answer cools that one key down instead of the whole integration, and a rejected auth marks it expired for your refresh job |
+| a CI or test fleet sharing a few real accounts | `max_concurrent_leases: 1` is a distributed mutex with a TTL, and the reaper cleans up after the job that died holding it |
+| egress you want governed in one place | one namespace proxy pool for every workload, with per-route concurrency, health checks and blame separation; retiring a bad route is a state change on the route, not an edit to every workload using it |
+| configuration and secrets, nothing else | versioned items with drafts, publish, diff and rollback; long-poll `WatchConfig`; `${secret:path}` resolved server-side; AES-256-GCM envelope encryption with online KEK rotation; `config:read` and `secret:read` token scopes; every secret read in the audit log |
+| one pool, several teams | tenants → namespaces → sites, roles `viewer / operator / admin / owner` bindable per namespace and per site, node tokens scoped to exactly the sites they need, and an audit trail that says who changed the policy and which report caused the ban |
+
+Plenty of people will want only the config server and the vault, and none of the rest.
+
+---
+
+## 📈 Performance and scaling
+
+Measured with the k6 scenarios in `test/load/` against the Compose stack, on one site with 100,000
+identities across 50 endpoint groups. Everything, the load generator included, ran inside one Docker VM on
+a laptop, so read the shapes as the product and the rates as a floor.
+
+| | Per instance |
+| --- | --- |
+| Full `Acquire` → `Report` cycle, exclusive leases, admission control on | **4,499/s** of 4,500 offered, acquire p99 **1.97 ms** |
+| `Acquire` alone, no report, `max_concurrent_leases: 4` | **4,993/s** at server-side p99 **4.32 ms** |
+| Report reception | **44,437/s** accepted, zero rejections |
+| A published config change reaching a watcher | p99 **46.1 ms**, with 200 watchers |
+| Concurrent long polls held | about **10,000**, at 0.05 cores |
+
+API instances are stateless, so add as many as you want — just know what you are buying. **Replicas add
+server capacity, not acquire throughput**: they share one Redis and the acquire ceiling lives there, so
+what you buy is long-poll capacity, report processing and availability. Raising the ceiling means raising
+Redis, and past that you partition into separate deployments. Report streams are sharded
+(`SPINNERET_REPORT_SHARDS`, 16 by default) and rebalance across workers as you add them.
+
+Past capacity it sheds instead of falling over. `SPINNERET_ACQUIRE_FLEET_INFLIGHT` (64 across the fleet by
+default, divided by the live instances each one sees, never below 4 per instance) caps in-flight acquire
+scripts and refuses the excess **in the server, before any Redis command**, as `unavailable`/`overloaded`
+with a jittered retry hint both SDKs honour. At 4,500 offered on two replicas it served 2,418 cycles/s,
+shed 1,881/s, and held acquire p99 at 89 ms: throughput fell, and nothing timed out.
+
+[Status and performance](#-status-and-performance) has the two-replica history, the rest of the numbers and
+the one thing the harness would not let me measure. [Performance and tuning](documents/en/17-performance.md)
+has the method and the traps.
+
+---
+
+## 🚧 What Spinneret is not
 
 - **Not in the data path.** No interception, no sidecar, no TLS termination. If you need something that
-  sits in the path, you need a forward proxy or a mesh.
-- **Not a job queue.** It has no work queue, no task distribution, no deduplication of your business work
-  and no storage of responses. Keep your queue; Spinneret answers *who to go as*, not *what to do*.
+  sits in the path, you want a forward proxy or a mesh.
+- **Not a job queue.** No work queue, no task distribution, no deduplication of your business work, no
+  storage of responses. Keep your queue.
 - **It does not obtain or refresh credentials.** No login flows, no signing algorithms, no session
   harvesting, no target-specific code of any kind. The `expire` action marks a credential stale so that
   your own refresh job replaces it.
-- **There is no fleet-wide request-rate ceiling per target.** Limits are per identity (`quota`,
-  `reuse_interval`, `max_concurrent_leases`) and per API token (requests per second, per instance). The
-  circuit breaker is a failure-driven brake, not a rate governor. Distributed global rate limiting is a
-  v0.2 candidate.
+- **No fleet-wide request-rate ceiling per target.** Limits are per identity (`quota`, `reuse_interval`,
+  `max_concurrent_leases`) and per API token (requests per second, per instance). Distributed global rate
+  limiting is a v0.2 candidate.
 - **A proxy is assigned as part of a lease.** There is no credential-free, egress-only lease.
-- **The report vocabulary is HTTP-shaped.** `uri` is required, `error_kind` is a closed enum of transport
-  failures. Another protocol can be expressed through `business_code` and markers, but the nouns will
-  fight you.
-- **It is overkill below a threshold.** One process, a handful of credentials that never get throttled: a
-  local semaphore beats this. The crossover is more than one machine, *and* more credentials than a
-  person can track by hand, *and* usability that changes with use.
+- **The report vocabulary is HTTP-shaped.** `uri` is required and `error_kind` is a closed enum of
+  transport failures. Another protocol fits through `business_code` and markers, but the nouns will fight
+  you.
+- **It is overkill below a threshold.** One process and a handful of credentials that never get throttled:
+  a local semaphore beats this. The crossover is more than one machine, more credentials than a person can
+  track by hand, and usability that changes with use.
 
-### Vocabulary
+---
+
+## 🔤 Vocabulary
 
 The API and the console use six nouns throughout.
 
@@ -128,11 +285,12 @@ The API and the console use six nouns throughout.
 ### The system
 
 One binary in two roles: the request path that hands out credentials and egress, and the pipeline that
-turns reports back into state — over PostgreSQL for truth, Valkey for the hot path, and ClickHouse for
-raw history. Three views of the same process follow.
+turns reports back into state — over PostgreSQL for truth, Valkey for the hot path, and ClickHouse for raw
+history. Three views of the same process, drawn separately because they are the three things that go wrong
+separately.
 
-**The request path.** Everything a worker calls, answered with one Redis round trip and no PostgreSQL in
-the way.
+**The request path.** Everything a node calls, answered out of Redis — scheduling never touches
+PostgreSQL, and the credential comes from the payload cache (a miss reads its encrypted payload once).
 
 ```mermaid
 flowchart LR
@@ -205,7 +363,8 @@ flowchart TB
     EXEC -->|"asynchronously"| PG
     JOBS --> RDOUT
     JOBS -->|"advisory locks<br/>elect the leader"| PG
-X
+    JOBS -->|"leader only"| NOTIFY
+    NOTIFY -->|"signed delivery"| HOOK
 ```
 
 **Shared state, the console and observability.** Every instance carries the same in-process caches and
@@ -250,17 +409,17 @@ flowchart LR
     CH -->|"request explorer"| ADMINAPI
 ```
 
-
-**Hot path.** `Acquire` runs one Lua script against Redis: it checks the breaker, samples candidates,
-filters on availability (cooldown, reuse interval, quota, concurrency) and writes the lease — no
-PostgreSQL round trip. `Report` validates, de-duplicates and appends to a Redis stream shard derived from
-the lease ID, then returns.
+**Hot path.** `Acquire` is one Lua script against Redis: breaker, candidate sample, availability filter
+(cooldown, reuse interval, quota, concurrency), lease written — and no PostgreSQL round trip. `Report`
+validates, de-duplicates, appends to the Redis stream shard derived from the lease ID, and returns. The
+full cycle is five Lua scripts, not one: the acquire, the report ingest, `observe`, the action apply and
+the lease end.
 
 **State layers.** PostgreSQL is the source of truth: catalog, identities, policies, secrets, audit. Redis
-holds the derived hot state and can be rebuilt from PostgreSQL at any time with `spnr rebuild`.
+holds the derived hot state, and `spnr rebuild` rebuilds all of it from PostgreSQL whenever you need it.
 ClickHouse is optional and stores raw request events for the request explorer.
 
-**Roles.** One binary, `SPINNERET_ROLE=all|api|worker`. `all` is the default and what Compose runs; split
+**Roles.** One binary, `SPINNERET_ROLE=all|api|worker`. `all` is the default and what Compose runs. Split
 the roles when a burst of reports must not slow `Acquire` down.
 
 ### One request, end to end
@@ -336,8 +495,8 @@ flowchart TB
     KEK["KEK, mounted as a file secret"] -.-> APPS
 ```
 
-Split the roles when reports and request serving should scale independently. The instances are stateless
-and replicate freely, the three stores are shared, and the acquire ceiling stays with the single Valkey.
+Split the roles when reports and request serving have to scale independently. The instances are stateless
+and replicate freely, the three stores are shared, and the acquire ceiling stays where it was: in Valkey.
 
 ```mermaid
 flowchart LR
@@ -790,40 +949,46 @@ test/               e2e, load (k6) and hot-path benchmarks
 
 ## 📊 Status and performance
 
-Spinneret is pre-1.0 and feature-complete for v0.1: the four milestones — core path, risk-control loop,
-infrastructure, console and release — are implemented, and the stack ships with Go end-to-end scenarios,
-a replica failover drill, a Playwright console suite and k6 load scenarios.
+Spinneret is pre-1.0 and feature-complete for v0.1. The four milestones — core path, risk-control loop,
+infrastructure, console and release — are implemented, and the stack ships with Go end-to-end scenarios, a
+replica failover drill, a Playwright console suite and k6 load scenarios.
 
-Measured on the Compose stack, one site with 100,000 identities across 50 endpoint groups, one server
-instance and one Valkey instance. Only the first row was measured with acquire admission control turned
-on; the other three predate the acquire gate, as the performance page states. Full tables, method and
-caveats are in [Performance and tuning](documents/en/17-performance.md).
+The numbers, in full. Measured on the Compose stack, one site with 100,000 identities across 50 endpoint
+groups, one server instance and one Valkey instance. Only the first row was measured with acquire
+admission control on; the other three predate the gate, which the performance page says plainly. Full
+tables, method and caveats are in [Performance and tuning](documents/en/17-performance.md).
 
 | Measurement | Result |
 | --- | --- |
 | Full acquire→report cycle, exclusive leases, **admission control on** | **4,499/s per instance** at 4,500 offered, acquire p99 **1.97 ms**, 0.4 sheds/s |
-| `Acquire` alone | **4,993/s per instance** at server-side p99 **4.32 ms**, peak 7,792/s |
+| `Acquire` alone, no report, `max_concurrent_leases: 4` | **4,993/s per instance** at server-side p99 **4.32 ms**, peak 7,792/s |
 | Report ingest | **44,437/s** accepted per instance with zero rejections; about 20,000/s applied to hot state inside the 200 ms budget |
 | Config change to fleet awareness | p99 **46.1 ms** to wake every watcher, measured with 200 watchers; separately, about 10,000 concurrent long polls held per instance at 0.05 cores |
 
-**Two replicas share one Redis, so extra replicas add server capacity, not acquire throughput.** Two
-replicas serve about 4,000 cycles/s where one serves 4,499/s. Redis capacity is what raises the acquire
-ceiling; replicas raise long-poll capacity, report processing and availability. Past that ceiling you
-partition into separate deployments rather than scaling out.
+**Replicas add server capacity, not acquire throughput**, because they share one Redis and the acquire
+ceiling lives there. Two replicas over one Valkey served 4,000 cycles/s at 4,000 offered, gated or ungated
+— the highest rate at which two replicas kept up, not a ceiling anyone found. An earlier round of this
+measurement had two replicas doing *less* than one; it did not reproduce from a rebuilt and warmed pool,
+and it would have been easy to publish the admission gate as its cure. What replicas do buy is long-poll
+capacity, report processing and availability. Raising the acquire ceiling means raising Redis, and past
+that you partition into separate deployments.
 
 Each instance bounds its own concurrency at Redis with **acquire admission control**
-(`SPINNERET_ACQUIRE_FLEET_INFLIGHT`, 64 across the fleet by default, divided by the live instances each
-one sees; `0` turns it off). Excess acquires are shed inside the server, before any Redis command is
-issued, as `unavailable`/`overloaded` with a jittered retry hint. It costs a single replica nothing
-(4,499 of 4,500 offered, 0.4 sheds/s); at capacity two replicas behave much the same gated or ungated,
-for some tail (acquire p99 2.99 ms against 1.66 ms); and past capacity it converts overload into shedding
-rather than timeouts. **Its behaviour well past the knee was not measured exhaustively** — the
-performance page states what was deliberately left unmeasured and gives an A/B recipe for your own
-hardware.
+(`SPINNERET_ACQUIRE_FLEET_INFLIGHT`, 64 across the fleet by default, divided by the live instances each one
+sees and never below 4 per instance; `0` builds no gate at all). Excess acquires are shed inside the
+server, before any Redis command is issued, as `unavailable`/`overloaded` with a jittered retry hint.
+Three things were measured: it costs a single replica nothing (4,499 of 4,500 offered, 0.4 sheds/s); at
+capacity two replicas behave much the same gated or ungated, for some tail (acquire p99 2.99 ms against
+1.66 ms); and past capacity it converts overload into shedding rather than timeouts (2,418/s served,
+1,881/s shed, acquire p99 89 ms).
+**What the same overload does with the gate off was never cleanly measured** — a collapsed run poisons the
+next one and a Valkey restart looks identical to congestion collapse, so every attempt was invalidated. The
+performance page marks which claims are mechanism and which are measurement, and gives an A/B recipe for
+your own hardware.
 
-Candidates for v0.2, explicitly out of scope for v0.1: distributed global rate limiting, external
-validator and refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged
-config rollouts, fingerprint distribution, browser pools.
+Out of scope for v0.1 and candidates for v0.2: distributed global rate limiting, external validator and
+refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
+fingerprint distribution, browser pools.
 
 ---
 
@@ -847,11 +1012,10 @@ Report a vulnerability privately at
 <https://github.com/TikHub/Spinneret/security/advisories/new>. Never open a public issue for a security
 problem. [`SECURITY.md`](SECURITY.md) describes the process.
 
-Three things stay your responsibility in every deployment: the KEK that wraps the vault's data keys must
-live outside the repository and outside the image; the console and the node API must sit behind TLS; and
-node tokens must be scoped to one namespace, the sites they need and nothing else.
-[Security hardening](documents/en/19-security.md) is the checklist to work through before anyone else can
-reach the installation.
+Three things stay yours in every deployment. The KEK that wraps the vault's data keys lives outside the
+repository and outside the image. The console and the node API sit behind TLS. Node tokens are scoped to
+one namespace, the sites they need and nothing else. [Security hardening](documents/en/19-security.md) is
+the checklist to work through before anyone else can reach the installation.
 
 ---
 
