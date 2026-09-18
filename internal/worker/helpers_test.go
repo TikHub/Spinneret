@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 	"testing"
@@ -302,6 +303,26 @@ func counterValue(t *testing.T, c prometheus.Collector) float64 {
 	require.True(t, ok)
 	var out dto.Metric
 	require.NoError(t, m.Write(&out))
+	return metricOf(&out)
+}
+
+// metricValue reads a collector without asserting anything, so it is safe from
+// inside a require.Eventually condition — those run off the test goroutine,
+// where the require helpers must not be called. It reports NaN when the value
+// cannot be read, which never compares equal to an expected number.
+func metricValue(c prometheus.Collector) float64 {
+	m, ok := c.(prometheus.Metric)
+	if !ok {
+		return math.NaN()
+	}
+	var out dto.Metric
+	if err := m.Write(&out); err != nil {
+		return math.NaN()
+	}
+	return metricOf(&out)
+}
+
+func metricOf(out *dto.Metric) float64 {
 	if out.Counter != nil {
 		return out.GetCounter().GetValue()
 	}

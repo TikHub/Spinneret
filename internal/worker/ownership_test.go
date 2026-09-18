@@ -159,8 +159,14 @@ func TestRunProcessesExistingAndNewReports(t *testing.T) {
 
 	w := f.newWorker("inst-a", fastConfig())
 	r := start(t, w)
-	require.Eventually(t, func() bool { return len(w.OwnedShards()) == testShards }, 5*time.Second, 10*time.Millisecond)
-	require.InDelta(t, testShards, counterValue(t, f.metrics.StreamOwnedShards), 0)
+	// OwnedShards() grows as each shard starts, but the gauge is published once at
+	// the end of the rebalance pass (updateOwnedGauge in ownership.go), so it
+	// converges just behind the set. Waiting on the set and then asserting the
+	// gauge is a race that a loaded runner loses; wait on the pair.
+	require.Eventually(t, func() bool {
+		return len(w.OwnedShards()) == testShards &&
+			metricValue(f.metrics.StreamOwnedShards) == float64(testShards)
+	}, 5*time.Second, 10*time.Millisecond)
 	idx, total, err := w.Membership(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, [2]int{0, 1}, [2]int{idx, total})

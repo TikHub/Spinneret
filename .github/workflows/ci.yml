@@ -69,7 +69,13 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
+      # package_json_file is resolved from the repository root, not from
+      # defaults.run.working-directory, which only applies to `run:` steps. Without
+      # it the action looks for a package.json that this repository does not have at
+      # the root and fails with "No pnpm version is specified".
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
