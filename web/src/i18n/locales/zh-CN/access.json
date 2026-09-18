@@ -1,0 +1,400 @@
+{
+  "tokens": {
+    "title": "API 令牌",
+    "description": "令牌用于命名空间 {{namespace}} 中的爬虫节点和自动化任务认证。令牌明文创建后不会再次显示。",
+    "noNamespace": "请选择一个命名空间以管理其 API 令牌。",
+    "create": "创建令牌",
+    "includeRevoked": "显示已吊销",
+    "empty": "暂无 API 令牌",
+    "emptyDescription": "为爬虫节点、Cookie 刷新任务或 CI 流水线创建令牌。",
+    "columns": {
+      "name": "名称",
+      "prefix": "前缀",
+      "scopes": "作用域",
+      "ipAllowlist": "IP 白名单",
+      "rateLimit": "限速",
+      "status": "状态",
+      "expires": "过期时间",
+      "lastUsed": "最近使用",
+      "createdBy": "创建者",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "prefixHint": "令牌的前几个字符，仅用于识别",
+    "anyIp": "任意地址",
+    "unlimited": "不限",
+    "rps": "{{value}} 次/秒",
+    "never": "永不过期",
+    "neverUsed": "从未使用",
+    "status": {
+      "active": "有效",
+      "expired": "已过期",
+      "revoked": "已吊销"
+    },
+    "revoke": "吊销",
+    "alreadyRevoked": "已吊销",
+    "revokeTitle": "吊销令牌 {{name}}？",
+    "revokeDescription": "所有使用该令牌的节点会在全部实例上立即被拒绝。吊销无法撤销，如需恢复访问请创建新令牌。",
+    "revokedToast": "令牌 {{name}} 已吊销",
+    "form": {
+      "title": "创建 API 令牌",
+      "description": "令牌将绑定到命名空间 {{namespace}}。",
+      "name": "名称",
+      "namePlaceholder": "例如 crawler-node-01",
+      "descriptionLabel": "描述",
+      "rateLimit": "限速（次/秒）",
+      "rateLimitHint": "按单个服务实例计算；留空或 0 表示不限。",
+      "rateLimitPlaceholder": "不限",
+      "scopes": "作用域",
+      "ipAllowlist": "IP 白名单",
+      "ipAllowlistHint": "IP 地址或 CIDR 网段；留空表示允许任意地址。",
+      "ipAllowlistPlaceholder": "203.0.113.7 或 10.0.0.0/8",
+      "expiresIn": "有效期",
+      "expiresInPlaceholder": "永不过期",
+      "expiresAt": "将于 {{time}} 过期",
+      "neverExpires": "该令牌永不过期。",
+      "submit": "创建令牌",
+      "created": "令牌 {{name}} 已创建",
+      "errors": {
+        "name": {
+          "required": "请输入名称。",
+          "tooLong": "最多 64 个字符。"
+        },
+        "description": "最多 1024 个字符。",
+        "rateLimit": "请输入 0 到 {{max}} 之间的整数。",
+        "scopes": {
+          "required": "请至少添加一个作用域。",
+          "tooMany": "最多 64 个作用域。",
+          "invalidRows": "请修正标红的作用域。"
+        },
+        "ipAllowlist": {
+          "invalid": "每一项都必须是 IP 地址或 CIDR 网段。",
+          "tooMany": "最多 256 项。"
+        },
+        "expiresIn": {
+          "invalid": "请输入时长，例如 30d 或 12h；留空表示永不过期。",
+          "notPositive": "时长必须大于 0。"
+        }
+      }
+    },
+    "secret": {
+      "title": "令牌 {{name}} 已创建",
+      "description": "请立即复制令牌并保存到密钥管理系统中。",
+      "warning": "这是令牌唯一一次显示。Spinneret 只保存其哈希值；如果丢失，请吊销该令牌并重新创建。",
+      "plaintextLabel": "令牌",
+      "copy": "复制令牌",
+      "usage": "节点通过 {{header}} 请求头发送该令牌。",
+      "confirm": "我已将令牌保存到安全的位置",
+      "close": "完成"
+    }
+  },
+  "scopes": {
+    "more_one": "另外 {{count}} 个",
+    "more_other": "另外 {{count}} 个",
+    "unknown": "未知作用域",
+    "names": {
+      "lease_acquire": {
+        "grants": "获取身份和代理租约",
+        "hint": "可在所有站点或仅在某一个站点上获取租约。"
+      },
+      "report_write": {
+        "grants": "上报请求结果",
+        "hint": "可为所有站点或仅为某一个站点上报结果。"
+      },
+      "config_read": {
+        "grants": "读取配置（节点配置服务与管理端读取）",
+        "hint": "可选的配置分组通配符，例如 crawler* ；留空表示所有分组。"
+      },
+      "config_publish": {
+        "grants": "读取、编辑并发布配置",
+        "hint": "可选的配置分组通配符，例如 crawler.* ；留空表示所有分组。"
+      },
+      "secret_read": {
+        "grants": "读取密钥值",
+        "hint": "必填，匹配 \"<命名空间>/<路径>\" 的通配符，例如 {{namespace}}/signing/*"
+      },
+      "identity_write": {
+        "grants": "读取、写入和操作身份",
+        "hint": "管理所有站点或某一个站点的身份（例如 Cookie 刷新任务）。"
+      },
+      "proxy_write": {
+        "grants": "读取、写入和操作代理",
+        "hint": "作用于整个命名空间，无需参数。"
+      },
+      "admin": {
+        "grants": "令牌所在命名空间内的管理员角色",
+        "hint": "授予命名空间内的管理员角色，请谨慎使用。"
+      }
+    },
+    "presets": {
+      "label": "预设",
+      "crawlerNode": "爬虫节点",
+      "cookieRefresher": "Cookie 刷新",
+      "ciPublisher": "CI 发布"
+    },
+    "builder": {
+      "empty": "尚未添加作用域。请添加作用域或从预设开始。",
+      "listLabel": "令牌作用域",
+      "scopeLabel": "作用域 {{index}}",
+      "argLabel": "作用域 {{index}} 的参数",
+      "remove": "移除作用域",
+      "removeRow": "移除作用域 {{index}}",
+      "add": "添加作用域",
+      "preview": "将授予的作用域",
+      "noArgument": "无参数",
+      "loadingSites": "正在加载站点…",
+      "allSites": "所有站点",
+      "sitesUnavailable": "无法加载站点，请直接输入站点名称。",
+      "sitePlaceholder": "站点名称；留空表示所有站点",
+      "groupPlaceholder": "分组通配符，例如 crawler*",
+      "pathPlaceholder": "{{namespace}}/signing/*"
+    },
+    "errors": {
+      "argRequired": "必须填写路径通配符，例如 {{namespace}}/signing/*",
+      "argInvalid": "参数无效：站点名称需精确匹配（不能使用通配符）；通配符表达式只能包含字母、数字、\".\"、\"_\"、\"-\"、\"*\" 和 \"?\"；密钥路径格式为 <命名空间>/<路径>。",
+      "duplicate": "该作用域已存在。",
+      "tooLong": "作用域长度超过 256 个字符。"
+    }
+  },
+  "roles": {
+    "names": {
+      "viewer": "查看者",
+      "operator": "操作员",
+      "admin": "管理员",
+      "owner": "所有者"
+    },
+    "summaries": {
+      "viewer": "只读访问调度状态、配置、仪表盘和审计日志。",
+      "operator": "查看者权限，外加身份、代理、策略和熔断器的日常操作。",
+      "admin": "操作员权限，外加站点管理、发布、密钥、明文查看、令牌和通知。",
+      "owner": "管理员权限，外加命名空间和用户管理。"
+    },
+    "descriptions": {
+      "viewer": "可查看命名空间、站点、身份、代理、策略、熔断器、配置、仪表盘、审计日志和通知；可列出密钥但看不到值。",
+      "operator": "拥有查看者的全部权限，并可写入和操作身份与代理、编辑策略和配置草稿、操作熔断器。",
+      "admin": "拥有操作员的全部权限，并可管理站点、发布策略和配置、写入及查看密钥明文、查看身份凭据明文、管理 API 令牌和通知渠道。",
+      "owner": "拥有管理员的全部权限，并可创建和删除命名空间、管理用户和角色绑定。"
+    },
+    "extra": {
+      "config_publish": "发布配置草稿",
+      "secret_reveal": "查看密钥明文",
+      "identity_reveal": "查看身份凭据明文",
+      "policy_publish": "发布策略"
+    },
+    "help": {
+      "open": "各角色有哪些权限？",
+      "title": "角色",
+      "extraTitle": "额外权限",
+      "extraDescription": "无需授予更高角色，即可为任意角色单独追加以下敏感权限：",
+      "scope": "角色绑定可作用于所有命名空间或某一个命名空间，并可进一步限定到其中的部分站点。只有覆盖整个租户的绑定才能管理用户和角色绑定。"
+    }
+  },
+  "password": {
+    "show": "显示密码",
+    "hide": "隐藏密码",
+    "hint": "至少 {{count}} 个字符。更长且混合多种字符的口令更安全。",
+    "strength": {
+      "0": "太弱",
+      "1": "弱",
+      "2": "一般",
+      "3": "较强",
+      "4": "强"
+    },
+    "errors": {
+      "required": "请输入密码。",
+      "tooShort": "至少 {{count}} 个字符。",
+      "tooLong": "最多 1024 个字符。"
+    }
+  },
+  "users": {
+    "title": "用户与角色",
+    "description": "租户 {{tenant}} 的成员及其角色绑定。",
+    "searchPlaceholder": "搜索用户名、名称或邮箱",
+    "allUsers": "所有用户",
+    "empty": "暂无用户",
+    "emptyDescription": "创建用户以授予其访问该租户的权限。",
+    "noMatches": "没有匹配的用户",
+    "noMatchesDescription": "请尝试其他搜索词。",
+    "platformAdmin": "平台管理员",
+    "platformAdminHint": "可管理租户，并可在所有租户中操作",
+    "you": "你",
+    "noBindings": "在该租户中没有绑定",
+    "columns": {
+      "username": "用户名",
+      "displayName": "显示名称",
+      "email": "邮箱",
+      "status": "状态",
+      "bindings": "角色绑定",
+      "lastLogin": "最近登录",
+      "createdAt": "创建时间",
+      "id": "用户 ID",
+      "actions": "操作"
+    },
+    "status": {
+      "active": "正常",
+      "disabled": "已停用"
+    },
+    "actions": {
+      "bindings": "角色绑定",
+      "edit": "编辑用户",
+      "resetPassword": "重置密码"
+    },
+    "fields": {
+      "username": "用户名",
+      "usernameHint": "3–64 个小写字母、数字、\".\"、\"_\" 或 \"-\"。",
+      "displayName": "显示名称",
+      "email": "邮箱",
+      "password": "初始密码",
+      "locale": "语言",
+      "disabled": "停用"
+    },
+    "errors": {
+      "username": {
+        "required": "请输入用户名。",
+        "pattern": "请使用 3–64 个小写字母、数字、\".\"、\"_\" 或 \"-\"，并以字母或数字开头。"
+      },
+      "displayName": "最多 128 个字符。",
+      "email": {
+        "invalid": "请输入有效的邮箱地址。",
+        "tooLong": "最多 254 个字符。"
+      },
+      "locale": "语言标签无效。"
+    },
+    "create": {
+      "button": "创建用户",
+      "title": "创建用户",
+      "description": "该用户将在租户 {{tenant}} 中获得一个初始角色绑定。",
+      "bindingTitle": "初始角色绑定",
+      "bindingDescription": "之后可在该用户的角色绑定中继续添加。",
+      "submit": "创建用户",
+      "success": "用户 {{username}} 已创建"
+    },
+    "edit": {
+      "title": "编辑 {{username}}",
+      "description": "资料字段对该用户在所有租户中生效。",
+      "emailHint": "留空将清除邮箱地址。",
+      "defaultLocale": "跟随浏览器",
+      "disabledHint": "停用的用户无法登录；停用会结束其所有会话。",
+      "success": "用户 {{username}} 已更新"
+    },
+    "disable": {
+      "title": "停用 {{username}}？",
+      "description": "该用户会在所有位置被登出，并且在重新启用前无法登录。",
+      "confirm": "停用用户"
+    },
+    "resetPassword": {
+      "title": "重置 {{username}} 的密码",
+      "description": "设置新密码，并通过安全渠道告知该用户。",
+      "warning": "该用户的所有会话将立即结束。",
+      "newPassword": "新密码",
+      "confirmPassword": "确认新密码",
+      "submit": "重置密码",
+      "success": "{{username}} 的密码已重置"
+    }
+  },
+  "bindings": {
+    "title": "{{username}} 的角色绑定",
+    "description": "在租户 {{tenant}} 中授予的角色。",
+    "count_one": "{{count}} 个绑定",
+    "count_other": "{{count}} 个绑定",
+    "add": "添加绑定",
+    "addTitle": "新建角色绑定",
+    "added": "已为 {{username}} 添加角色绑定",
+    "empty": "暂无角色绑定",
+    "emptyDescription": "没有绑定的用户无法访问该租户。",
+    "truncated": "仅显示前面的部分绑定。",
+    "delete": "删除绑定",
+    "deleteTitle": "删除角色绑定？",
+    "deleteDescription": "{{username}} 将失去在 {{scope}} 上的 {{role}} 角色。服务器不允许移除租户的最后一个所有者。",
+    "deleted": "{{username}} 的角色绑定已删除",
+    "role": "角色",
+    "namespace": "命名空间",
+    "namespaceHint": "将绑定限定到某一个命名空间，或授予所有命名空间。",
+    "allNamespaces": "所有命名空间",
+    "sites": "站点",
+    "sitesHint": "将绑定限定到 {{namespace}} 中的部分站点；不选择表示所有站点。",
+    "allSites": "所有站点",
+    "sitesSelected_one": "{{count}} 个站点",
+    "sitesSelected_other": "{{count}} 个站点",
+    "filterSites": "筛选站点",
+    "noSites": "该命名空间下没有站点。",
+    "noMatchingSites": "没有匹配的站点。",
+    "sitesManualPlaceholder": "输入站点名称并按回车",
+    "sitesUnavailable": "无法列出站点（{{reason}}）。",
+    "extraPermissions": "额外权限",
+    "redundantExtras": "{{role}} 已包含 {{permissions}}。",
+    "created": "创建时间",
+    "id": "绑定 ID",
+    "otherTenant": "其他租户中的绑定（{{tenant}}）",
+    "errors": {
+      "sites": {
+        "requireNamespace": "限定站点时必须选择命名空间。",
+        "tooMany": "最多 500 个站点。",
+        "duplicate": "站点不能重复。"
+      },
+      "extraPermissions": "额外权限无效。"
+    }
+  },
+  "audit": {
+    "title": "审计日志",
+    "description": "谁做了什么、是否被允许。最新记录在前。",
+    "live": "自动刷新",
+    "empty": "暂无审计记录",
+    "emptyDescription": "所选时间范围内没有符合筛选条件的记录。",
+    "showDetails": "展开详情",
+    "hideDetails": "收起详情",
+    "tenantLevel": "租户级",
+    "columns": {
+      "expand": "详情",
+      "time": "时间",
+      "actor": "操作者",
+      "action": "动作",
+      "resource": "资源",
+      "result": "结果",
+      "namespace": "命名空间",
+      "client": "客户端"
+    },
+    "actorKinds": {
+      "user": "用户",
+      "token": "令牌",
+      "system": "系统"
+    },
+    "results": {
+      "ok": "成功",
+      "denied": "拒绝",
+      "error": "错误"
+    },
+    "ranges": {
+      "1h": "最近 1 小时",
+      "24h": "最近 24 小时",
+      "7d": "最近 7 天",
+      "30d": "最近 30 天",
+      "custom": "自定义范围"
+    },
+    "filters": {
+      "namespace": "命名空间",
+      "allNamespaces": "所有命名空间",
+      "actor": "操作者",
+      "action": "动作，例如 secret.read",
+      "resourceKind": "资源类型",
+      "resourceId": "资源 ID",
+      "result": "结果",
+      "anyResult": "任意结果",
+      "range": "时间范围",
+      "from": "开始时间",
+      "to": "结束时间",
+      "rangeInvalid": "结束时间必须晚于开始时间。",
+      "rangeHint": "本地时间；留空表示不限制该边界。"
+    },
+    "details": {
+      "id": "记录 ID",
+      "time": "时间",
+      "actorId": "操作者 ID",
+      "resourceKind": "资源类型",
+      "resourceId": "资源 ID",
+      "userAgent": "User-Agent",
+      "payload": "详情",
+      "none": "没有记录详情。"
+    }
+  }
+}

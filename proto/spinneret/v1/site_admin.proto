@@ -1,0 +1,445 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// SiteAdminService manages sites, endpoint groups and URI rules of the
+// active tenant. Reads require `site:read`, writes `site:write`; list results
+// are filtered to the sites the caller can access.
+service SiteAdminService {
+  // ListSites lists the accessible sites of a namespace.
+  rpc ListSites(ListSitesRequest) returns (ListSitesResponse);
+  // GetSite returns one site, addressed by ID or by namespace and name.
+  rpc GetSite(GetSiteRequest) returns (GetSiteResponse);
+  // CreateSite creates a site and a `_default` endpoint group per client.
+  rpc CreateSite(CreateSiteRequest) returns (CreateSiteResponse);
+  // UpdateSite changes a site; unset fields keep their value.
+  rpc UpdateSite(UpdateSiteRequest) returns (UpdateSiteResponse);
+  // DeleteSite deletes a site with its endpoint groups, identity types,
+  // identities and accounts. A site that still has identities is only deleted
+  // with `force` (failed_precondition otherwise).
+  rpc DeleteSite(DeleteSiteRequest) returns (DeleteSiteResponse);
+  // ListEndpointGroups lists the endpoint groups of a site with their rules.
+  rpc ListEndpointGroups(ListEndpointGroupsRequest) returns (ListEndpointGroupsResponse);
+  // CreateEndpointGroup creates an endpoint group with optional URI rules.
+  rpc CreateEndpointGroup(CreateEndpointGroupRequest) returns (CreateEndpointGroupResponse);
+  // UpdateEndpointGroup changes an endpoint group; unset fields keep their
+  // value.
+  rpc UpdateEndpointGroup(UpdateEndpointGroupRequest) returns (UpdateEndpointGroupResponse);
+  // DeleteEndpointGroup deletes an endpoint group (`_default` groups cannot
+  // be deleted).
+  rpc DeleteEndpointGroup(DeleteEndpointGroupRequest) returns (DeleteEndpointGroupResponse);
+  // ListURIRules lists the URI rules of an endpoint group.
+  rpc ListURIRules(ListURIRulesRequest) returns (ListURIRulesResponse);
+  // ReplaceURIRules atomically replaces all URI rules of an endpoint group.
+  rpc ReplaceURIRules(ReplaceURIRulesRequest) returns (ReplaceURIRulesResponse);
+  // TestURI resolves a URI to its endpoint group and effective policies.
+  rpc TestURI(TestURIRequest) returns (TestURIResponse);
+}
+
+// Site is a target website or API crawled by the nodes.
+message Site {
+  // Site ID (`sit_...`).
+  string id = 1;
+  // Namespace name.
+  string namespace = 2;
+  // Name, unique inside the namespace.
+  string name = 3;
+  // Display name.
+  string display_name = 4;
+  // Description.
+  string description = 5;
+  // Client types of the site, e.g. ["web", "app"].
+  repeated string clients = 6;
+  // True when the site switch is off and leases are refused (site_paused).
+  bool paused = 7;
+  // Reason given when the site was paused.
+  string paused_reason = 8;
+  // Time the site was paused; null while not paused.
+  google.protobuf.Timestamp paused_at = 9;
+  // Number of endpoint groups across all clients.
+  int32 endpoint_group_count = 10;
+  // Number of identities that are not retired.
+  int32 identity_count = 11;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 12;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+// URIRule maps request paths to an endpoint group. Match priority is
+// exact > template > prefix (longest) > regex (by position) > `_default`.
+message URIRule {
+  // Rule ID (`uri_...`); ignored on input.
+  string id = 1 [(buf.validate.field).string.max_len = 64];
+  // Match kind.
+  string kind = 2 [(buf.validate.field).string = {
+    in: [
+      "exact",
+      "template",
+      "prefix",
+      "regex"
+    ]
+  }];
+  // Pattern: a path for exact/prefix, a path with `{param}` segments for
+  // template, an RE2 expression for regex.
+  string pattern = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
+  // Order inside the endpoint group (regex evaluation order and template
+  // tie-break); on input positions are assigned from list order.
+  int32 position = 4 [(buf.validate.field).int32.gte = 0];
+}
+
+// EndpointGroup is the unit of rotation, cooldown and circuit breaking for a
+// site client.
+message EndpointGroup {
+  // Endpoint group ID (`eg_...`).
+  string id = 1;
+  // Site name.
+  string site = 2;
+  // Site ID.
+  string site_id = 3;
+  // Client type.
+  string client = 4;
+  // Name, unique per site and client (`_default` is the fallback group).
+  string name = 5;
+  // Description.
+  string description = 6;
+  // Alert threshold of available identities; 0 disables the alert.
+  int32 low_watermark = 7;
+  // URI rules ordered by position.
+  repeated URIRule rules = 8;
+  // Identities currently available for leasing in this group.
+  int32 available_identities = 9;
+  // Breaker state: closed | open | half_open.
+  string breaker_state = 10;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 11;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// ListSitesRequest filters and pages sites.
+message ListSitesRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListSitesResponse is one page of sites.
+message ListSitesResponse {
+  // Sites ordered by name.
+  repeated Site sites = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of accessible sites.
+  int32 total = 3;
+}
+
+// GetSiteRequest addresses a site by `id`, or by `namespace` and `name`.
+message GetSiteRequest {
+  option (buf.validate.message).cel = {
+    id: "get_site.address"
+    message: "id or namespace and name are required"
+    expression: "this.id != '' || (this.namespace != '' && this.name != '')"
+  };
+
+  // Site ID.
+  string id = 1 [(buf.validate.field).string.max_len = 64];
+  // Namespace name (with `name`).
+  string namespace = 2 [(buf.validate.field).string.max_len = 64];
+  // Site name (with `namespace`).
+  string name = 3 [(buf.validate.field).string.max_len = 64];
+}
+
+// GetSiteResponse carries the site.
+message GetSiteResponse {
+  // The site.
+  Site site = 1;
+}
+
+// CreateSiteRequest describes a new site.
+message CreateSiteRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Name: lower-case letters, digits, '_', '.' and '-', 1..64 characters.
+  string name = 2 [(buf.validate.field).string.pattern = "^[a-z0-9_][a-z0-9_.-]{0,63}$"];
+  // Display name.
+  string display_name = 3 [(buf.validate.field).string.max_len = 128];
+  // Description.
+  string description = 4 [(buf.validate.field).string.max_len = 1024];
+  // Client types; empty defaults to ["web"].
+  repeated string clients = 5 [(buf.validate.field).repeated = {
+    max_items: 16
+    unique: true
+    items: {
+      string: {pattern: "^[a-z0-9_-]{1,32}$"}
+    }
+  }];
+}
+
+// CreateSiteResponse returns the created site.
+message CreateSiteResponse {
+  // The created site.
+  Site site = 1;
+}
+
+// UpdateSiteRequest changes a site; unset fields keep their value.
+message UpdateSiteRequest {
+  // Site ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New display name.
+  optional string display_name = 2 [(buf.validate.field).string.max_len = 128];
+  // New description.
+  optional string description = 3 [(buf.validate.field).string.max_len = 1024];
+  // New complete list of client types; empty keeps the current list. Adding a
+  // client creates its `_default` endpoint group; a client that still has
+  // identities cannot be removed.
+  repeated string clients = 4 [(buf.validate.field).repeated = {
+    max_items: 16
+    unique: true
+    items: {
+      string: {pattern: "^[a-z0-9_-]{1,32}$"}
+    }
+  }];
+}
+
+// UpdateSiteResponse returns the updated site.
+message UpdateSiteResponse {
+  // The updated site.
+  Site site = 1;
+}
+
+// DeleteSiteRequest addresses a site.
+message DeleteSiteRequest {
+  // Site ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Delete the site even when it still has identities; they are deleted with
+  // it. Without force the call fails with failed_precondition in that case.
+  bool force = 2;
+}
+
+// DeleteSiteResponse is empty.
+message DeleteSiteResponse {}
+
+// ListEndpointGroupsRequest filters and pages endpoint groups of a site.
+message ListEndpointGroupsRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Optional client filter.
+  string client = 3 [(buf.validate.field).string.max_len = 32];
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 4 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 5 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListEndpointGroupsResponse is one page of endpoint groups.
+message ListEndpointGroupsResponse {
+  // Endpoint groups ordered by client, then name.
+  repeated EndpointGroup endpoint_groups = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of matching endpoint groups.
+  int32 total = 3;
+}
+
+// CreateEndpointGroupRequest describes a new endpoint group.
+message CreateEndpointGroupRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Client type; must be one of the site clients.
+  string client = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  // Name: lower-case letters, digits, '_', '.' and '-', 1..64 characters.
+  string name = 4 [(buf.validate.field).string.pattern = "^[a-z0-9_][a-z0-9_.-]{0,63}$"];
+  // Description.
+  string description = 5 [(buf.validate.field).string.max_len = 1024];
+  // Alert threshold of available identities; 0 disables the alert.
+  int32 low_watermark = 6 [(buf.validate.field).int32.gte = 0];
+  // Initial URI rules, in evaluation order.
+  repeated URIRule rules = 7 [(buf.validate.field).repeated.max_items = 500];
+}
+
+// CreateEndpointGroupResponse returns the created endpoint group.
+message CreateEndpointGroupResponse {
+  // The created endpoint group.
+  EndpointGroup endpoint_group = 1;
+}
+
+// UpdateEndpointGroupRequest changes an endpoint group; unset fields keep
+// their value.
+message UpdateEndpointGroupRequest {
+  // Endpoint group ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New description.
+  optional string description = 2 [(buf.validate.field).string.max_len = 1024];
+  // New low watermark; 0 disables the alert.
+  optional int32 low_watermark = 3 [(buf.validate.field).int32.gte = 0];
+}
+
+// UpdateEndpointGroupResponse returns the updated endpoint group.
+message UpdateEndpointGroupResponse {
+  // The updated endpoint group.
+  EndpointGroup endpoint_group = 1;
+}
+
+// DeleteEndpointGroupRequest addresses an endpoint group.
+message DeleteEndpointGroupRequest {
+  // Endpoint group ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// DeleteEndpointGroupResponse is empty.
+message DeleteEndpointGroupResponse {}
+
+// ListURIRulesRequest addresses the rules of an endpoint group.
+message ListURIRulesRequest {
+  // Endpoint group ID.
+  string endpoint_group_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListURIRulesResponse is one page of URI rules.
+message ListURIRulesResponse {
+  // Rules ordered by position.
+  repeated URIRule rules = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of rules of the endpoint group.
+  int32 total = 3;
+}
+
+// ReplaceURIRulesRequest carries the complete new rule list.
+message ReplaceURIRulesRequest {
+  // Endpoint group ID (not a `_default` group).
+  string endpoint_group_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New rules in evaluation order; empty removes all rules. Patterns are
+  // validated per kind.
+  repeated URIRule rules = 2 [(buf.validate.field).repeated.max_items = 500];
+}
+
+// ReplaceURIRulesResponse returns the stored rules.
+message ReplaceURIRulesResponse {
+  // Stored rules with IDs and positions.
+  repeated URIRule rules = 1;
+}
+
+// TestURIRequest describes a URI to resolve.
+message TestURIRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Client type.
+  string client = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  // URI to resolve (path, path with query, or absolute URL).
+  string uri = 4 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
+}
+
+// TestURIResponse describes how a URI would be scheduled.
+message TestURIResponse {
+  // Matched endpoint group name.
+  string endpoint_group = 1;
+  // Matched endpoint group ID.
+  string endpoint_group_id = 2;
+  // Matching rule ID; empty when the `_default` group was used.
+  string rule_id = 3;
+  // Matching rule kind; empty when the `_default` group was used.
+  string kind = 4;
+  // True when no rule matched and the `_default` group was used.
+  bool is_default = 5;
+  // Effective policies of the endpoint group, one per policy kind.
+  repeated ResolvedPolicyRef policies = 6;
+}
+
+// ResolvedPolicyRef is the policy that applies to an endpoint group for one
+// policy kind.
+message ResolvedPolicyRef {
+  // Policy kind: rotation | signal | action | breaker.
+  string kind = 1;
+  // Policy ID; empty when the built-in default applies.
+  string policy_id = 2;
+  // Policy name.
+  string name = 3;
+  // Published version in effect; 0 for the built-in default.
+  int32 version = 4;
+  // Binding level that selected the policy: endpoint_group | client | site |
+  // namespace | builtin.
+  string level = 5;
+}

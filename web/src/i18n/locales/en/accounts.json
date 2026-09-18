@@ -1,0 +1,87 @@
+{
+  "title": "Accounts",
+  "description": "User accounts grouping identities of the same site; bans and disables apply to every member identity",
+  "noNamespace": "Select a namespace to see its accounts.",
+  "filters": {
+    "search": "Search external references…",
+    "state": "State",
+    "allStates": "All states"
+  },
+  "columns": {
+    "externalRef": "External reference",
+    "site": "Site",
+    "state": "State",
+    "banUntil": "Ban ends",
+    "cooldownUntil": "Cooldown",
+    "region": "Region",
+    "tags": "Tags",
+    "identities": "Identities",
+    "notes": "Notes",
+    "updated": "Updated",
+    "actions": "Actions"
+  },
+  "fields": {
+    "site": "Site",
+    "externalRef": "External reference",
+    "region": "Region",
+    "tags": "Tags",
+    "notes": "Notes"
+  },
+  "state": {
+    "permanent": "Permanent"
+  },
+  "empty": {
+    "title": "No accounts yet",
+    "description": "Accounts are created by imports with an _account column, by attaching identities or here.",
+    "filteredTitle": "No matching accounts",
+    "filteredDescription": "No account matches the current filters."
+  },
+  "actions": {
+    "upsert": "Add account",
+    "viewIdentities": "View identities",
+    "operations": "Operations"
+  },
+  "operations": {
+    "ban": "Ban",
+    "unban": "Unban",
+    "cooldown": "Cooldown",
+    "disable": "Disable",
+    "enable": "Enable"
+  },
+  "operationHints": {
+    "ban_one": "Bans the account and removes its {{count}} identity from scheduling.",
+    "ban_other": "Bans the account and removes its {{count}} identities from scheduling.",
+    "unban_one": "Lifts the account ban; its {{count}} identity can be scheduled again.",
+    "unban_other": "Lifts the account ban; its {{count}} identities can be scheduled again.",
+    "cooldown_one": "Pauses leasing of the account's {{count}} identity for the duration.",
+    "cooldown_other": "Pauses leasing of the account's {{count}} identities for the duration.",
+    "disable_one": "Disables the account and its {{count}} identity until enabled again.",
+    "disable_other": "Disables the account and its {{count}} identities until enabled again.",
+    "enable_one": "Enables the account and its {{count}} identity.",
+    "enable_other": "Enables the account and its {{count}} identities."
+  },
+  "operation": {
+    "title": "{{operation}} account {{ref}}",
+    "duration": "Duration",
+    "banHint": "For example 7d, or choose Permanent from the presets.",
+    "cooldownHint": "For example 30m, 2h or 1d.",
+    "reason": "Reason",
+    "toastApplied_one": "{{operation}} applied to account {{ref}} ({{count}} identity updated)",
+    "toastApplied_other": "{{operation}} applied to account {{ref}} ({{count}} identities updated)",
+    "toastIdentityFailures_one": "{{count}} identity of the account could not be updated",
+    "toastIdentityFailures_other": "{{count}} identities of the account could not be updated"
+  },
+  "result": {
+    "title": "{{operation}} account {{ref}}: identities",
+    "description": "Outcome for the identities of the account."
+  },
+  "upsert": {
+    "createTitle": "Add account",
+    "editTitle": "Edit account",
+    "description": "Accounts are identified by site and external reference; saving an existing pair updates it.",
+    "externalRefHint": "User name, UID or another stable reference, unique within the site.",
+    "tagsHint": "Replaces the existing tags.",
+    "tooLong": "At most {{max}} characters.",
+    "saved": "Account {{ref}} saved"
+  }
+}

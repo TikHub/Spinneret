@@ -1,0 +1,224 @@
+{
+  "title": "Notifications",
+  "description": "Alert delivery channels of the tenant and the history of fired alerts",
+  "tabs": {
+    "channels": "Channels",
+    "alerts": "Alert history"
+  },
+  "kinds": {
+    "webhook": "Webhook",
+    "feishu": "Feishu",
+    "dingtalk": "DingTalk",
+    "wecom": "WeCom",
+    "telegram": "Telegram"
+  },
+  "severities": {
+    "info": "Info",
+    "warning": "Warning",
+    "critical": "Critical"
+  },
+  "scope": {
+    "all": "All accessible channels",
+    "allAlerts": "All accessible alerts",
+    "tenant": "Tenant-wide",
+    "namespaceNamed": "Namespace {{namespace}}"
+  },
+  "fields": {
+    "name": "Name",
+    "kind": "Kind",
+    "scope": "Scope",
+    "eventTypes": "Event types",
+    "sites": "Sites",
+    "minSeverity": "Min severity",
+    "enabled": "Enabled",
+    "lastDelivery": "Last delivery"
+  },
+  "alertKinds": {
+    "breaker_opened": {
+      "label": "Breaker opened",
+      "description": "An endpoint group circuit breaker opened and stopped handing out identities."
+    },
+    "breaker_reopened": {
+      "label": "Breaker reopened",
+      "description": "A half-open breaker failed its probes and opened again."
+    },
+    "breaker_closed": {
+      "label": "Breaker closed",
+      "description": "A breaker recovered and traffic resumed."
+    },
+    "identity_low_watermark": {
+      "label": "Identities below low watermark",
+      "description": "Available identities of an endpoint group dropped below its low watermark."
+    },
+    "proxy_low_watermark": {
+      "label": "Proxies below low watermark",
+      "description": "Available proxies of a site dropped below the low watermark."
+    },
+    "ban_spike": {
+      "label": "Ban spike",
+      "description": "Identities are being banned much faster than usual."
+    },
+    "report_backlog": {
+      "label": "Report backlog",
+      "description": "Node reports are piling up faster than workers process them."
+    },
+    "unknown_ratio_high": {
+      "label": "High unknown ratio",
+      "description": "Too many reports match no signal rule; rules may need to be extended."
+    },
+    "client_error_spike": {
+      "label": "Client error spike",
+      "description": "Crawler-side errors (parameters, signatures) increased sharply."
+    },
+    "identity_expired": {
+      "label": "Identity expired",
+      "description": "Identities expired and need their payload refreshed."
+    },
+    "secret_expiring": {
+      "label": "Secret expiring",
+      "description": "A secret expires within 7 days."
+    },
+    "test": {
+      "label": "Test",
+      "description": "Test deliveries sent from the console."
+    }
+  },
+  "channels": {
+    "create": "New channel",
+    "empty": "No notification channels",
+    "emptyDescription": "Add a webhook, Feishu, DingTalk, WeCom or Telegram channel to receive alerts.",
+    "autoRefresh": "Refreshes every 5 s",
+    "neverDelivered": "Never",
+    "deliveryOk": "Delivered successfully",
+    "deliveryFailed": "Delivery failed",
+    "toggle": "Enable channel {{name}}",
+    "enabled": "Channel {{name}} enabled",
+    "disabled": "Channel {{name}} disabled",
+    "test": "Send test alert",
+    "testOk": "Test alert delivered through {{name}}",
+    "testFailed": "Test delivery through {{name}} failed: {{error}}",
+    "deleteTitle": "Delete channel {{name}}?",
+    "deleteDescription": "Alerts are no longer delivered through this channel. Its delivery history stays in the alert history.",
+    "deleted": "Channel {{name}} deleted"
+  },
+  "form": {
+    "createTitle": "New notification channel",
+    "editTitle": "Edit {{name}}",
+    "description": "Choose where alerts are delivered and which alerts are sent.",
+    "scopeFixed": "The scope cannot be changed.",
+    "kindFixed": "The kind cannot be changed.",
+    "minSeverityHint": "Alerts below this severity are not sent.",
+    "sitesHint": "Leave empty to receive alerts of every site.",
+    "tenantSites": "Tenant-wide channels receive alerts of every namespace and site.",
+    "created": "Channel {{name}} created",
+    "updated": "Channel {{name}} updated"
+  },
+  "config": {
+    "url": "URL",
+    "webhookUrl": "Webhook URL",
+    "secret": "Signing secret",
+    "headers": "Headers",
+    "headersHint": "Extra HTTP headers. Values of credential headers (Authorization, tokens, keys) are masked after saving and kept unless replaced entirely.",
+    "headerName": "Header name",
+    "headerValue": "Value",
+    "botToken": "Bot token",
+    "chatId": "Chat ID",
+    "apiBase": "API base URL",
+    "placeholders": {
+      "url": "https://hooks.example.com/spinneret",
+      "webhookUrl": "https://…",
+      "secret": "Optional",
+      "botToken": "123456789:AA…",
+      "chatId": "-1001234567890",
+      "apiBase": "https://api.telegram.org"
+    },
+    "hints": {
+      "webhook": {
+        "url": "Receives a JSON POST per alert.",
+        "secret": "When set, requests carry X-Spinneret-Timestamp and an HMAC-SHA256 X-Spinneret-Signature."
+      },
+      "feishu": {
+        "webhookUrl": "Custom bot webhook of the Feishu group.",
+        "secret": "Signature verification secret of the bot, if enabled."
+      },
+      "dingtalk": {
+        "webhookUrl": "Robot webhook including access_token.",
+        "secret": "Signing secret (SEC…) of the robot, if enabled."
+      },
+      "wecom": {
+        "webhookUrl": "Group robot webhook including key."
+      },
+      "telegram": {
+        "botToken": "Token from @BotFather.",
+        "chatId": "User, group or channel ID the bot posts to.",
+        "apiBase": "Optional; defaults to https://api.telegram.org."
+      }
+    }
+  },
+  "masked": {
+    "replace": "Replace",
+    "replaceHint": "The stored value is kept unless you replace it.",
+    "keep": "Keep current",
+    "keepHint": "Restore the stored value"
+  },
+  "picker": {
+    "all": "All",
+    "selected": "{{count}} of {{total}} selected",
+    "noOptions": "Nothing to select",
+    "eventTypesNone": "Select event types",
+    "eventTypesAll": "All event types",
+    "sitesAll": "All sites",
+    "sitesManual": "Type site names and press Enter"
+  },
+  "validation": {
+    "name": {
+      "required": "Enter a name",
+      "tooLong": "At most 64 characters"
+    },
+    "eventTypes": "Select at least one event type",
+    "config": {
+      "required": "Required",
+      "url": "Enter an absolute http or https URL",
+      "botToken": "The bot token must look like <bot id>:<secret>",
+      "masked": "This value is masked; replace it entirely or keep the current value",
+      "maskedDestination": "The API base changed: enter the full bot token again",
+      "headerName": "Header names may contain letters, digits and !#$%&'*+.^_`|~-",
+      "headerReserved": "This header is set by Spinneret and cannot be overridden",
+      "headerDuplicate": "Header names must be unique (case-insensitive)",
+      "headerLimit": "At most 20 headers",
+      "headerMasked": "A masked header value was changed; enter the full value",
+      "headerMaskedDestination": "The URL changed: enter the full values of masked credential headers again"
+    }
+  },
+  "alerts": {
+    "time": "Time",
+    "severity": "Severity",
+    "kind": "Kind",
+    "title": "Alert",
+    "scope": "Namespace / site",
+    "site": "Site",
+    "range": "Time range",
+    "deliveries": "Deliveries",
+    "delivered": "{{ok}}/{{total}} delivered",
+    "noDeliveries": "Not delivered",
+    "noDeliveriesHint": "No channel matched this alert.",
+    "ok": "Delivered",
+    "failed": "Failed",
+    "expand": "Show details",
+    "collapse": "Hide details",
+    "anyKind": "Any kind",
+    "anySeverity": "Any severity",
+    "anySite": "Any site",
+    "siteNeedsNamespace": "Pick a namespace scope",
+    "empty": "No alerts",
+    "emptyDescription": "Alerts appear here when they fire, with the delivery result of every channel.",
+    "noMatches": "No alerts match the filters",
+    "ranges": {
+      "1h": "Last hour",
+      "24h": "Last 24 hours",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "all": "All time"
+    }
+  }
+}

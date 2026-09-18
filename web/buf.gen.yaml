@@ -1,0 +1,17 @@
+# Generates protobuf-es v2 code (messages and service descriptors) for the console.
+# Run via `pnpm gen` from web/. The input is the repository buf workspace so the
+# protovalidate dependency from ../buf.lock resolves; include_imports also emits
+# buf/validate/validate_pb.ts (well-known types come from @bufbuild/protobuf/wkt).
+version: v2
+clean: true
+inputs:
+  - directory: ..
+    paths:
+      - ../proto/spinneret/v1
+plugins:
+  - local: protoc-gen-es
+    out: src/gen
+    include_imports: true
+    opt:
+      - target=ts
+      - import_extension=none

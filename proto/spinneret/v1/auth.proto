@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// AuthService manages console sessions. Login is the only public RPC; the
+// others require a session cookie (`spinneret_session`) and the
+// `X-Spinneret-CSRF: 1` header.
+service AuthService {
+  // Login verifies username and password and sets the session cookie.
+  // Repeated failures are throttled (resource_exhausted/login_throttled).
+  rpc Login(LoginRequest) returns (LoginResponse);
+  // Logout deletes the current session and clears the cookie.
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  // GetMe returns the current user and the tenants it can access.
+  rpc GetMe(GetMeRequest) returns (GetMeResponse);
+  // ChangePassword changes the password of the current user and invalidates
+  // its other sessions.
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+}
+
+// LoginRequest carries the console credentials.
+message LoginRequest {
+  // Username (case-insensitive).
+  string username = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Password.
+  string password = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
+}
+
+// LoginResponse describes the signed-in user.
+message LoginResponse {
+  // The signed-in user.
+  User user = 1;
+  // Tenants the user can access with the effective permissions per namespace
+  // and site.
+  repeated TenantAccess tenants = 2;
+}
+
+// LogoutRequest is empty.
+message LogoutRequest {}
+
+// LogoutResponse is empty.
+message LogoutResponse {}
+
+// GetMeRequest is empty.
+message GetMeRequest {}
+
+// GetMeResponse describes the current user.
+message GetMeResponse {
+  // The current user.
+  User user = 1;
+  // Tenants the user can access with the effective permissions per namespace
+  // and site. Platform admins get every tenant.
+  repeated TenantAccess tenants = 2;
+}
+
+// ChangePasswordRequest changes the current user's password.
+message ChangePasswordRequest {
+  // Current password.
+  string current_password = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1024
+  }];
+  // New password (at least 10 characters).
+  string new_password = 2 [(buf.validate.field).string = {
+    min_len: 10
+    max_len: 1024
+  }];
+}
+
+// ChangePasswordResponse is empty.
+message ChangePasswordResponse {}
+
+// User is a global console account.
+message User {
+  // User ID (`usr_...`).
+  string id = 1;
+  // Unique lower-case username.
+  string username = 2;
+  // Display name.
+  string display_name = 3;
+  // Email address; empty when unknown.
+  string email = 4;
+  // Preferred UI locale, e.g. "en" or "zh-CN"; empty = browser default.
+  string locale = 5;
+  // True for platform administrators (manage tenants and KEKs, act in any
+  // tenant).
+  bool is_platform_admin = 6;
+  // True when the account is disabled and cannot sign in.
+  bool disabled = 7;
+  // Time of the last successful login; null when never.
+  google.protobuf.Timestamp last_login_at = 8;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// Tenant is an isolation boundary (team or organization).
+message Tenant {
+  // Tenant ID (`ten_...`).
+  string id = 1;
+  // Unique slug.
+  string name = 2;
+  // Display name.
+  string display_name = 3;
+  // Description.
+  string description = 4;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 5;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// Namespace groups sites, proxies, configs, secrets, tokens and policies
+// inside a tenant.
+message Namespace {
+  // Namespace ID (`ns_...`).
+  string id = 1;
+  // Owning tenant ID.
+  string tenant_id = 2;
+  // Slug, unique inside the tenant.
+  string name = 3;
+  // Display name.
+  string display_name = 4;
+  // Description.
+  string description = 5;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 6;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// RoleBinding grants a role to a user inside a tenant, optionally narrowed to
+// one namespace and a set of sites.
+message RoleBinding {
+  // Binding ID (`rb_...`).
+  string id = 1;
+  // Bound user ID.
+  string user_id = 2;
+  // Bound username.
+  string username = 3;
+  // Tenant ID.
+  string tenant_id = 4;
+  // Role: owner | admin | operator | viewer.
+  string role = 5;
+  // Namespace ID; empty when the binding covers all namespaces.
+  string namespace_id = 6;
+  // Namespace name; empty when the binding covers all namespaces.
+  string namespace = 7;
+  // Site IDs the binding is restricted to; empty = all sites.
+  repeated string site_ids = 8;
+  // Site names matching `site_ids`, in the same order.
+  repeated string sites = 9;
+  // Extra permissions granted on top of the role (config:publish,
+  // secret:reveal, identity:reveal, policy:publish).
+  repeated string extra_permissions = 10;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 11;
+}
+
+// TenantAccess summarizes what a user can do inside one tenant.
+message TenantAccess {
+  // The tenant.
+  Tenant tenant = 1;
+  // The user's role bindings in the tenant (empty for platform admins
+  // without explicit bindings).
+  repeated RoleBinding bindings = 2;
+  // Accessible namespaces with effective permissions.
+  repeated NamespaceAccess namespaces = 3;
+}
+
+// NamespaceAccess lists the effective permissions inside one namespace.
+message NamespaceAccess {
+  // The namespace.
+  Namespace namespace = 1;
+  // Permissions granted for the whole namespace (from bindings without site
+  // restriction), e.g. "site:read", "config:publish".
+  repeated string permissions = 2;
+  // Sites with permissions granted only through site-restricted bindings.
+  repeated SiteAccess sites = 3;
+}
+
+// SiteAccess lists permissions granted on one site through site-restricted
+// bindings.
+message SiteAccess {
+  // Site ID.
+  string site_id = 1;
+  // Site name.
+  string site_name = 2;
+  // Effective permissions on the site.
+  repeated string permissions = 3;
+}

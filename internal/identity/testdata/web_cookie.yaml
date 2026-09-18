@@ -1,0 +1,17 @@
+# Web crawler: cookie identity (design doc section 5.1).
+name: web_cookie
+site: shop
+client: web
+fields:
+  cookies:    { type: cookie_map, required: true, sensitive: true }
+  user_agent: { type: string }
+  signature:   { type: string, sensitive: true }
+unique_by: [cookies.sessionid]
+activation: probe
+deliver:
+  cookies: "{{ cookies }}"
+  cookie_header: "{{ cookies }}"
+  headers:
+    User-Agent: "{{ user_agent }}"
+  values:
+    signature: "{{ signature }}"

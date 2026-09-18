@@ -1,0 +1,284 @@
+package server
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"time"
+
+	chdriver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/rueidis"
+
+	"github.com/Evil0ctal/Spinneret/internal/action"
+	"github.com/Evil0ctal/Spinneret/internal/analytics"
+	"github.com/Evil0ctal/Spinneret/internal/appconfig"
+	"github.com/Evil0ctal/Spinneret/internal/audit"
+	"github.com/Evil0ctal/Spinneret/internal/auth"
+	"github.com/Evil0ctal/Spinneret/internal/breaker"
+	"github.com/Evil0ctal/Spinneret/internal/catalog"
+	"github.com/Evil0ctal/Spinneret/internal/configcenter"
+	"github.com/Evil0ctal/Spinneret/internal/events"
+	"github.com/Evil0ctal/Spinneret/internal/hotstate"
+	"github.com/Evil0ctal/Spinneret/internal/identitysvc"
+	"github.com/Evil0ctal/Spinneret/internal/jobs"
+	"github.com/Evil0ctal/Spinneret/internal/notify"
+	"github.com/Evil0ctal/Spinneret/internal/observability"
+	"github.com/Evil0ctal/Spinneret/internal/pkg/netx"
+	"github.com/Evil0ctal/Spinneret/internal/policysvc"
+	"github.com/Evil0ctal/Spinneret/internal/proxy"
+	"github.com/Evil0ctal/Spinneret/internal/scheduler"
+	"github.com/Evil0ctal/Spinneret/internal/signal"
+	"github.com/Evil0ctal/Spinneret/internal/sitesvc"
+	"github.com/Evil0ctal/Spinneret/internal/stats"
+	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
+	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/Evil0ctal/Spinneret/internal/tenancy"
+	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/Evil0ctal/Spinneret/internal/worker"
+)
+
+// ClickHouse writer settings (spec §6.3: raw report and lease events).
+const (
+	clickHouseFlushEvery = time.Second
+	clickHouseMaxBatch   = 10_000
+	// dedupePepperName is the system key used to hash identity and proxy uniqueness keys.
+	dedupePepperName = "dedupe_pepper"
+	dedupePepperSize = 32
+)
+
+// infra holds the shared infrastructure clients of one instance.
+type infra struct {
+	pool   *pgxpool.Pool
+	rdb    rueidis.Client
+	keys   redis.Keys
+	chConn chdriver.Conn // nil when ClickHouse is disabled
+	cipher *vault.Cipher
+	pepper []byte
+}
+
+// components holds every domain service of one instance. All services are
+// constructed regardless of the role (construction is cheap and has no side
+// effects); the role decides which loops, jobs and handlers are started.
+type components struct {
+	bus         events.Bus
+	audit       *audit.Writer
+	catalog     *catalog.Store
+	hot         *hotstate.Syncer
+	chWriter    *chstore.Writer // nil when ClickHouse is disabled
+	stats       *stats.Aggregator
+	secrets     *vault.SecretStore
+	rewrapper   *vault.Rewrapper
+	stateWriter *action.StateWriter
+	executor    *action.Executor
+	operator    *action.Operator
+	payloads    *identitysvc.PayloadCache
+	identities  *identitysvc.Service
+	proxies     *proxy.Service
+	resolver    *proxy.Resolver
+	checker     *proxy.HealthChecker
+	policies    *policysvc.Service
+	sites       *sitesvc.Service
+	tenancy     *tenancy.Service
+	authn       *auth.Authenticator
+	users       *auth.Users
+	tokens      *auth.Tokens
+	auditLogs   *auth.AuditLogs
+	breaker     *breaker.Service
+	bindings    *proxyBindingWriter
+	scheduler   *scheduler.Service
+	ingestor    *signal.Ingestor
+	worker      *worker.Worker // nil unless the role runs workers
+	config      *configcenter.Service
+	notify      *notify.Service
+	analytics   *analytics.Service
+	partitions  *partitionMaintainer
+
+	unsubscribeResolver func()
+}
+
+// buildComponents wires the domain services following
+// docs/design/3_service_contracts.md and 6_wiring_interfaces.md.
+func buildComponents(cfg appconfig.Config, in *infra, metrics *observability.Metrics, logger *slog.Logger) (*components, error) {
+	c := &components{}
+	pool, rdb, keys := in.pool, in.rdb, in.keys
+
+	c.bus = events.NewRedisBus(rdb, keys, cfg.InstanceID, logger)
+	c.audit = audit.NewWriter(pool, logger.With(slog.String("component", "audit")))
+	c.catalog = catalog.NewStore(pool, c.bus, logger)
+	c.catalog.SetChangeMarks(catalog.NewRedisChangeMarks(rdb, keys))
+	c.hot = hotstate.NewSyncer(pool, rdb, keys, c.catalog, logger)
+
+	if in.chConn != nil {
+		c.chWriter = chstore.NewWriter(in.chConn, logger, clickHouseFlushEvery, clickHouseMaxBatch)
+	}
+	// A nil writer (ClickHouse disabled) makes the aggregator skip raw events.
+	c.stats = stats.NewAggregator(pool, c.chWriter, metrics, logger)
+
+	c.secrets = vault.NewSecretStore(pool, in.cipher, c.audit, logger)
+	c.rewrapper = vault.NewRewrapper(pool, in.cipher, logger)
+
+	c.stateWriter = action.NewStateWriter(pool, metrics, logger)
+	c.executor = action.NewExecutor(action.ExecutorConfig{RecordCooldownEvents: cfg.RecordCooldownEvents},
+		rdb, keys, c.stateWriter, c.bus, metrics, logger)
+	c.operator = action.NewOperator(pool, rdb, keys, c.catalog, actionHotSyncer{hot: c.hot}, c.stateWriter, c.audit, c.bus, logger)
+
+	c.payloads = identitysvc.NewPayloadCache(pool, in.cipher, c.secrets, cfg.PayloadCacheSize, cfg.PayloadCache, logger)
+	c.identities = identitysvc.NewService(pool, in.cipher, in.pepper, c.catalog, identityHotSyncer{hot: c.hot},
+		identityOperator{op: c.operator}, c.audit, c.bus, logger)
+
+	c.proxies = proxy.NewService(pool, in.cipher, in.pepper, rdb, keys, c.catalog, c.hot, c.audit, c.bus, logger)
+	c.resolver = proxy.NewResolver(pool, in.cipher, logger)
+	// Drop cached proxy URLs on proxy.state events (published locally and by peers).
+	c.unsubscribeResolver = c.resolver.Subscribe(c.bus)
+
+	c.policies = policysvc.NewService(pool, c.catalog, c.hot, c.audit, logger.With(slog.String("component", "policies")),
+		policysvc.WithEventBus(c.bus))
+	c.sites = sitesvc.NewService(pool, c.catalog, c.hot, c.audit, rdb, keys, logger)
+	c.tenancy = tenancy.NewService(pool, c.catalog, c.policies, c.audit, logger)
+
+	trusted, err := netx.ParsePrefixes(cfg.TrustedProxies)
+	if err != nil {
+		return nil, fmt.Errorf("parse SPINNERET_TRUSTED_PROXIES: %w", err)
+	}
+	authCfg := auth.Config{
+		TokenCacheTTL:  cfg.TokenCacheTTL,
+		SessionTTL:     cfg.SessionTTL,
+		CookieSecure:   cfg.CookieSecure,
+		TrustedProxies: trusted,
+		InstanceID:     cfg.InstanceID,
+	}
+	c.authn = auth.NewAuthenticator(authCfg, pool, rdb, keys, c.bus, logger)
+	c.users = auth.NewUsers(pool, rdb, keys, c.audit, authCfg, logger, auth.WithEventBus(c.bus))
+	c.tokens = auth.NewTokens(pool, c.bus, c.audit, logger)
+	c.auditLogs = auth.NewAuditLogs(pool)
+
+	c.breaker = breaker.New(breaker.Config{}, pool, rdb, keys, c.catalog, c.bus, c.audit, metrics, logger)
+
+	c.bindings = newProxyBindingWriter(pool, metrics, logger)
+	c.scheduler = scheduler.New(c.schedulerConfig(cfg), rdb, keys, c.catalog, c.payloads, schedulerProxyResolver{r: c.resolver},
+		schedulerStats{agg: c.stats}, metrics, logger)
+
+	c.ingestor = signal.NewIngestor(signal.Config{
+		ReportShards:     cfg.ReportShards,
+		DedupTTL:         cfg.ReportDedupTTL,
+		StreamMaxLen:     cfg.StreamMaxLen,
+		LateReportWindow: cfg.LateReportWindow,
+	}, rdb, keys, c.catalog, c.stats, metrics, logger)
+
+	var membership proxy.Membership = noMembership{}
+	if cfg.Role.RunsWorkers() {
+		c.worker = worker.New(worker.Config{
+			ReportShards:     cfg.ReportShards,
+			InstanceID:       cfg.InstanceID,
+			LateReportWindow: cfg.LateReportWindow,
+		}, rdb, keys, c.catalog, workerExecutor{exec: c.executor}, c.scheduler, c.breaker, workerStats{agg: c.stats},
+			metrics, logger)
+		membership = c.worker
+	}
+	c.checker = proxy.NewHealthChecker(proxy.HealthConfig{
+		CheckURL:  cfg.ProxyCheckURL,
+		Interval:  cfg.ProxyCheckInterval,
+		Timeout:   cfg.ProxyCheckTimeout,
+		ExitIPURL: cfg.ProxyExitIPURL,
+		GeoIPDB:   cfg.GeoIPDB,
+	}, pool, in.cipher, rdb, keys, c.catalog, c.hot, membership, c.bus, metrics, logger)
+
+	c.config = configcenter.New(configcenter.Config{MaxWatchers: cfg.MaxWatchers}, pool, c.catalog, c.bus,
+		configSecrets{store: c.secrets}, c.breaker, c.audit, metrics, logger)
+	c.notify = notify.New(notify.Config{ReportShards: cfg.ReportShards}, pool, in.cipher, rdb, keys, c.catalog, c.bus,
+		c.audit, metrics, logger)
+
+	// in.chConn is a nil interface (not a typed nil) when ClickHouse is disabled.
+	c.analytics = analytics.New(pool, in.chConn, rdb, keys, c.catalog, logger, analytics.WithReportShards(cfg.ReportShards))
+
+	c.partitions = newPartitionMaintainer(pool, cfg.Retention, logger)
+	return c, nil
+}
+
+// registerJobs adds every periodic job of a worker instance (spec §6.8) and
+// returns the number of leader jobs.
+func (c *components) registerJobs(r *jobs.Runner) (leaders int, err error) {
+	for _, j := range []jobs.Job{
+		c.scheduler.ReapJob(),
+		c.operator.ExpiryJob(),
+		c.breaker.EvaluateJob(),
+		c.hot.SnapshotJob(),
+		c.checker.Job(),
+		c.notify.EvaluateJob(),
+		c.partitions.job(),
+	} {
+		if err := r.Add(j); err != nil {
+			return 0, fmt.Errorf("register job %s: %w", j.Name, err)
+		}
+		if j.Mode == jobs.Leader {
+			leaders++
+		}
+	}
+	return leaders, nil
+}
+
+// minFreeConnections is the number of pooled PostgreSQL connections that must
+// remain for requests, loops and non-leader jobs once every leader job holds
+// its lock connection.
+const minFreeConnections = 2
+
+// checkPoolSize rejects a connection pool that leader jobs would exhaust: the
+// jobs runner keeps one pooled connection per leader job for as long as it
+// holds the job's advisory lock, so a pool of that size or barely larger
+// starves every other database user of the leader instance.
+func checkPoolSize(maxConns int32, leaderJobs int) error {
+	if need := leaderJobs + minFreeConnections; int(maxConns) < need {
+		return fmt.Errorf("SPINNERET_DATABASE_MAX_CONNS=%d is too small for a worker instance: "+
+			"%d leader jobs each hold a connection while leading; use at least %d", maxConns, leaderJobs, need)
+	}
+	return nil
+}
+
+// schedulerConfig builds the scheduler configuration. Acquire runs on api
+// instances, so the half-open hook is wired on every role; the breaker's
+// notification loop that consumes it runs on every role as well (startLoops).
+func (c *components) schedulerConfig(cfg appconfig.Config) scheduler.Config {
+	return scheduler.Config{
+		ReportShards:      cfg.ReportShards,
+		LateReportWindow:  cfg.LateReportWindow,
+		OnBreakerHalfOpen: c.breaker.NotifyRisk,
+		OnProxyBound:      c.bindings.Record,
+	}
+}
+
+// loopGroup starts supervised loops (implemented by *tier).
+type loopGroup interface {
+	Go(name string, fn func(context.Context) error)
+}
+
+// startLoops starts the long-running loops of the instance role in tiers:
+// services (stopped first), sinks that persist what the services produced,
+// and finally the ClickHouse writer that receives rows from the stats sink.
+// startWorker is called (supervised) on worker roles and must block until ctx ends.
+func (c *components) startLoops(role appconfig.Role, services, sinks, clickhouse loopGroup, startWorker func(ctx context.Context) error) {
+	services.Go("events_bus", c.bus.Run)
+	services.Go("catalog", c.catalog.Run)
+	// Breaker evaluations requested by the worker (risk outcomes) and by
+	// acquire (lazy open -> half_open transitions) are served on every role.
+	services.Go("breaker", c.breaker.Run)
+	if role.ServesAPI() {
+		services.Go("auth", c.authn.Run)
+		services.Go("configcenter", c.config.Run)
+		services.Go("kek_rewrap", c.rewrapper.Run)
+	}
+	if role.RunsWorkers() {
+		services.Go("notify", c.notify.Run)
+		services.Go("worker_startup", startWorker)
+	}
+
+	sinks.Go("stats", c.stats.Run)
+	sinks.Go("state_writer", c.stateWriter.Run)
+	sinks.Go("secret_access", c.secrets.Run)
+	sinks.Go("audit", c.audit.Run)
+	sinks.Go("proxy_bindings", c.bindings.Run)
+
+	if c.chWriter != nil {
+		clickhouse.Go("clickhouse_writer", c.chWriter.Run)
+	}
+}

@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// ConfigService serves published configuration items to nodes. Only the
+// current published version is served; `${secret:...}` references are
+// resolved, which requires the matching `secret:read` token scope. It
+// requires the `config:read[:<group glob>]` token scope. The reserved,
+// read-only `_runtime` group exposes `breakers` and `site_switches`.
+service ConfigService {
+  // GetConfig returns one published item (not_found when the item does not
+  // exist or has no published version).
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+  // BatchGetConfig returns several published items; unknown or unpublished
+  // items are listed in `missing` instead of failing the call.
+  rpc BatchGetConfig(BatchGetConfigRequest) returns (BatchGetConfigResponse);
+  // WatchConfig long-polls for changes: it returns immediately with the items
+  // whose published version differs from the given one, or waits up to
+  // `timeout_ms` and returns an empty list when nothing changed.
+  rpc WatchConfig(WatchConfigRequest) returns (WatchConfigResponse);
+}
+
+// ConfigRef addresses a configuration item inside a namespace.
+message ConfigRef {
+  // Group name, e.g. "crawler" or "_runtime".
+  string group = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 128
+  }];
+  // Item key, e.g. "search.json".
+  string key = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+}
+
+// ConfigItem is a published configuration item as delivered to nodes.
+message ConfigItem {
+  // Namespace name.
+  string namespace = 1;
+  // Group name.
+  string group = 2;
+  // Item key.
+  string key = 3;
+  // Content format: json | yaml | text.
+  string format = 4;
+  // Published version number. It increases on every publish and rollback and
+  // never repeats for a namespace/group/key: a new item starts at 1, and an
+  // item re-created after deletion continues above the last version published
+  // before it was deleted.
+  int32 version = 5;
+  // Content of the published version with secret references resolved.
+  string content = 6;
+  // Time the version was published.
+  google.protobuf.Timestamp updated_at = 7;
+  // True when the published content contains secret references that were
+  // resolved into content. Clients must not persist such content in plain
+  // text (for example in local snapshots).
+  bool has_secret_refs = 8;
+}
+
+// GetConfigRequest addresses one item.
+message GetConfigRequest {
+  // Optional namespace name; when set it must equal the token namespace.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // Group name.
+  string group = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 128
+  }];
+  // Item key.
+  string key = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+}
+
+// GetConfigResponse carries the requested item.
+message GetConfigResponse {
+  // The published item.
+  ConfigItem item = 1;
+}
+
+// BatchGetConfigRequest addresses several items.
+message BatchGetConfigRequest {
+  // Optional namespace name; when set it must equal the token namespace.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // Items to fetch (1..200).
+  repeated ConfigRef items = 2 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+  }];
+}
+
+// BatchGetConfigResponse carries the found items and the missing references.
+message BatchGetConfigResponse {
+  // Published items, in request order.
+  repeated ConfigItem items = 1;
+  // Requested items that do not exist or have no published version.
+  repeated ConfigRef missing = 2;
+}
+
+// WatchItem is an item the caller holds together with its known version.
+message WatchItem {
+  // Group name.
+  string group = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 128
+  }];
+  // Item key.
+  string key = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 256
+  }];
+  // Version the caller currently holds; 0 when it holds none, in which case
+  // the item is returned as soon as it has a published version.
+  int32 version = 3 [(buf.validate.field).int32.gte = 0];
+}
+
+// WatchConfigRequest starts a long poll.
+message WatchConfigRequest {
+  // Optional namespace name; when set it must equal the token namespace.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // Items to watch (1..200).
+  repeated WatchItem items = 2 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 200
+  }];
+  // Maximum time to wait for a change in milliseconds (0 = server default of
+  // 30000, max 60000).
+  int32 timeout_ms = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 60000
+  }];
+}
+
+// WatchConfigResponse lists changed items only.
+message WatchConfigResponse {
+  // Items whose published version differs from the watched version; empty
+  // when the poll timed out without changes.
+  repeated ConfigItem items = 1;
+}

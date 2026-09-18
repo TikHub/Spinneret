@@ -1,0 +1,356 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "spinneret/v1/common.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// ProxyAdminService manages the proxy pool of a namespace.
+service ProxyAdminService {
+  // ListProxies lists proxies matching a filter (proxy:read).
+  rpc ListProxies(ListProxiesRequest) returns (ListProxiesResponse);
+  // GetProxy returns one proxy with its per-site state (proxy:read).
+  rpc GetProxy(GetProxyRequest) returns (GetProxyResponse);
+  // ImportProxies imports proxies from URL lines, JSON Lines or CSV (proxy:write).
+  rpc ImportProxies(ImportProxiesRequest) returns (ImportProxiesResponse);
+  // UpdateProxy changes proxy attributes (proxy:write).
+  rpc UpdateProxy(UpdateProxyRequest) returns (UpdateProxyResponse);
+  // OperateProxies applies a manual operation to proxies (proxy:operate).
+  rpc OperateProxies(OperateProxiesRequest) returns (OperateProxiesResponse);
+  // DeleteProxies deletes proxies and their identity bindings (proxy:write).
+  rpc DeleteProxies(DeleteProxiesRequest) returns (DeleteProxiesResponse);
+  // CheckProxy runs a health check through a proxy immediately (proxy:operate).
+  rpc CheckProxy(CheckProxyRequest) returns (CheckProxyResponse);
+  // GetProviderStats aggregates request outcomes and pool health per provider (proxy:read).
+  rpc GetProviderStats(GetProviderStatsRequest) returns (GetProviderStatsResponse);
+}
+
+// ProxySiteState is the per-site state of a proxy.
+message ProxySiteState {
+  // Site name.
+  string site = 1;
+  // Site ID.
+  string site_id = 2;
+  // State of the proxy as seen by the site scheduler.
+  string state = 3;
+  // Proxy × site health score (0..100).
+  double score = 4;
+  // Number of observations behind score.
+  int32 samples = 5;
+  // Active leases on the site using this proxy.
+  int32 active_leases = 6;
+  // End of the site-scoped cooldown.
+  google.protobuf.Timestamp cooldown_until = 7;
+}
+
+// Proxy is an outbound HTTP(S) or SOCKS5 proxy. Credentials are stored
+// encrypted and never returned.
+message Proxy {
+  // Proxy ID ("pxy_...").
+  string id = 1;
+  // Namespace name.
+  string namespace = 2;
+  // Proxy URL without credentials, e.g. "http://203.0.113.10:8000".
+  string display_url = 3;
+  // Scheme: http | https | socks5.
+  string scheme = 4;
+  // Host name or IP address.
+  string host = 5;
+  // Port.
+  int32 port = 6;
+  // First characters of the user name followed by "***"; empty without credentials.
+  string username_hint = 7;
+  // Kind: datacenter | residential | mobile | tunnel.
+  string kind = 8;
+  // Exit region.
+  string region = 9;
+  // Exit city.
+  string city = 10;
+  // Provider name.
+  string provider = 11;
+  // Maximum concurrent leases.
+  int32 max_concurrency = 12;
+  // Free-form tags.
+  repeated string tags = 13;
+  // Session template for tunnel proxies, e.g. "user-{username}-session-{identity_hash}".
+  string session_template = 14;
+  // State: active | disabled | dead | banned | quarantined | retired.
+  string state = 15;
+  // Reason of the last state change.
+  string state_reason = 16;
+  // Time of the last state change.
+  google.protobuf.Timestamp state_changed_at = 17;
+  // End of a temporary ban; unset while banned means the ban is permanent.
+  google.protobuf.Timestamp ban_until = 18;
+  // End of the global cooldown.
+  google.protobuf.Timestamp cooldown_until = 19;
+  // Time of the last health check.
+  google.protobuf.Timestamp last_check_at = 20;
+  // Whether the last health check succeeded.
+  bool last_check_ok = 21;
+  // Latency of the last successful health check in milliseconds.
+  int32 last_latency_ms = 22;
+  // Exit IP detected by the last health check.
+  string exit_ip = 23;
+  // Consecutive failed health checks.
+  int32 consecutive_check_failures = 24;
+  // Number of identities bound to the proxy.
+  int32 bound_identities = 25;
+  // Per-site state (only sites where the proxy has hot state).
+  repeated ProxySiteState sites = 26;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 27;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 28;
+}
+
+// ListProxiesRequest selects a page of proxies. Repeated filters match any of
+// their values, except tags which must all be present.
+message ListProxiesRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // States to include; empty matches every state except retired.
+  repeated string states = 2 [(buf.validate.field).repeated = {max_items: 6, unique: true, items: {string: {in: ["active", "disabled", "dead", "banned", "quarantined", "retired"]}}}];
+  // Kinds to include; empty matches all kinds.
+  repeated string kinds = 3 [(buf.validate.field).repeated = {max_items: 4, unique: true, items: {string: {in: ["datacenter", "residential", "mobile", "tunnel"]}}}];
+  // Providers to include; empty matches all providers.
+  repeated string providers = 4 [(buf.validate.field).repeated = {max_items: 64, items: {string: {min_len: 1, max_len: 128}}}];
+  // Regions to include; empty matches all regions.
+  repeated string regions = 5 [(buf.validate.field).repeated = {max_items: 64, items: {string: {min_len: 1, max_len: 64}}}];
+  // Tags that must all be present.
+  repeated string tags = 6 [(buf.validate.field).repeated = {max_items: 32, items: {string: {min_len: 1, max_len: 64}}}];
+  // Substring match on the display URL, host or exit IP, or an ID prefix.
+  string search = 7 [(buf.validate.field).string.max_len = 256];
+  // Page size, 0 = default (50).
+  int32 page_size = 8 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 9 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListProxiesResponse is a page of proxies.
+message ListProxiesResponse {
+  // Proxies of this page.
+  repeated Proxy proxies = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of matching proxies.
+  int32 total = 3;
+}
+
+// GetProxyRequest identifies a proxy.
+message GetProxyRequest {
+  // Proxy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// GetProxyResponse carries the proxy.
+message GetProxyResponse {
+  // The proxy, including per-site state.
+  Proxy proxy = 1;
+}
+
+// ProxyDefaults are attribute values applied to imported proxies that do not
+// set them.
+message ProxyDefaults {
+  // Kind; empty = datacenter.
+  string kind = 1 [(buf.validate.field).string = {in: ["", "datacenter", "residential", "mobile", "tunnel"]}];
+  // Exit region.
+  string region = 2 [(buf.validate.field).string.max_len = 64];
+  // Exit city.
+  string city = 3 [(buf.validate.field).string.max_len = 128];
+  // Provider name.
+  string provider = 4 [(buf.validate.field).string.max_len = 128];
+  // Tags added to every imported proxy.
+  repeated string tags = 5 [(buf.validate.field).repeated = {max_items: 64, items: {string: {min_len: 1, max_len: 64}}}];
+  // Maximum concurrent leases; 0 = 1.
+  int32 max_concurrency = 6 [(buf.validate.field).int32 = {gte: 0, lte: 100000}];
+  // Session template for tunnel proxies.
+  string session_template = 7 [(buf.validate.field).string.max_len = 512];
+}
+
+// ProxyImportFailure describes one import row that was rejected.
+message ProxyImportFailure {
+  // 1-based line (lines, JSONL) or record (CSV, header = line 1) number.
+  int32 line = 1;
+  // Why the row was rejected (never contains credentials).
+  string message = 2;
+}
+
+// ImportProxiesRequest imports proxies. Proxies are deduplicated by URL.
+//
+// Formats:
+//   - lines: one URL per line, optionally followed by space-separated key=value
+//     pairs (kind, region, city, provider, tags=a,b, max_concurrency); blank
+//     lines and lines starting with "#" are ignored.
+//   - jsonl: one object per line with url, kind, region, city, provider, tags
+//     (array), max_concurrency and session_template.
+//   - csv: header row with url and optional kind, region, city, provider, tags
+//     (";"-separated), max_concurrency and session_template columns.
+message ImportProxiesRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Data format.
+  string format = 2 [(buf.validate.field).string = {in: ["lines", "jsonl", "csv"]}];
+  // Import data (max 32 MiB).
+  string data = 3 [(buf.validate.field).string = {min_len: 1, max_bytes: 33554432}];
+  // Defaults for attributes a row does not set.
+  ProxyDefaults defaults = 4;
+  // Validate and count only; nothing is stored.
+  bool dry_run = 5;
+}
+
+// ImportProxiesResponse summarizes an import.
+message ImportProxiesResponse {
+  // Proxies created.
+  int32 created = 1;
+  // Existing proxies whose attributes changed.
+  int32 updated = 2;
+  // Rows that matched an existing proxy without changes.
+  int32 unchanged = 3;
+  // Rejected rows.
+  repeated ProxyImportFailure failed = 4;
+}
+
+// UpdateProxyRequest changes proxy attributes. Unset fields are left unchanged.
+message UpdateProxyRequest {
+  // Proxy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // New URL including credentials (http, https or socks5); re-encrypted and
+  // propagated to nodes with a new URL version.
+  optional string url = 2 [(buf.validate.field).string = {min_len: 1, max_len: 2048}];
+  // New kind.
+  optional string kind = 3 [(buf.validate.field).string = {in: ["datacenter", "residential", "mobile", "tunnel"]}];
+  // New exit region.
+  optional string region = 4 [(buf.validate.field).string.max_len = 64];
+  // New exit city.
+  optional string city = 5 [(buf.validate.field).string.max_len = 128];
+  // New provider name.
+  optional string provider = 6 [(buf.validate.field).string.max_len = 128];
+  // New maximum concurrent leases.
+  optional int32 max_concurrency = 7 [(buf.validate.field).int32 = {gte: 1, lte: 100000}];
+  // New tags; applied only when set_tags is true.
+  repeated string tags = 8 [(buf.validate.field).repeated = {max_items: 64, items: {string: {min_len: 1, max_len: 64}}}];
+  // Replace tags with the tags field (allows clearing them).
+  bool set_tags = 9;
+  // New session template; empty clears it.
+  optional string session_template = 10 [(buf.validate.field).string.max_len = 512];
+}
+
+// UpdateProxyResponse carries the updated proxy.
+message UpdateProxyResponse {
+  // The updated proxy.
+  Proxy proxy = 1;
+}
+
+// OperateProxiesRequest applies one manual operation to proxies.
+message OperateProxiesRequest {
+  option (buf.validate.message).cel = {
+    id: "operate_proxies.duration_required"
+    message: "duration is required for cooldown and ban and must be greater than zero"
+    expression: "!(this.operation in ['cooldown', 'ban']) || this.duration == 'permanent' || this.duration.matches('[1-9]')"
+  };
+  option (buf.validate.message).cel = {
+    id: "operate_proxies.permanent_only_for_ban"
+    message: "duration \"permanent\" is only allowed for ban"
+    expression: "!(this.operation in ['cooldown', 'quarantine']) || this.duration != 'permanent'"
+  };
+
+  // Proxy IDs (1..1000).
+  repeated string ids = 1 [(buf.validate.field).repeated = {min_items: 1, max_items: 1000, unique: true, items: {string: {min_len: 1, max_len: 64}}}];
+  // Operation. archive retires, restore brings a retired proxy back to active,
+  // reset_stats resets health scores and failure counters.
+  string operation = 2 [(buf.validate.field).string = {in: ["disable", "enable", "ban", "unban", "cooldown", "quarantine", "unquarantine", "archive", "restore", "reset_stats"]}];
+  // Site name for a site-scoped cooldown or reset_stats; empty = global.
+  string site = 3 [(buf.validate.field).string.max_len = 64];
+  // Duration for cooldown, ban and quarantine (e.g. "10m", "7d", units
+  // ms|s|m|h|d). Required and greater than zero for cooldown and ban
+  // ("permanent" is accepted for ban only); an empty quarantine duration uses
+  // the action policy default.
+  string duration = 4 [(buf.validate.field).string = {max_len: 32, pattern: "^(permanent|0|([0-9]+d)?([0-9]+(\\.[0-9]+)?(ms|s|m|h))*)$"}];
+  // Operator-supplied reason recorded in state events and the audit log.
+  string reason = 5 [(buf.validate.field).string.max_len = 512];
+}
+
+// OperateProxiesResponse summarizes the operation.
+message OperateProxiesResponse {
+  // Per-proxy outcome.
+  BulkResult result = 1;
+}
+
+// DeleteProxiesRequest identifies the proxies to delete.
+message DeleteProxiesRequest {
+  // Proxy IDs (1..1000).
+  repeated string ids = 1 [(buf.validate.field).repeated = {min_items: 1, max_items: 1000, unique: true, items: {string: {min_len: 1, max_len: 64}}}];
+}
+
+// DeleteProxiesResponse summarizes the deletion.
+message DeleteProxiesResponse {
+  // Per-proxy outcome.
+  BulkResult result = 1;
+}
+
+// CheckProxyRequest identifies the proxy to check.
+message CheckProxyRequest {
+  // Proxy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// CheckProxyResponse is the result of a health check. The result is also
+// recorded on the proxy like a scheduled check.
+message CheckProxyResponse {
+  // Whether the check request succeeded through the proxy.
+  bool ok = 1;
+  // Round-trip latency in milliseconds.
+  int32 latency_ms = 2;
+  // Detected exit IP (when exit IP detection is configured).
+  string exit_ip = 3;
+  // Region resolved from the exit IP (when a GeoIP database is configured).
+  string region = 4;
+  // Failure description when ok is false (never contains credentials).
+  string error = 5;
+}
+
+// GetProviderStatsRequest selects the provider statistics scope.
+message GetProviderStatsRequest {
+  option (buf.validate.message).cel = {
+    id: "get_provider_stats.time_range_order"
+    message: "time_range.start must be before time_range.end"
+    expression: "!has(this.time_range.start) || !has(this.time_range.end) || this.time_range.start < this.time_range.end"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name; empty aggregates all accessible sites.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Time range of request statistics; unset = the last 24 hours.
+  TimeRange time_range = 3;
+}
+
+// ProviderStats aggregates pool health and request outcomes of one provider.
+message ProviderStats {
+  // Provider name; empty for proxies without a provider.
+  string provider = 1;
+  // Number of proxies (retired excluded).
+  int32 proxies = 2;
+  // Number of active proxies.
+  int32 active = 3;
+  // Number of dead proxies.
+  int32 dead = 4;
+  // Requests reported through the provider's proxies in the time range.
+  int64 requests = 5;
+  // Share of requests with outcome success (0..1).
+  double success_ratio = 6;
+  // Share of requests with a risk outcome (rate_limited, captcha, forbidden, banned) (0..1).
+  double risk_ratio = 7;
+  // Average reported latency in milliseconds.
+  double avg_latency_ms = 8;
+}
+
+// GetProviderStatsResponse lists provider statistics.
+message GetProviderStatsResponse {
+  // Statistics per provider, ordered by requests descending.
+  repeated ProviderStats providers = 1;
+}

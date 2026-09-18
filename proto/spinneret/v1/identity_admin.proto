@@ -1,0 +1,772 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "spinneret/v1/common.proto";
+import "spinneret/v1/lease.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// IdentityAdminService manages identity types, identities, accounts and their
+// lifecycle from the console and from credential refresh services.
+service IdentityAdminService {
+  // ListIdentityTypes lists identity types of a namespace (identity:read).
+  rpc ListIdentityTypes(ListIdentityTypesRequest) returns (ListIdentityTypesResponse);
+  // GetIdentityType returns one identity type (identity:read).
+  rpc GetIdentityType(GetIdentityTypeRequest) returns (GetIdentityTypeResponse);
+  // CreateIdentityType creates an identity type from its YAML spec (site:write).
+  rpc CreateIdentityType(CreateIdentityTypeRequest) returns (CreateIdentityTypeResponse);
+  // UpdateIdentityType replaces the YAML spec of an identity type and bumps its version (site:write).
+  rpc UpdateIdentityType(UpdateIdentityTypeRequest) returns (UpdateIdentityTypeResponse);
+  // DeleteIdentityType deletes an identity type that has no identities (site:write).
+  rpc DeleteIdentityType(DeleteIdentityTypeRequest) returns (DeleteIdentityTypeResponse);
+  // PreviewDelivery normalizes a sample payload and renders the credential a node would receive (identity:read).
+  // secret_ref values are resolved only for callers with secret:reveal (audited); otherwise they render masked,
+  // so the preview cannot be used to read secrets.
+  rpc PreviewDelivery(PreviewDeliveryRequest) returns (PreviewDeliveryResponse);
+  // ListIdentities lists identities matching a filter (identity:read).
+  rpc ListIdentities(ListIdentitiesRequest) returns (ListIdentitiesResponse);
+  // GetIdentity returns one identity with its (masked) payload, hot state and recent events (identity:read).
+  rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse);
+  // ImportIdentities imports identities from JSON Lines or CSV (identity:write).
+  rpc ImportIdentities(ImportIdentitiesRequest) returns (ImportIdentitiesResponse);
+  // UpdateIdentityPayload stores a new payload version of an identity (identity:write).
+  rpc UpdateIdentityPayload(UpdateIdentityPayloadRequest) returns (UpdateIdentityPayloadResponse);
+  // UpdateIdentity changes identity attributes such as region, tags, labels and account (identity:write).
+  rpc UpdateIdentity(UpdateIdentityRequest) returns (UpdateIdentityResponse);
+  // OperateIdentities applies a manual operation to explicit identity IDs (identity:operate).
+  rpc OperateIdentities(OperateIdentitiesRequest) returns (OperateIdentitiesResponse);
+  // BulkOperateIdentities applies a manual operation to every identity matching a filter (identity:operate).
+  rpc BulkOperateIdentities(BulkOperateIdentitiesRequest) returns (BulkOperateIdentitiesResponse);
+  // RevertActions reverts automatic actions recorded in a time range, e.g. after a rule misfired (identity:operate).
+  rpc RevertActions(RevertActionsRequest) returns (RevertActionsResponse);
+  // ListStateEvents lists lifecycle and disposition events (identity:read).
+  rpc ListStateEvents(ListStateEventsRequest) returns (ListStateEventsResponse);
+  // GetIdentityHotState returns the live Redis state of an identity (identity:read).
+  rpc GetIdentityHotState(GetIdentityHotStateRequest) returns (GetIdentityHotStateResponse);
+  // ListAccounts lists accounts (identity:read).
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+  // UpsertAccount creates or updates an account identified by site and external reference (identity:write).
+  rpc UpsertAccount(UpsertAccountRequest) returns (UpsertAccountResponse);
+  // OperateAccount bans, unbans, cools down, disables or enables an account and its identities (identity:operate).
+  rpc OperateAccount(OperateAccountRequest) returns (OperateAccountResponse);
+}
+
+// IdentityField describes one payload field of an identity type.
+message IdentityField {
+  // Field name, i.e. the payload key.
+  string name = 1;
+  // Field type: string | number | bool | cookie_map | json | secret_ref.
+  string type = 2;
+  // Whether imports must provide the field.
+  bool required = 3;
+  // Whether the console masks the field unless the caller may reveal payloads.
+  bool sensitive = 4;
+  // Human-readable description.
+  string description = 5;
+}
+
+// IdentityType describes the payload fields of a family of identities and how
+// they are delivered to nodes.
+message IdentityType {
+  // Identity type ID ("ity_...").
+  string id = 1;
+  // Namespace name.
+  string namespace = 2;
+  // Site name.
+  string site = 3;
+  // Client of the site the type is used by (e.g. "web", "app").
+  string client = 4;
+  // Type name, unique within the site.
+  string name = 5;
+  // Human-readable description.
+  string description = 6;
+  // Source YAML spec.
+  string spec_yaml = 7;
+  // JSON Schema (draft 2020-12) generated from the fields, serialized as JSON.
+  string json_schema = 8;
+  // Spec version, incremented on every update.
+  int32 version = 9;
+  // Number of identities of this type (retired excluded).
+  int32 identity_count = 10;
+  // Payload fields sorted by name.
+  repeated IdentityField fields = 11;
+  // Field paths identities are deduplicated by.
+  repeated string unique_by = 12;
+  // Initial state of imported identities: probe (pending) | immediate (active).
+  string activation = 13;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 14;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// ListIdentityTypesRequest selects identity types.
+message ListIdentityTypesRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name filter; empty lists all accessible sites.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Client filter; empty lists all clients.
+  string client = 3 [(buf.validate.field).string.max_len = 64];
+  // Case-insensitive substring match on the type name.
+  string search = 4 [(buf.validate.field).string.max_len = 256];
+  // Page size, 0 = default (50).
+  int32 page_size = 5 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 6 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListIdentityTypesResponse is a page of identity types.
+message ListIdentityTypesResponse {
+  // Identity types of this page.
+  repeated IdentityType identity_types = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of matching identity types.
+  int32 total = 3;
+}
+
+// GetIdentityTypeRequest identifies an identity type.
+message GetIdentityTypeRequest {
+  // Identity type ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// GetIdentityTypeResponse carries the identity type.
+message GetIdentityTypeResponse {
+  // The identity type.
+  IdentityType identity_type = 1;
+}
+
+// CreateIdentityTypeRequest creates an identity type. Name, client, fields,
+// unique_by, activation and delivery come from the YAML spec.
+message CreateIdentityTypeRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name; overrides any site set in the YAML spec.
+  string site = 2 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // YAML spec (max 1 MiB).
+  string spec_yaml = 3 [(buf.validate.field).string = {min_len: 1, max_bytes: 1048576}];
+}
+
+// CreateIdentityTypeResponse carries the created identity type.
+message CreateIdentityTypeResponse {
+  // The created identity type.
+  IdentityType identity_type = 1;
+}
+
+// UpdateIdentityTypeRequest replaces the spec of an identity type. The site of
+// the type cannot change.
+message UpdateIdentityTypeRequest {
+  // Identity type ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // New YAML spec (max 1 MiB).
+  string spec_yaml = 2 [(buf.validate.field).string = {min_len: 1, max_bytes: 1048576}];
+}
+
+// UpdateIdentityTypeResponse carries the updated identity type.
+message UpdateIdentityTypeResponse {
+  // The updated identity type.
+  IdentityType identity_type = 1;
+}
+
+// DeleteIdentityTypeRequest identifies the identity type to delete.
+message DeleteIdentityTypeRequest {
+  // Identity type ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// DeleteIdentityTypeResponse is empty.
+message DeleteIdentityTypeResponse {}
+
+// PreviewDeliveryRequest renders a sample payload with an existing or draft
+// identity type. Nothing is stored.
+message PreviewDeliveryRequest {
+  // Namespace name (secret references resolve inside it when the caller has secret:reveal).
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name; overrides the YAML site of a draft spec. Ignored with type_id.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Identity type to render with.
+  oneof source {
+    option (buf.validate.oneof).required = true;
+    // ID of an existing identity type.
+    string type_id = 3 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+    // Draft YAML spec (max 1 MiB).
+    string spec_yaml = 4 [(buf.validate.field).string = {min_len: 1, max_bytes: 1048576}];
+  }
+  // Sample payload as a JSON object (max 1 MiB).
+  string payload_json = 5 [(buf.validate.field).string = {min_len: 1, max_bytes: 1048576}];
+}
+
+// PreviewDeliveryResponse carries the rendered credential or validation errors.
+message PreviewDeliveryResponse {
+  // Rendered credential; unset when errors is non-empty.
+  Credential credential = 1;
+  // Spec, payload or rendering errors.
+  repeated string errors = 2;
+  // Payload after type coercion (cookie maps parsed, numbers and bools coerced).
+  google.protobuf.Struct normalized_payload = 3;
+}
+
+// Identity is one credential (cookie set, device parameters, API key, ...) used
+// by crawler nodes.
+message Identity {
+  // Identity ID ("idt_...").
+  string id = 1;
+  // Namespace name.
+  string namespace = 2;
+  // Site name.
+  string site = 3;
+  // Client of the site.
+  string client = 4;
+  // Identity type name.
+  string type = 5;
+  // Identity type ID.
+  string type_id = 6;
+  // Account ID ("acc_..."), empty when the identity has no account.
+  string account_id = 7;
+  // External reference of the account, empty when the identity has no account.
+  string account_ref = 8;
+  // Lifecycle state: pending | active | expired | banned | quarantined | disabled | retired.
+  string state = 9;
+  // Reason of the last state change.
+  string state_reason = 10;
+  // Time of the last state change.
+  google.protobuf.Timestamp state_changed_at = 11;
+  // End of a temporary ban; unset while banned means the ban is permanent.
+  google.protobuf.Timestamp ban_until = 12;
+  // End of the quarantine.
+  google.protobuf.Timestamp quarantine_until = 13;
+  // Region (e.g. "US").
+  string region = 14;
+  // Free-form tags.
+  repeated string tags = 15;
+  // Free-form labels.
+  map<string, string> labels = 16;
+  // Current payload version.
+  int32 payload_version = 17;
+  // Time the identity became active.
+  google.protobuf.Timestamp activated_at = 18;
+  // Time the identity was last leased.
+  google.protobuf.Timestamp last_used_at = 19;
+  // Global health score (0..100).
+  double global_score = 20;
+  // Number of observations behind global_score.
+  int32 global_samples = 21;
+  // Number of active leases.
+  int32 active_leases = 22;
+  // ID of the bound proxy ("pxy_..."), empty when unbound.
+  string bound_proxy_id = 23;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 24;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 25;
+}
+
+// IdentityFilter selects identities. All conditions are combined with AND.
+message IdentityFilter {
+  option (buf.validate.message).cel = {
+    id: "identity_filter.score_range"
+    message: "min_score must not exceed max_score"
+    expression: "!has(this.min_score) || !has(this.max_score) || this.min_score <= this.max_score"
+  };
+
+  // Site name; empty matches all accessible sites.
+  string site = 1 [(buf.validate.field).string.max_len = 64];
+  // Identity type name.
+  string type = 2 [(buf.validate.field).string.max_len = 64];
+  // States to include; empty matches every state except retired (see include_retired).
+  repeated string states = 3 [(buf.validate.field).repeated = {max_items: 7, unique: true, items: {string: {in: ["pending", "active", "expired", "banned", "quarantined", "disabled", "retired"]}}}];
+  // Tags that must all be present.
+  repeated string tags = 4 [(buf.validate.field).repeated = {max_items: 32, items: {string: {min_len: 1, max_len: 64}}}];
+  // External reference of the account.
+  string account_ref = 5 [(buf.validate.field).string.max_len = 256];
+  // Region.
+  string region = 6 [(buf.validate.field).string.max_len = 64];
+  // Identity ID prefix or exact label value.
+  string search = 7 [(buf.validate.field).string.max_len = 256];
+  // Minimum global score (inclusive).
+  optional double min_score = 8 [(buf.validate.field).double = {gte: 0, lte: 100}];
+  // Maximum global score (inclusive).
+  optional double max_score = 9 [(buf.validate.field).double = {gte: 0, lte: 100}];
+  // Include retired identities when states is empty.
+  bool include_retired = 10;
+}
+
+// ListIdentitiesRequest selects a page of identities.
+message ListIdentitiesRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Filter; unset matches every non-retired identity.
+  IdentityFilter filter = 2;
+  // Page size, 0 = default (50).
+  int32 page_size = 3 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 4 [(buf.validate.field).string.max_len = 1024];
+  // Sort key; empty = created_at.
+  string order_by = 5 [(buf.validate.field).string = {in: ["", "created_at", "updated_at", "state_changed_at", "last_used_at", "score"]}];
+  // Sort descending.
+  bool descending = 6;
+}
+
+// ListIdentitiesResponse is a page of identities.
+message ListIdentitiesResponse {
+  // Identities of this page.
+  repeated Identity identities = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of matching identities (may be approximate).
+  int32 total = 3;
+}
+
+// GetIdentityRequest identifies an identity.
+message GetIdentityRequest {
+  // Identity ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Return sensitive payload fields in clear text; requires identity:reveal and is audited.
+  bool reveal = 2;
+}
+
+// GetIdentityResponse carries an identity with its payload and live state.
+message GetIdentityResponse {
+  // The identity.
+  Identity identity = 1;
+  // Current payload; sensitive fields are masked ("••••" + last 4) unless revealed.
+  google.protobuf.Struct payload = 2;
+  // Whether sensitive fields in payload are clear text.
+  bool revealed = 3;
+  // Live Redis state.
+  IdentityHotState hot_state = 4;
+  // Most recent state events, newest first (at most 20).
+  repeated StateEvent recent_events = 5;
+}
+
+// ImportFailure describes one import row that was rejected.
+message ImportFailure {
+  // 1-based line (JSONL) or record (CSV, header = line 1) number.
+  int32 line = 1;
+  // Why the row was rejected.
+  string message = 2;
+}
+
+// ImportIdentitiesRequest imports identities of one type.
+message ImportIdentitiesRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Identity type name.
+  string type = 3 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Data format.
+  string format = 4 [(buf.validate.field).string = {in: ["jsonl", "csv"]}];
+  // Import data (at most 50 000 rows, 32 MiB).
+  string data = 5 [(buf.validate.field).string = {min_len: 1, max_bytes: 33554432}];
+  // upsert (default) updates identities with the same unique key; create_only skips them.
+  string mode = 6 [(buf.validate.field).string = {in: ["", "upsert", "create_only"]}];
+  // Validate and count only; nothing is stored.
+  bool dry_run = 7;
+}
+
+// ImportIdentitiesResponse summarizes an import.
+message ImportIdentitiesResponse {
+  // Identities created.
+  int32 created = 1;
+  // Identities that received a new payload version.
+  int32 updated = 2;
+  // Rows whose payload matched the stored one (or were skipped by create_only).
+  int32 unchanged = 3;
+  // Rejected rows.
+  repeated ImportFailure failed = 4;
+}
+
+// UpdateIdentityPayloadRequest replaces the payload of an identity.
+message UpdateIdentityPayloadRequest {
+  // Identity ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // New payload; validated against the identity type schema.
+  google.protobuf.Struct payload = 2 [(buf.validate.field).required = true];
+}
+
+// UpdateIdentityPayloadResponse carries the updated identity.
+message UpdateIdentityPayloadResponse {
+  // The updated identity.
+  Identity identity = 1;
+}
+
+// UpdateIdentityRequest changes identity attributes. Unset fields are left unchanged.
+message UpdateIdentityRequest {
+  // Identity ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // New region.
+  optional string region = 2 [(buf.validate.field).string.max_len = 64];
+  // New tags; applied only when set_tags is true.
+  repeated string tags = 3 [(buf.validate.field).repeated = {max_items: 64, items: {string: {min_len: 1, max_len: 64}}}];
+  // Replace tags with the tags field (allows clearing them).
+  bool set_tags = 4;
+  // New labels; applied only when set_labels is true.
+  map<string, string> labels = 5 [(buf.validate.field).map = {max_pairs: 64, keys: {string: {min_len: 1, max_len: 64}}, values: {string: {max_len: 256}}}];
+  // Replace labels with the labels field (allows clearing them).
+  bool set_labels = 6;
+  // External reference of the account to attach (created when missing); empty detaches.
+  optional string account_ref = 7 [(buf.validate.field).string.max_len = 256];
+}
+
+// UpdateIdentityResponse carries the updated identity.
+message UpdateIdentityResponse {
+  // The updated identity.
+  Identity identity = 1;
+}
+
+// OperateIdentitiesRequest applies one manual operation to explicit identities.
+message OperateIdentitiesRequest {
+  option (buf.validate.message).cel = {
+    id: "operate_identities.endpoint_group_required"
+    message: "endpoint_group_id is required for scope identity_endpoint"
+    expression: "this.scope != 'identity_endpoint' || this.endpoint_group_id != ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "operate_identities.duration_required"
+    message: "duration is required for cooldown and ban and must be greater than zero"
+    expression: "!(this.operation in ['cooldown', 'ban']) || this.duration == 'permanent' || this.duration.matches('[1-9]')"
+  };
+  option (buf.validate.message).cel = {
+    id: "operate_identities.permanent_only_for_ban"
+    message: "duration \"permanent\" is only allowed for ban"
+    expression: "!(this.operation in ['cooldown', 'quarantine']) || this.duration != 'permanent'"
+  };
+
+  // Identity IDs (1..1000).
+  repeated string ids = 1 [(buf.validate.field).repeated = {min_items: 1, max_items: 1000, unique: true, items: {string: {min_len: 1, max_len: 64}}}];
+  // Operation. archive retires, restore brings a retired identity back to pending,
+  // reset_stats resets health scores and failure streaks.
+  string operation = 2 [(buf.validate.field).string = {in: ["cooldown", "ban", "unban", "quarantine", "unquarantine", "expire", "disable", "enable", "archive", "restore", "activate", "reset_stats"]}];
+  // Level of cooldown and reset_stats: identity_endpoint (needs endpoint_group_id),
+  // identity_site or identity (same as identity_site). Empty = identity_site for
+  // cooldown and every level for reset_stats. Ignored by other operations.
+  string scope = 3 [(buf.validate.field).string = {in: ["", "identity_endpoint", "identity_site", "identity"]}];
+  // Endpoint group ID for scope identity_endpoint.
+  string endpoint_group_id = 4 [(buf.validate.field).string.max_len = 64];
+  // Duration for cooldown, ban and quarantine (e.g. "30m", "7d", "1d12h",
+  // units ms|s|m|h|d). Required and greater than zero for cooldown and ban
+  // ("permanent" is accepted for ban only); an empty quarantine duration uses
+  // the action policy default.
+  string duration = 5 [(buf.validate.field).string = {max_len: 32, pattern: "^(permanent|0|([0-9]+d)?([0-9]+(\\.[0-9]+)?(ms|s|m|h))*)$"}];
+  // Operator-supplied reason recorded in state events and the audit log.
+  string reason = 6 [(buf.validate.field).string.max_len = 512];
+  // Also reset consecutive failure streaks (unban, unquarantine, enable, restore, activate).
+  bool reset_failures = 7;
+  // Also reset health scores to the baseline (unban, unquarantine, enable, restore, activate).
+  bool reset_health = 8;
+}
+
+// OperateIdentitiesResponse summarizes the operation.
+message OperateIdentitiesResponse {
+  // Per-identity outcome.
+  BulkResult result = 1;
+}
+
+// BulkOperateIdentitiesRequest applies one manual operation to every identity
+// matching a filter.
+message BulkOperateIdentitiesRequest {
+  option (buf.validate.message).cel = {
+    id: "bulk_operate_identities.endpoint_group_required"
+    message: "endpoint_group_id is required for scope identity_endpoint"
+    expression: "this.scope != 'identity_endpoint' || this.endpoint_group_id != ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "bulk_operate_identities.duration_required"
+    message: "duration is required for cooldown and ban and must be greater than zero"
+    expression: "!(this.operation in ['cooldown', 'ban']) || this.duration == 'permanent' || this.duration.matches('[1-9]')"
+  };
+  option (buf.validate.message).cel = {
+    id: "bulk_operate_identities.permanent_only_for_ban"
+    message: "duration \"permanent\" is only allowed for ban"
+    expression: "!(this.operation in ['cooldown', 'quarantine']) || this.duration != 'permanent'"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Identities to operate on.
+  IdentityFilter filter = 2 [(buf.validate.field).required = true];
+  // Operation, see OperateIdentitiesRequest.operation.
+  string operation = 3 [(buf.validate.field).string = {in: ["cooldown", "ban", "unban", "quarantine", "unquarantine", "expire", "disable", "enable", "archive", "restore", "activate", "reset_stats"]}];
+  // Level, see OperateIdentitiesRequest.scope.
+  string scope = 4 [(buf.validate.field).string = {in: ["", "identity_endpoint", "identity_site", "identity"]}];
+  // Endpoint group ID for scope identity_endpoint.
+  string endpoint_group_id = 5 [(buf.validate.field).string.max_len = 64];
+  // Duration, see OperateIdentitiesRequest.duration.
+  string duration = 6 [(buf.validate.field).string = {max_len: 32, pattern: "^(permanent|0|([0-9]+d)?([0-9]+(\\.[0-9]+)?(ms|s|m|h))*)$"}];
+  // Operator-supplied reason.
+  string reason = 7 [(buf.validate.field).string.max_len = 512];
+  // Also reset consecutive failure streaks.
+  bool reset_failures = 8;
+  // Also reset health scores to the baseline.
+  bool reset_health = 9;
+  // Only count matching identities; nothing is changed.
+  bool dry_run = 10;
+  // Maximum identities to operate on; 0 = server maximum (100 000).
+  int32 limit = 11 [(buf.validate.field).int32 = {gte: 0, lte: 100000}];
+}
+
+// BulkOperateIdentitiesResponse summarizes the bulk operation.
+message BulkOperateIdentitiesResponse {
+  // Matched and applied counts with failures.
+  BulkResult result = 1;
+}
+
+// RevertActionsRequest reverts automatic actions recorded in state events,
+// e.g. unbans every identity a misfiring rule banned.
+message RevertActionsRequest {
+  option (buf.validate.message).cel = {
+    id: "revert_actions.start_required"
+    message: "time_range.start is required"
+    expression: "!has(this.time_range) || has(this.time_range.start)"
+  };
+  option (buf.validate.message).cel = {
+    id: "revert_actions.time_range_order"
+    message: "time_range.start must be before time_range.end"
+    expression: "!has(this.time_range.start) || !has(this.time_range.end) || this.time_range.start < this.time_range.end"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name; empty matches all accessible sites.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Policy ID that produced the actions; empty matches any policy.
+  string policy_id = 3 [(buf.validate.field).string.max_len = 64];
+  // Rule name that produced the actions; empty matches any rule.
+  string rule = 4 [(buf.validate.field).string.max_len = 128];
+  // Actions to revert; empty = ban, quarantine, expire and cooldown.
+  repeated string actions = 5 [(buf.validate.field).repeated = {max_items: 4, unique: true, items: {string: {in: ["ban", "quarantine", "expire", "cooldown"]}}}];
+  // Time range of the state events to revert; start is required so a revert
+  // never silently covers the whole history.
+  TimeRange time_range = 6 [(buf.validate.field).required = true];
+  // Also reset consecutive failure streaks.
+  bool reset_failures = 7;
+  // Also reset health scores to the baseline.
+  bool reset_health = 8;
+  // Only list affected identities; nothing is changed.
+  bool dry_run = 9;
+}
+
+// RevertActionsResponse summarizes the revert.
+message RevertActionsResponse {
+  // Matched and reverted counts with failures.
+  BulkResult result = 1;
+  // Affected identity IDs (at most 1000).
+  repeated string identity_ids = 2;
+}
+
+// ListStateEventsRequest selects state events, newest first.
+message ListStateEventsRequest {
+  option (buf.validate.message).cel = {
+    id: "list_state_events.time_range_order"
+    message: "time_range.start must be before time_range.end"
+    expression: "!has(this.time_range.start) || !has(this.time_range.end) || this.time_range.start < this.time_range.end"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Subject kind; empty matches all kinds.
+  string subject_kind = 2 [(buf.validate.field).string = {in: ["", "identity", "account", "proxy", "endpoint_group", "site"]}];
+  // Subject ID; empty matches all subjects.
+  string subject_id = 3 [(buf.validate.field).string.max_len = 64];
+  // Site name; empty matches all accessible sites.
+  string site = 4 [(buf.validate.field).string.max_len = 64];
+  // Actions to include; empty includes all.
+  repeated string actions = 5 [(buf.validate.field).repeated = {max_items: 32, unique: true, items: {string: {pattern: "^[a-z][a-z_]{0,31}$"}}}];
+  // Shadow filter; unset includes both enforced and shadow events.
+  optional bool shadow = 6;
+  // Time range; unset bounds are open.
+  TimeRange time_range = 7;
+  // Page size, 0 = default (50).
+  int32 page_size = 8 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 9 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListStateEventsResponse is a page of state events.
+message ListStateEventsResponse {
+  // Events of this page, newest first.
+  repeated StateEvent events = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+}
+
+// GetIdentityHotStateRequest identifies an identity.
+message GetIdentityHotStateRequest {
+  // Identity ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// GetIdentityHotStateResponse carries the live state.
+message GetIdentityHotStateResponse {
+  // Live Redis state.
+  IdentityHotState hot_state = 1;
+}
+
+// EndpointHotState is the live identity × endpoint group state.
+message EndpointHotState {
+  // Endpoint group name.
+  string endpoint_group = 1;
+  // Endpoint group ID.
+  string endpoint_group_id = 2;
+  // Client of the endpoint group.
+  string client = 3;
+  // Health score with decay applied (0..100).
+  double score = 4;
+  // Number of observations behind score.
+  int32 samples = 5;
+  // Consecutive failures.
+  int32 consecutive_failures = 6;
+  // End of the endpoint cooldown.
+  google.protobuf.Timestamp cooldown_until = 7;
+  // End of the reuse interval.
+  google.protobuf.Timestamp reuse_until = 8;
+  // Time of the last lease on this endpoint group.
+  google.protobuf.Timestamp last_used_at = 9;
+  // Earliest time the identity can be leased for this endpoint group.
+  google.protobuf.Timestamp available_at = 10;
+  // Whether the identity is in the ready queue of the endpoint group.
+  bool in_ready_queue = 11;
+}
+
+// IdentityHotState is the live Redis state of an identity.
+message IdentityHotState {
+  // Whether the identity is materialized in Redis.
+  bool present = 1;
+  // State as seen by the scheduler.
+  string state = 2;
+  // Active leases.
+  int32 active_leases = 3;
+  // End of the site-level cooldown.
+  google.protobuf.Timestamp site_cooldown_until = 4;
+  // End of the site-level reuse interval.
+  google.protobuf.Timestamp site_reuse_until = 5;
+  // End of the exclusive lease (single-concurrency leases).
+  google.protobuf.Timestamp exclusive_until = 6;
+  // Bound proxy ID, empty when unbound.
+  string bound_proxy_id = 7;
+  // Global health score (0..100).
+  double global_score = 8;
+  // Number of observations behind global_score.
+  int32 global_samples = 9;
+  // Per endpoint group state.
+  repeated EndpointHotState groups = 10;
+  // End of the account cooldown.
+  google.protobuf.Timestamp account_cooldown_until = 11;
+}
+
+// Account groups identities that belong to the same user account on a site.
+message Account {
+  // Account ID ("acc_...").
+  string id = 1;
+  // Site name.
+  string site = 2;
+  // External reference (e.g. user name or UID), unique within the site.
+  string external_ref = 3;
+  // Region.
+  string region = 4;
+  // Free-form tags.
+  repeated string tags = 5;
+  // State: active | banned | disabled.
+  string state = 6;
+  // End of a temporary ban; unset while banned means the ban is permanent.
+  google.protobuf.Timestamp ban_until = 7;
+  // End of the account cooldown.
+  google.protobuf.Timestamp cooldown_until = 8;
+  // Operator notes.
+  string notes = 9;
+  // Number of identities of the account.
+  int32 identity_count = 10;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 11;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// ListAccountsRequest selects a page of accounts.
+message ListAccountsRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name; empty matches all accessible sites.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Substring match on the external reference.
+  string search = 3 [(buf.validate.field).string.max_len = 256];
+  // State filter; empty matches all states.
+  string state = 4 [(buf.validate.field).string = {in: ["", "active", "banned", "disabled"]}];
+  // Page size, 0 = default (50).
+  int32 page_size = 5 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 6 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListAccountsResponse is a page of accounts.
+message ListAccountsResponse {
+  // Accounts of this page.
+  repeated Account accounts = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of matching accounts.
+  int32 total = 3;
+}
+
+// UpsertAccountRequest creates an account or updates the account with the same
+// site and external reference.
+message UpsertAccountRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // External reference.
+  string external_ref = 3 [(buf.validate.field).string = {min_len: 1, max_len: 256}];
+  // Region.
+  string region = 4 [(buf.validate.field).string.max_len = 64];
+  // Tags (replace existing tags).
+  repeated string tags = 5 [(buf.validate.field).repeated = {max_items: 64, items: {string: {min_len: 1, max_len: 64}}}];
+  // Operator notes.
+  string notes = 6 [(buf.validate.field).string.max_len = 4096];
+}
+
+// UpsertAccountResponse carries the stored account.
+message UpsertAccountResponse {
+  // The created or updated account.
+  Account account = 1;
+}
+
+// OperateAccountRequest applies a manual operation to an account. Bans and
+// disables also remove the account's identities from scheduling.
+message OperateAccountRequest {
+  option (buf.validate.message).cel = {
+    id: "operate_account.duration_required"
+    message: "duration is required for cooldown and ban and must be greater than zero"
+    expression: "!(this.operation in ['cooldown', 'ban']) || this.duration == 'permanent' || this.duration.matches('[1-9]')"
+  };
+  option (buf.validate.message).cel = {
+    id: "operate_account.permanent_only_for_ban"
+    message: "duration \"permanent\" is only allowed for ban"
+    expression: "!(this.operation in ['cooldown', 'quarantine']) || this.duration != 'permanent'"
+  };
+
+  // Account ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Operation.
+  string operation = 2 [(buf.validate.field).string = {in: ["ban", "unban", "cooldown", "disable", "enable"]}];
+  // Duration for cooldown and ban, e.g. "30m", "7d", units ms|s|m|h|d.
+  // Required and greater than zero for both ("permanent" is accepted for ban only).
+  string duration = 3 [(buf.validate.field).string = {max_len: 32, pattern: "^(permanent|0|([0-9]+d)?([0-9]+(\\.[0-9]+)?(ms|s|m|h))*)$"}];
+  // Operator-supplied reason.
+  string reason = 4 [(buf.validate.field).string.max_len = 512];
+}
+
+// OperateAccountResponse carries the account and the effect on its identities.
+message OperateAccountResponse {
+  // The updated account.
+  Account account = 1;
+  // Outcome for the identities of the account.
+  BulkResult identities = 2;
+}

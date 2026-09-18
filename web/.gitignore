@@ -1,0 +1,6 @@
+# Local build and test artifacts (the repository .gitignore also covers these).
+node_modules/
+test-results/
+playwright-report/
+e2e/.auth/
+*.tsbuildinfo

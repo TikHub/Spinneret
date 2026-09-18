@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// LeaseService hands out short-lived leases on identities (and optionally
+// proxies) to crawler nodes. It is authenticated with an API token that
+// carries the `lease:acquire[:<site>]` scope; the namespace is implied by the
+// token. Error reasons are returned in the `Spinneret-Reason` header and retry
+// hints in `Spinneret-Retry-After-Ms`.
+service LeaseService {
+  // Acquire leases one identity for a request against a site endpoint group.
+  // Fails with resource_exhausted/no_identity_available,
+  // unavailable/circuit_open, unavailable/site_paused or
+  // resource_exhausted/no_proxy_available when nothing can be issued within
+  // `wait_ms`.
+  rpc Acquire(AcquireRequest) returns (AcquireResponse);
+  // AcquireBatch leases up to `count` distinct identities in one call. When
+  // fewer identities are available the leases that could be issued are
+  // returned; an error is returned only when none could be issued.
+  rpc AcquireBatch(AcquireBatchRequest) returns (AcquireBatchResponse);
+  // Renew extends an active lease, bounded by the lease lifetime cap of the
+  // rotation policy (lease_lifetime_exceeded when the cap is reached).
+  rpc Renew(RenewRequest) returns (RenewResponse);
+  // Release ends a lease early. Releasing is usually unnecessary: the last
+  // report of a lease can set `release: true` instead.
+  rpc Release(ReleaseRequest) returns (ReleaseResponse);
+}
+
+// AcquireRequest selects the endpoint group to lease an identity for.
+message AcquireRequest {
+  // Site name inside the token namespace, e.g. "shop".
+  string site = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Client type of the site, e.g. "web" or "app".
+  string client = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  // Request URI (path, optionally with query, or an absolute URL) used to
+  // match the endpoint group. Ignored when `endpoint_group` is set. When both
+  // are empty the `_default` endpoint group is used.
+  string uri = 3 [(buf.validate.field).string.max_len = 2048];
+  // Explicit endpoint group name; takes precedence over `uri`.
+  string endpoint_group = 4 [(buf.validate.field).string.max_len = 64];
+  // Optional sticky-session key. When the rotation policy enables sticky
+  // sessions, requests with the same key reuse the same identity while it
+  // stays usable.
+  string session_key = 5 [(buf.validate.field).string.max_len = 256];
+  // Maximum time in milliseconds the server may wait for an identity to
+  // become available before failing (0 = fail immediately, max 5000).
+  int32 wait_ms = 6 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 5000
+  }];
+}
+
+// AcquireResponse is one issued lease with everything a node needs to send
+// the request.
+message AcquireResponse {
+  // Lease metadata; its `lease_id` must be sent with every report.
+  Lease lease = 1;
+  // Rendered credential of the leased identity.
+  Credential credential = 2;
+  // Proxy to route the request through; null when the rotation policy
+  // assigns no proxy.
+  ProxyAssignment proxy = 3;
+  // Client-side hints for handling the lease.
+  Hints hints = 4;
+}
+
+// Lease describes an issued lease.
+message Lease {
+  // Opaque lease ID (`lse_<32hex>_<site>_<shard>`).
+  string lease_id = 1;
+  // ID of the leased identity.
+  string identity_id = 2;
+  // Name of the identity type of the leased identity.
+  string identity_type = 3;
+  // Name of the endpoint group the lease was issued for.
+  string endpoint_group = 4;
+  // Time at which the lease expires unless renewed.
+  google.protobuf.Timestamp expires_at = 5;
+  // True when the identity was reused through the sticky session key.
+  bool sticky = 6;
+  // True when the lease is a probe (half-open breaker probe or a pending
+  // identity being validated); its reports decide state transitions.
+  bool probe = 7;
+}
+
+// Credential is the delivery rendering of an identity payload, shaped by the
+// `deliver` section of its identity type. Unused segments are empty maps,
+// empty strings or null.
+message Credential {
+  // Cookies as name → value.
+  map<string, string> cookies = 1;
+  // Cookies rendered as a `Cookie` header value ("k1=v1; k2=v2").
+  string cookie_header = 2;
+  // Request headers as name → value.
+  map<string, string> headers = 3;
+  // Query parameters as name → value.
+  map<string, string> query = 4;
+  // Arbitrary JSON value (for example a request body fragment); null when
+  // unused.
+  google.protobuf.Value json = 5;
+  // Free-form typed values (device parameters, signing keys, ...).
+  google.protobuf.Struct values = 6;
+}
+
+// ProxyAssignment is the proxy assigned to a lease. It is serialized under
+// the JSON key "proxy" of AcquireResponse.
+message ProxyAssignment {
+  // Proxy ID.
+  string proxy_id = 1;
+  // Full proxy URL including credentials, e.g. "http://user:pass@host:port".
+  string url = 2;
+  // Proxy kind: datacenter | residential | mobile | tunnel.
+  string kind = 3;
+  // Proxy region (for example an ISO country code); empty when unknown.
+  string region = 4;
+}
+
+// Hints carries advisory values for lease handling.
+message Hints {
+  // Renew the lease when fewer than this many milliseconds remain before
+  // `expires_at` (a quarter of the lease TTL).
+  int32 renew_before_ms = 1;
+}
+
+// AcquireBatchRequest is an AcquireRequest with a count.
+message AcquireBatchRequest {
+  // Site name inside the token namespace.
+  string site = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Client type of the site.
+  string client = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  // Request URI used to match the endpoint group (see AcquireRequest.uri).
+  string uri = 3 [(buf.validate.field).string.max_len = 2048];
+  // Explicit endpoint group name; takes precedence over `uri`.
+  string endpoint_group = 4 [(buf.validate.field).string.max_len = 64];
+  // Optional sticky-session key; stickiness only applies when `count` is 1.
+  string session_key = 5 [(buf.validate.field).string.max_len = 256];
+  // Maximum wait in milliseconds for the first lease (0..5000).
+  int32 wait_ms = 6 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 5000
+  }];
+  // Number of distinct identities requested (1..50).
+  int32 count = 7 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 50
+  }];
+}
+
+// AcquireBatchResponse lists the leases that could be issued.
+message AcquireBatchResponse {
+  // Issued leases, each for a distinct identity; may be fewer than requested.
+  repeated AcquireResponse leases = 1;
+  // Number of leases that were requested.
+  int32 requested = 2;
+}
+
+// RenewRequest extends an active lease.
+message RenewRequest {
+  // Lease to renew.
+  string lease_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 128
+  }];
+  // Extension in milliseconds counted from now (0 = the policy lease TTL,
+  // max 1800000). The new expiry never exceeds the lease lifetime cap.
+  int32 extend_ms = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1800000
+  }];
+}
+
+// RenewResponse returns the new lease expiry.
+message RenewResponse {
+  // New expiry time of the lease.
+  google.protobuf.Timestamp expires_at = 1;
+}
+
+// ReleaseRequest ends a lease.
+message ReleaseRequest {
+  // Lease to release.
+  string lease_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 128
+  }];
+}
+
+// ReleaseResponse reports whether the call ended the lease.
+message ReleaseResponse {
+  // True when the lease was active and is now released; false when it had
+  // already been released or had expired (the call is idempotent).
+  bool released = 1;
+}

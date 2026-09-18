@@ -1,0 +1,33 @@
+# Built-in default rotation policy (used when nothing is bound).
+name: default-rotation
+description: Built-in default rotation policy.
+# Empty list = every identity type of the site + client.
+identity_types: []
+rotation:
+  strategy: weighted_random       # weighted_random | least_recently_used | round_robin | best_health
+  candidate_sample: 32            # candidates sampled per acquire (1..256)
+  lease_ttl: 2m                   # 5s..30m
+  max_lease_lifetime: 30m         # renewals cannot extend a lease beyond this
+  max_concurrent_leases: 1        # 1 = exclusive
+  reuse_interval: 0s              # minimum gap between two uses of an identity
+  reuse_anchor: released          # acquired | released
+  reuse_scope: endpoint_group     # endpoint_group | site
+  quota: []                       # e.g. [{limit: 60, window: 1h}]
+  sticky:
+    enabled: false
+    ttl: 10m
+  warmup:
+    duration: 0s
+    quota_factor: 1
+  probe:
+    weight_factor: 0.1
+    max_leases: 2
+proxy:
+  mode: none                      # none | pool | bind_identity | region_match
+  kinds: []                       # datacenter | residential | mobile | tunnel
+  tags: []
+  providers: []
+  regions: []
+  region_match: false
+  rebind_tolerance: 5m
+  max_rebinds_per_day: 3

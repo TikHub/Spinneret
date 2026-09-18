@@ -1,0 +1,172 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "spinneret/v1/auth.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// TenantAdminService manages tenants (platform admins) and the namespaces of
+// the active tenant (`X-Spinneret-Tenant` header). Tenant RPCs other than
+// ListTenants require `tenant:manage`; namespace reads require
+// `namespace:read` and writes `namespace:write`.
+service TenantAdminService {
+  // ListTenants lists every tenant for platform admins and the tenants the
+  // caller has bindings in otherwise.
+  rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse);
+  // CreateTenant creates a tenant and optionally grants an owner.
+  rpc CreateTenant(CreateTenantRequest) returns (CreateTenantResponse);
+  // UpdateTenant changes the descriptive fields of a tenant.
+  rpc UpdateTenant(UpdateTenantRequest) returns (UpdateTenantResponse);
+  // DeleteTenant deletes a tenant and everything it owns.
+  rpc DeleteTenant(DeleteTenantRequest) returns (DeleteTenantResponse);
+  // ListNamespaces lists the accessible namespaces of the active tenant.
+  rpc ListNamespaces(ListNamespacesRequest) returns (ListNamespacesResponse);
+  // CreateNamespace creates a namespace in the active tenant and publishes
+  // the built-in default policies for it.
+  rpc CreateNamespace(CreateNamespaceRequest) returns (CreateNamespaceResponse);
+  // UpdateNamespace changes the descriptive fields of a namespace.
+  rpc UpdateNamespace(UpdateNamespaceRequest) returns (UpdateNamespaceResponse);
+  // DeleteNamespace deletes a namespace and everything it owns.
+  rpc DeleteNamespace(DeleteNamespaceRequest) returns (DeleteNamespaceResponse);
+}
+
+// ListTenantsRequest pages through tenants.
+message ListTenantsRequest {
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 1 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 2 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListTenantsResponse is one page of tenants.
+message ListTenantsResponse {
+  // Tenants ordered by name.
+  repeated Tenant tenants = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of matching tenants.
+  int32 total = 3;
+}
+
+// CreateTenantRequest describes a new tenant.
+message CreateTenantRequest {
+  // Unique slug: lower-case letters, digits and dashes, 2..63 characters.
+  string name = 1 [(buf.validate.field).string.pattern = "^[a-z0-9][a-z0-9-]{1,62}$"];
+  // Display name.
+  string display_name = 2 [(buf.validate.field).string.max_len = 128];
+  // Description.
+  string description = 3 [(buf.validate.field).string.max_len = 1024];
+  // Optional user ID that receives an `owner` binding for the tenant.
+  string owner_user_id = 4 [(buf.validate.field).string.max_len = 64];
+}
+
+// CreateTenantResponse returns the created tenant.
+message CreateTenantResponse {
+  // The created tenant.
+  Tenant tenant = 1;
+}
+
+// UpdateTenantRequest changes a tenant; unset fields keep their value.
+message UpdateTenantRequest {
+  // Tenant ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New display name.
+  optional string display_name = 2 [(buf.validate.field).string.max_len = 128];
+  // New description.
+  optional string description = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// UpdateTenantResponse returns the updated tenant.
+message UpdateTenantResponse {
+  // The updated tenant.
+  Tenant tenant = 1;
+}
+
+// DeleteTenantRequest addresses a tenant.
+message DeleteTenantRequest {
+  // Tenant ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// DeleteTenantResponse is empty.
+message DeleteTenantResponse {}
+
+// ListNamespacesRequest pages through namespaces of the active tenant.
+message ListNamespacesRequest {
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 1 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 2 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListNamespacesResponse is one page of namespaces.
+message ListNamespacesResponse {
+  // Namespaces ordered by name.
+  repeated Namespace namespaces = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of accessible namespaces.
+  int32 total = 3;
+}
+
+// CreateNamespaceRequest describes a new namespace in the active tenant.
+message CreateNamespaceRequest {
+  // Slug unique inside the tenant: lower-case letters, digits and dashes,
+  // 2..63 characters.
+  string name = 1 [(buf.validate.field).string.pattern = "^[a-z0-9][a-z0-9-]{1,62}$"];
+  // Display name.
+  string display_name = 2 [(buf.validate.field).string.max_len = 128];
+  // Description.
+  string description = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// CreateNamespaceResponse returns the created namespace.
+message CreateNamespaceResponse {
+  // The created namespace.
+  Namespace namespace = 1;
+}
+
+// UpdateNamespaceRequest changes a namespace; unset fields keep their value.
+message UpdateNamespaceRequest {
+  // Namespace ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New display name.
+  optional string display_name = 2 [(buf.validate.field).string.max_len = 128];
+  // New description.
+  optional string description = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// UpdateNamespaceResponse returns the updated namespace.
+message UpdateNamespaceResponse {
+  // The updated namespace.
+  Namespace namespace = 1;
+}
+
+// DeleteNamespaceRequest addresses a namespace.
+message DeleteNamespaceRequest {
+  // Namespace ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// DeleteNamespaceResponse is empty.
+message DeleteNamespaceResponse {}

@@ -1,0 +1,4 @@
+<clickhouse>
+    <!-- Containers usually lack IPv6; listen on IPv4 only to avoid startup warnings. -->
+    <listen_host replace="replace">0.0.0.0</listen_host>
+</clickhouse>

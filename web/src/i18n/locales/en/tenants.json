@@ -1,0 +1,98 @@
+{
+  "title": "Tenants & namespaces",
+  "description": "Tenants you belong to and the namespaces of the active tenant.",
+  "descriptionAdmin": "Manage every tenant and the namespaces of the active tenant.",
+  "active": "Active",
+  "columns": {
+    "name": "Name",
+    "displayName": "Display name",
+    "description": "Description",
+    "id": "ID",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "actions": "Actions"
+  },
+  "tenants": {
+    "title": "Tenants",
+    "description": "Tenants where you have role bindings. Click a row to switch to it.",
+    "descriptionAdmin": "All tenants of this installation. Click a row to switch to it.",
+    "create": "Create tenant",
+    "empty": "No tenants",
+    "emptyDescription": "You have no role bindings in any tenant.",
+    "emptyAdminDescription": "Create the first tenant to start.",
+    "switchTo": "Switch to tenant",
+    "alreadyActive": "This is the active tenant",
+    "notAccessible": "You cannot access this tenant",
+    "created": "Tenant {{name}} created",
+    "updated": "Tenant {{name}} updated",
+    "deleted": "Tenant {{name}} deleted",
+    "deleteTitle": "Delete tenant {{name}}?",
+    "deleteDescription": "The tenant, its users' role bindings and notification channels are deleted permanently. Delete its namespaces first; the server refuses to delete a tenant that still has namespaces."
+  },
+  "namespaces": {
+    "title": "Namespaces of {{tenant}}",
+    "titleNoTenant": "Namespaces",
+    "description": "Namespaces group sites, proxies, config, secrets, tokens and policies. Creating one publishes the built-in default policies.",
+    "noTenant": "No active tenant",
+    "noTenantDescription": "Create or select a tenant to manage its namespaces.",
+    "create": "Create namespace",
+    "empty": "No namespaces",
+    "emptyDescription": "Create a namespace to add sites, proxies and tokens.",
+    "switchTo": "Switch to namespace",
+    "alreadyActive": "This is the active namespace",
+    "notAccessible": "You cannot access this namespace",
+    "created": "Namespace {{name}} created",
+    "updated": "Namespace {{name}} updated",
+    "deleted": "Namespace {{name}} deleted",
+    "deleteTitle": "Delete namespace {{name}}?",
+    "deleteDescription": "The namespace is deleted permanently. The server refuses to delete a namespace that still contains sites, proxies, config, secrets, tokens or policies."
+  },
+  "form": {
+    "displayName": "Display name",
+    "name": "Name (slug)",
+    "nameHint": "2–63 lower-case letters, digits and dashes; cannot be changed later.",
+    "nameImmutable": "The name cannot be changed.",
+    "description": "Description",
+    "ownerUserId": "Owner user ID",
+    "ownerUserIdHint": "Optional: this user receives the owner role in the new tenant.",
+    "tenant": {
+      "createTitle": "Create tenant",
+      "createDescription": "A tenant is an isolation boundary for a team or organization.",
+      "editTitle": "Edit tenant {{name}}",
+      "editDescription": "Change how the tenant is displayed."
+    },
+    "namespace": {
+      "createTitle": "Create namespace",
+      "createDescription": "The namespace is created in tenant {{tenant}}.",
+      "editTitle": "Edit namespace {{name}}",
+      "editDescription": "Change how the namespace is displayed."
+    },
+    "errors": {
+      "displayName": "At most 128 characters.",
+      "description": "At most 1024 characters.",
+      "name": {
+        "required": "Enter a name.",
+        "pattern": "Use 2–63 lower-case letters, digits and dashes, starting with a letter or digit."
+      },
+      "ownerUserId": {
+        "tooLong": "At most 64 characters.",
+        "invalid": "A user ID has no spaces."
+      }
+    }
+  },
+  "intro": {
+    "tenantTitle": "Tenant = a team or organization",
+    "tenantPoints": [
+      "Hard isolation boundary: tokens, namespaces, sites, proxies, configs, secrets and notification channels belong to exactly one tenant and are never visible from another.",
+      "Users are global accounts. A role binding (role + optional namespace + optional sites) is what gives a user access to this tenant.",
+      "Platform admins, created by \"spnr admin init\", can act in every tenant."
+    ],
+    "namespaceTitle": "Namespace = an environment or business line inside one tenant",
+    "namespacePoints": [
+      "Sites, proxies, config items, secrets, API tokens and policies belong to a namespace; endpoint groups, identity types, identities and accounts belong to a site.",
+      "A binding pinned to namespace A cannot see the sites, identities or credentials of namespace B, and can be narrowed further to single sites.",
+      "Revealing a credential payload additionally needs the identity:reveal permission."
+    ],
+    "mapping": "In short: a team is a tenant, and a project or environment inside that team is a namespace."
+  }
+}

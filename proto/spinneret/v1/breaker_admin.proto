@@ -1,0 +1,299 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "spinneret/v1/common.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// BreakerAdminService inspects and operates endpoint group circuit breakers
+// and site switches. Reads require `breaker:read`, operations
+// `breaker:operate`.
+service BreakerAdminService {
+  // ListBreakers lists breaker states of the accessible endpoint groups.
+  rpc ListBreakers(ListBreakersRequest) returns (ListBreakersResponse);
+  // GetBreaker returns the breaker state of one endpoint group.
+  rpc GetBreaker(GetBreakerRequest) returns (GetBreakerResponse);
+  // OpenBreaker manually opens a breaker for a duration or indefinitely.
+  rpc OpenBreaker(OpenBreakerRequest) returns (OpenBreakerResponse);
+  // CloseBreaker manually closes a breaker.
+  rpc CloseBreaker(CloseBreakerRequest) returns (CloseBreakerResponse);
+  // ListBreakerEvents lists breaker transitions, newest first.
+  rpc ListBreakerEvents(ListBreakerEventsRequest) returns (ListBreakerEventsResponse);
+  // SetSitePaused turns the site switch off (paused) or on.
+  rpc SetSitePaused(SetSitePausedRequest) returns (SetSitePausedResponse);
+}
+
+// BreakerStatus is the live breaker state of an endpoint group.
+message BreakerStatus {
+  // Namespace name.
+  string namespace = 1;
+  // Site name.
+  string site = 2;
+  // Site ID.
+  string site_id = 3;
+  // Client type.
+  string client = 4;
+  // Endpoint group name.
+  string endpoint_group = 5;
+  // Endpoint group ID.
+  string endpoint_group_id = 6;
+  // State: closed | open | half_open.
+  string state = 7;
+  // End of the open period; null while closed or when opened indefinitely.
+  google.protobuf.Timestamp open_until = 8;
+  // Consecutive opens without a long enough closed period (drives the
+  // exponential open duration).
+  int32 consecutive_opens = 9;
+  // True when the current state was set manually.
+  bool manual = 10;
+  // Reason of the last transition.
+  string reason = 11;
+  // Sliding window statistics used for trip evaluation.
+  WindowMetrics window = 12;
+  // Half-open probe statistics.
+  ProbeMetrics probe = 13;
+  // Time of the last transition to open; null when never opened.
+  google.protobuf.Timestamp last_opened_at = 14;
+  // Time of the last transition to closed; null when never closed.
+  google.protobuf.Timestamp last_closed_at = 15;
+  // True when the whole site is paused.
+  bool site_paused = 16;
+  // ID of the effective breaker policy; empty for the built-in default.
+  string policy_id = 17;
+  // Name of the effective breaker policy.
+  string policy_name = 18;
+}
+
+// WindowMetrics summarizes the breaker sliding window.
+message WindowMetrics {
+  // Reports in the window.
+  int32 total = 1;
+  // Successful reports in the window.
+  int32 success = 2;
+  // Risk outcome reports (rate_limited, captcha, forbidden, banned).
+  int32 risk = 3;
+  // Distinct identities that produced a captcha in the window.
+  int32 captcha_identities = 4;
+  // risk / total; 0 when total is 0.
+  double risk_ratio = 5;
+  // success / total; 0 when total is 0.
+  double success_ratio = 6;
+}
+
+// ProbeMetrics summarizes half-open probing.
+message ProbeMetrics {
+  // Probe reports received in the half-open period.
+  int32 samples = 1;
+  // Successful probe reports.
+  int32 successes = 2;
+  // Probe leases issued in the current 10 second window.
+  int32 issued = 3;
+}
+
+// ListBreakersRequest filters and pages breakers.
+message ListBreakersRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Optional site name filter.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Optional client filter.
+  string client = 3 [(buf.validate.field).string.max_len = 32];
+  // Optional state filter; empty = all states.
+  repeated string states = 4 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      string: {
+        in: [
+          "closed",
+          "open",
+          "half_open"
+        ]
+      }
+    }
+  }];
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 6 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListBreakersResponse is one page of breakers.
+message ListBreakersResponse {
+  // Breakers ordered by state severity (open, half_open, closed), then site
+  // and endpoint group name.
+  repeated BreakerStatus breakers = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of matching breakers.
+  int32 total = 3;
+}
+
+// GetBreakerRequest addresses an endpoint group breaker.
+message GetBreakerRequest {
+  // Endpoint group ID.
+  string endpoint_group_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// GetBreakerResponse carries the breaker state.
+message GetBreakerResponse {
+  // The breaker state.
+  BreakerStatus breaker = 1;
+}
+
+// OpenBreakerRequest opens a breaker manually.
+message OpenBreakerRequest {
+  // Endpoint group ID.
+  string endpoint_group_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Open duration such as "30m" or "2h"; "" or "permanent" keeps the breaker
+  // open until closed manually.
+  string duration = 2 [(buf.validate.field).string.max_len = 32];
+  // Reason recorded in the breaker event and audit log.
+  string reason = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// OpenBreakerResponse returns the new breaker state.
+message OpenBreakerResponse {
+  // The breaker state after the operation.
+  BreakerStatus breaker = 1;
+}
+
+// CloseBreakerRequest closes a breaker manually.
+message CloseBreakerRequest {
+  // Endpoint group ID.
+  string endpoint_group_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Reason recorded in the breaker event and audit log.
+  string reason = 2 [(buf.validate.field).string.max_len = 1024];
+}
+
+// CloseBreakerResponse returns the new breaker state.
+message CloseBreakerResponse {
+  // The breaker state after the operation.
+  BreakerStatus breaker = 1;
+}
+
+// ListBreakerEventsRequest filters and pages breaker events.
+message ListBreakerEventsRequest {
+  option (buf.validate.message).cel = {
+    id: "time_range.ordered"
+    message: "time_range.end must be after time_range.start"
+    expression: "!has(this.time_range) || !has(this.time_range.start) || !has(this.time_range.end) || this.time_range.end > this.time_range.start"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Optional site name filter.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Optional endpoint group ID filter.
+  string endpoint_group_id = 3 [(buf.validate.field).string.max_len = 64];
+  // Optional trigger filter.
+  string trigger = 4 [(buf.validate.field).string = {
+    in: [
+      "",
+      "auto",
+      "manual",
+      "probe",
+      "site_switch"
+    ]
+  }];
+  // Time range; unset = no bound.
+  TimeRange time_range = 5;
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 6 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 7 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListBreakerEventsResponse is one page of breaker events.
+message ListBreakerEventsResponse {
+  // Events, newest first.
+  repeated BreakerEvent events = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+}
+
+// BreakerEvent is one breaker state transition.
+message BreakerEvent {
+  // Event ID (`brk_...`).
+  string id = 1;
+  // Time of the transition.
+  google.protobuf.Timestamp created_at = 2;
+  // Site name.
+  string site = 3;
+  // Endpoint group name; empty for site switch events.
+  string endpoint_group = 4;
+  // Endpoint group ID; empty for site switch events.
+  string endpoint_group_id = 5;
+  // Previous state: closed | open | half_open.
+  string from_state = 6;
+  // New state: closed | open | half_open.
+  string to_state = 7;
+  // Trigger: auto | manual | probe | site_switch.
+  string trigger = 8;
+  // Human-readable reason.
+  string reason = 9;
+  // End of the open period; null when not applicable or indefinite.
+  google.protobuf.Timestamp open_until = 10;
+  // Window and probe metrics at transition time.
+  google.protobuf.Struct metrics = 11;
+  // Actor: "user:<id>", "token:<id>" or "system".
+  string actor = 12;
+  // Client type of the endpoint group.
+  string client = 13;
+}
+
+// SetSitePausedRequest pauses or resumes a site.
+message SetSitePausedRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // True to pause (refuse all leases), false to resume.
+  bool paused = 3;
+  // Reason recorded with the switch.
+  string reason = 4 [(buf.validate.field).string.max_len = 1024];
+}
+
+// SetSitePausedResponse returns the resulting site switch state.
+message SetSitePausedResponse {
+  // Site name.
+  string site = 1;
+  // True when the site is paused.
+  bool paused = 2;
+  // Reason of the pause; empty when not paused.
+  string paused_reason = 3;
+  // Time the site was paused; null when not paused.
+  google.protobuf.Timestamp paused_at = 4;
+  // Site ID.
+  string site_id = 5;
+}

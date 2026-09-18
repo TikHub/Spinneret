@@ -1,0 +1,40 @@
+# Built-in default signal policy (used when nothing is bound).
+# Rules are evaluated top-down; the first match wins. Unmatched reports are
+# classified as "unknown" (or the node's outcome_hint when trusted and valid).
+name: default-signal
+description: Built-in default signal policy.
+trust_outcome_hint: false
+rules:
+  - name: proxy-error
+    when: { error_kind: [proxy_auth, conn_refused] }
+    outcome: proxy_error
+  - name: network-error
+    when: { error_kind: [timeout, conn_reset, tls, dns] }
+    outcome: network_error
+  - name: captcha
+    when: { markers: [captcha_page] }
+    outcome: captcha
+  - name: login-redirect
+    when: { markers: [login_redirect] }
+    outcome: auth_invalid
+  - name: rate-limited
+    when: { http_status: [429] }
+    outcome: rate_limited
+  - name: target-error
+    when: { http_status: { gte: 500 } }
+    outcome: target_error
+  - name: empty-list
+    when: { http_status: [200], markers: [empty_list] }
+    outcome: empty
+  - name: client-error
+    when: { http_status: [400] }
+    outcome: client_error
+  - name: auth-invalid
+    when: { http_status: [401] }
+    outcome: auth_invalid
+  - name: forbidden
+    when: { http_status: [403] }
+    outcome: forbidden
+  - name: success
+    when: { http_status: { gte: 200, lt: 300 } }
+    outcome: success

@@ -1,0 +1,63 @@
+{
+  "title": "冷却热力图",
+  "description": "站点客户端下身份 × 端点组的剩余冷却时间或健康分",
+  "noNamespace": "请选择命名空间以查看热力图。",
+  "autoRefresh": "每 {{seconds}} 秒刷新",
+  "noSites": "暂无站点",
+  "noSitesDescription": "创建站点并导入身份后即可在此查看冷却情况。",
+  "noClient": "请选择站点的客户端类型",
+  "noClients": "该站点尚未配置客户端类型",
+  "emptyTitle": "没有身份",
+  "emptyDescription": "该站点客户端下没有符合状态筛选的身份。",
+  "noGroups": "该客户端没有端点组",
+  "clickHint": "点击单元格可打开对应身份。",
+  "controls": "热力图控制",
+  "client": "客户端",
+  "metric": "指标",
+  "metrics": {
+    "cooldown": "剩余冷却",
+    "score": "健康分"
+  },
+  "states": "状态",
+  "allStates": "除已归档外全部",
+  "limit": "每页身份数",
+  "limitOption_one": "{{count}} 个身份",
+  "limitOption_other": "{{count}} 个身份",
+  "view": "视图",
+  "views": {
+    "chart": "图表",
+    "table": "表格"
+  },
+  "rowsRange": "第 {{from}}–{{to}} 个身份，共 {{total}} 个",
+  "identity": "身份",
+  "tableCaption": "热力图表格：各身份在各端点组的{{metric}}",
+  "chartLabel": "{{rows}} 个身份 × {{columns}} 个端点组的热力图；可切换到表格视图获取无障碍列表",
+  "buckets": {
+    "cooling": "冷却中",
+    "permanent": "永久封禁",
+    "available": "可用",
+    "unavailable": "不可用",
+    "scored": "健康分",
+    "baseline": "无热状态（基线分）"
+  },
+  "cell": {
+    "baseline": "基线",
+    "available": "可用",
+    "unavailable": "不可用"
+  },
+  "tooltip": {
+    "identity": "身份",
+    "label": "标签",
+    "state": "状态",
+    "group": "端点组",
+    "score": "健康分",
+    "cooldown": "剩余冷却",
+    "noCooldown": "无",
+    "permanentBan": "永久封禁",
+    "available": "可用",
+    "yes": "是",
+    "no": "否",
+    "hotState": "热状态",
+    "noHotState": "无（基线分）"
+  }
+}

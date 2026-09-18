@@ -1,0 +1,19 @@
+# Built-in default breaker policy (used when nothing is bound).
+name: default-breaker
+description: Built-in default breaker policy.
+enabled: true
+window: 60s
+buckets: 12
+min_requests: 50
+trip:                             # any condition opens the breaker; 0 disables a condition
+  risk_ratio_gte: 0.4
+  distinct_captcha_identities_gte: 10
+  success_ratio_lte: 0.2
+open_duration: 2m
+max_open_duration: 1h
+reset_open_count_after: 30m
+half_open:
+  probe_leases_per_10s: 5
+  close_min_samples: 5
+  close_success_ratio_gte: 0.8
+revert_recent_cooldowns: endpoint # none | endpoint | all (true = endpoint, false = none)

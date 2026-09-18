@@ -1,0 +1,58 @@
+{
+  "title": "风险事件",
+  "description": "存储在 PostgreSQL 中的非成功上报（保留时长由服务端配置，默认 30 天），按时间倒序",
+  "noNamespace": "请选择命名空间以查看风险事件。",
+  "autoRefresh": "自动刷新（{{seconds}} 秒）",
+  "filters": {
+    "outcome": "结果",
+    "allOutcomes": "全部结果",
+    "identity": "身份 ID",
+    "proxy": "代理 ID",
+    "node": "节点"
+  },
+  "columns": {
+    "time": "时间",
+    "site": "站点",
+    "group": "端点组",
+    "outcome": "结果",
+    "blame": "归因",
+    "rule": "规则",
+    "httpStatus": "HTTP",
+    "businessCode": "业务码",
+    "errorKind": "错误类型",
+    "markers": "标记",
+    "latency": "耗时",
+    "identity": "身份",
+    "proxy": "代理",
+    "node": "节点",
+    "lease": "租约 ID",
+    "report": "上报 ID"
+  },
+  "blame": {
+    "none": "无",
+    "identity": "身份",
+    "proxy": "代理",
+    "both": "两者"
+  },
+  "unknownGroup": "未知端点组",
+  "expand": "详情",
+  "expandRow": "展开详情",
+  "collapseRow": "收起详情",
+  "empty": {
+    "title": "没有风险事件",
+    "description": "该时间范围内没有符合筛选条件的非成功上报。"
+  },
+  "detail": {
+    "request": "请求",
+    "startedAt": "开始时间",
+    "finishedAt": "结束时间",
+    "processedAt": "处理时间",
+    "duration": "持续时间",
+    "reported": "上报耗时 {{latency}}",
+    "bytes": "响应大小",
+    "client": "客户端",
+    "id": "事件 ID",
+    "token": "令牌",
+    "groupId": "端点组 ID"
+  }
+}

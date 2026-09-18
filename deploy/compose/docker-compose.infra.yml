@@ -1,0 +1,51 @@
+# Development / test infrastructure only (PostgreSQL, Valkey, ClickHouse).
+# Used by `make infra-up` so integration tests can run against real services:
+#   SPINNERET_TEST_DATABASE_URL=postgres://spinneret:spinneret@localhost:45432/spinneret?sslmode=disable
+#   SPINNERET_TEST_REDIS_URL=redis://localhost:46379/0
+#   SPINNERET_TEST_CLICKHOUSE_URL=clickhouse://spinneret:spinneret@localhost:49000/default
+name: spinneret-infra
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: spinneret
+      POSTGRES_PASSWORD: spinneret
+      POSTGRES_DB: spinneret
+    command: ["postgres", "-c", "max_connections=500", "-c", "shared_buffers=256MB", "-c", "fsync=off", "-c", "synchronous_commit=off"]
+    ports: ["45432:5432"]
+    tmpfs: ["/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spinneret -d spinneret"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--save", "", "--appendonly", "no", "--maxclients", "20000"]
+    ports: ["46379:6379"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8-alpine
+    environment:
+      CLICKHOUSE_USER: spinneret
+      CLICKHOUSE_PASSWORD: spinneret
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    # Same caps as the full stack: an unconstrained ClickHouse sizes its caches for the whole
+    # machine and this one usually runs next to it. See config/clickhouse-limits.xml.
+    volumes:
+      - ./config/clickhouse-limits.xml:/etc/clickhouse-server/config.d/limits.xml:ro
+    ports: ["49000:9000", "48123:8123"]
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 40

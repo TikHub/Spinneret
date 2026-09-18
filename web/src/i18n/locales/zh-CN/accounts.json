@@ -1,0 +1,87 @@
+{
+  "title": "账号",
+  "description": "归属同一站点用户账号的身份分组；封禁与停用会作用于其下所有身份",
+  "noNamespace": "请选择命名空间以查看其账号。",
+  "filters": {
+    "search": "搜索外部引用…",
+    "state": "状态",
+    "allStates": "全部状态"
+  },
+  "columns": {
+    "externalRef": "外部引用",
+    "site": "站点",
+    "state": "状态",
+    "banUntil": "封禁结束",
+    "cooldownUntil": "冷却",
+    "region": "地区",
+    "tags": "标签",
+    "identities": "身份数",
+    "notes": "备注",
+    "updated": "更新时间",
+    "actions": "操作"
+  },
+  "fields": {
+    "site": "站点",
+    "externalRef": "外部引用",
+    "region": "地区",
+    "tags": "标签",
+    "notes": "备注"
+  },
+  "state": {
+    "permanent": "永久"
+  },
+  "empty": {
+    "title": "暂无账号",
+    "description": "账号可通过带 _account 列的导入、关联身份或在此处创建。",
+    "filteredTitle": "没有匹配的账号",
+    "filteredDescription": "没有账号符合当前筛选条件。"
+  },
+  "actions": {
+    "upsert": "添加账号",
+    "viewIdentities": "查看身份",
+    "operations": "操作"
+  },
+  "operations": {
+    "ban": "封禁",
+    "unban": "解封",
+    "cooldown": "冷却",
+    "disable": "停用",
+    "enable": "启用"
+  },
+  "operationHints": {
+    "ban_one": "封禁该账号，并将其下 {{count}} 个身份移出调度。",
+    "ban_other": "封禁该账号，并将其下 {{count}} 个身份移出调度。",
+    "unban_one": "解除账号封禁，其下 {{count}} 个身份可重新参与调度。",
+    "unban_other": "解除账号封禁，其下 {{count}} 个身份可重新参与调度。",
+    "cooldown_one": "在指定时长内暂停该账号下 {{count}} 个身份的租借。",
+    "cooldown_other": "在指定时长内暂停该账号下 {{count}} 个身份的租借。",
+    "disable_one": "停用该账号及其下 {{count}} 个身份，直到重新启用。",
+    "disable_other": "停用该账号及其下 {{count}} 个身份，直到重新启用。",
+    "enable_one": "启用该账号及其下 {{count}} 个身份。",
+    "enable_other": "启用该账号及其下 {{count}} 个身份。"
+  },
+  "operation": {
+    "title": "{{operation}}账号 {{ref}}",
+    "duration": "时长",
+    "banHint": "例如 7d，或在预设中选择“永久”。",
+    "cooldownHint": "例如 30m、2h 或 1d。",
+    "reason": "原因",
+    "toastApplied_one": "已对账号 {{ref}} 执行{{operation}}（更新 {{count}} 个身份）",
+    "toastApplied_other": "已对账号 {{ref}} 执行{{operation}}（更新 {{count}} 个身份）",
+    "toastIdentityFailures_one": "该账号有 {{count}} 个身份未能更新",
+    "toastIdentityFailures_other": "该账号有 {{count}} 个身份未能更新"
+  },
+  "result": {
+    "title": "{{operation}}账号 {{ref}}：身份结果",
+    "description": "该账号下各身份的操作结果。"
+  },
+  "upsert": {
+    "createTitle": "添加账号",
+    "editTitle": "编辑账号",
+    "description": "账号由站点与外部引用唯一确定；保存已存在的组合会更新该账号。",
+    "externalRefHint": "用户名、UID 等稳定引用，在站点内唯一。",
+    "tagsHint": "将替换现有标签。",
+    "tooLong": "最多 {{max}} 个字符。",
+    "saved": "账号 {{ref}} 已保存"
+  }
+}

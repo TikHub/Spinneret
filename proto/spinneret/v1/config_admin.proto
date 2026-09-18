@@ -1,0 +1,270 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// ConfigAdminService manages config items: drafts, immutable published
+// versions, rollback and diffs. Nodes read published content through
+// ConfigService.
+service ConfigAdminService {
+  // ListConfigItems lists config items of a namespace (config:read).
+  rpc ListConfigItems(ListConfigItemsRequest) returns (ListConfigItemsResponse);
+  // GetConfigItem returns one config item by ID or by namespace, group and key (config:read).
+  rpc GetConfigItem(GetConfigItemRequest) returns (GetConfigItemResponse);
+  // CreateConfigItem creates a config item with draft or published content (config:write, config:publish to publish).
+  rpc CreateConfigItem(CreateConfigItemRequest) returns (CreateConfigItemResponse);
+  // SaveConfigDraft stores draft content and metadata (config:write).
+  rpc SaveConfigDraft(SaveConfigDraftRequest) returns (SaveConfigDraftResponse);
+  // PublishConfig validates the draft and publishes it as a new version (config:publish).
+  rpc PublishConfig(PublishConfigRequest) returns (PublishConfigResponse);
+  // RollbackConfig publishes the content of an old version as a new version (config:publish).
+  rpc RollbackConfig(RollbackConfigRequest) returns (RollbackConfigResponse);
+  // DeleteConfigItem deletes a config item and its versions (config:publish).
+  rpc DeleteConfigItem(DeleteConfigItemRequest) returns (DeleteConfigItemResponse);
+  // ListConfigVersions lists published versions, newest first (config:read).
+  rpc ListConfigVersions(ListConfigVersionsRequest) returns (ListConfigVersionsResponse);
+  // DiffConfigVersions compares two versions or a version and the draft (config:read).
+  rpc DiffConfigVersions(DiffConfigVersionsRequest) returns (DiffConfigVersionsResponse);
+}
+
+// ConfigItemInfo is a config item with its published and draft content.
+message ConfigItemInfo {
+  // Config item ID ("cfg_...").
+  string id = 1;
+  // Namespace name.
+  string namespace = 2;
+  // Group name; groups starting with "_" are system-maintained and read-only.
+  string group = 3;
+  // Key, unique within the group.
+  string key = 4;
+  // Content format: json | yaml | text.
+  string format = 5;
+  // JSON Schema (draft 2020-12) validated on publish for json and yaml; empty = none.
+  string schema_json = 6;
+  // Human-readable description.
+  string description = 7;
+  // Current published version; 0 when never published.
+  int32 current_version = 8;
+  // Content of the current version, raw: secret references are NOT resolved.
+  string published_content = 9;
+  // Draft content; empty when there is no draft.
+  string draft_content = 10;
+  // Whether a draft exists.
+  bool has_draft = 11;
+  // Actor ("user:<id>" or "token:<id>") that last saved the draft.
+  string draft_updated_by = 12;
+  // Time the draft was last saved.
+  google.protobuf.Timestamp draft_updated_at = 13;
+  // Actor that published the current version.
+  string published_by = 14;
+  // Publish time of the current version.
+  google.protobuf.Timestamp published_at = 15;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 16;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 17;
+}
+
+// ConfigVersion is an immutable published version of a config item.
+message ConfigVersion {
+  // Version number, starting at 1.
+  int32 version = 1;
+  // Published content, raw (secret references are not resolved).
+  string content = 2;
+  // Publish comment.
+  string comment = 3;
+  // For rollbacks, the version whose content was republished; 0 otherwise.
+  int32 source_version = 4;
+  // Actor that published the version.
+  string published_by = 5;
+  // Publish time.
+  google.protobuf.Timestamp published_at = 6;
+}
+
+// ConfigLocator addresses a config item by name.
+message ConfigLocator {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Group name (system groups such as "_runtime" included).
+  string group = 2 [(buf.validate.field).string.pattern = "^_?[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$"];
+  // Key.
+  string key = 3 [(buf.validate.field).string.pattern = "^[a-zA-Z0-9][a-zA-Z0-9_./-]{0,127}$"];
+}
+
+// ListConfigItemsRequest selects a page of config items.
+message ListConfigItemsRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Group filter; empty matches all groups.
+  string group = 2 [(buf.validate.field).string.pattern = "^(_?[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63})?$"];
+  // Substring match on the key or description.
+  string search = 3 [(buf.validate.field).string.max_len = 256];
+  // Page size, 0 = default (50).
+  int32 page_size = 4 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 5 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListConfigItemsResponse is a page of config items ordered by group and key.
+message ListConfigItemsResponse {
+  // Config items of this page.
+  repeated ConfigItemInfo items = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of matching items.
+  int32 total = 3;
+}
+
+// GetConfigItemRequest identifies a config item.
+message GetConfigItemRequest {
+  // Item selector.
+  oneof selector {
+    option (buf.validate.oneof).required = true;
+    // Config item ID.
+    string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+    // Namespace, group and key.
+    ConfigLocator locator = 2;
+  }
+}
+
+// GetConfigItemResponse carries the config item.
+message GetConfigItemResponse {
+  // The config item.
+  ConfigItemInfo item = 1;
+}
+
+// CreateConfigItemRequest creates a config item.
+message CreateConfigItemRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Group name; must not start with "_" (reserved).
+  string group = 2 [(buf.validate.field).string.pattern = "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$"];
+  // Key.
+  string key = 3 [(buf.validate.field).string.pattern = "^[a-zA-Z0-9][a-zA-Z0-9_./-]{0,127}$"];
+  // Content format.
+  string format = 4 [(buf.validate.field).string = {in: ["json", "yaml", "text"]}];
+  // JSON Schema for json and yaml content; empty = none.
+  string schema_json = 5 [(buf.validate.field).string.max_bytes = 1048576];
+  // Human-readable description.
+  string description = 6 [(buf.validate.field).string.max_len = 1024];
+  // Initial content (max 4 MiB). May contain ${secret:<path>} references.
+  string content = 7 [(buf.validate.field).string.max_bytes = 4194304];
+  // Publish the content as version 1 (requires config:publish); otherwise stored as a draft.
+  bool publish = 8;
+  // Publish comment.
+  string comment = 9 [(buf.validate.field).string.max_len = 1024];
+}
+
+// CreateConfigItemResponse carries the created config item.
+message CreateConfigItemResponse {
+  // The created config item.
+  ConfigItemInfo item = 1;
+}
+
+// SaveConfigDraftRequest stores draft content. Unset optional fields are left unchanged.
+message SaveConfigDraftRequest {
+  // Config item ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Draft content (max 4 MiB).
+  string content = 2 [(buf.validate.field).string.max_bytes = 4194304];
+  // New JSON Schema; empty removes the schema.
+  optional string schema_json = 3 [(buf.validate.field).string.max_bytes = 1048576];
+  // New description.
+  optional string description = 4 [(buf.validate.field).string.max_len = 1024];
+}
+
+// SaveConfigDraftResponse carries the item with the saved draft.
+message SaveConfigDraftResponse {
+  // The updated config item.
+  ConfigItemInfo item = 1;
+}
+
+// PublishConfigRequest publishes the draft of a config item.
+message PublishConfigRequest {
+  // Config item ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Publish comment.
+  string comment = 2 [(buf.validate.field).string.max_len = 1024];
+  // Optimistic concurrency check: when > 0 the publish fails with reason
+  // conflict unless current_version equals it; 0 skips the check.
+  int32 expected_version = 3 [(buf.validate.field).int32.gte = 0];
+}
+
+// PublishConfigResponse carries the item after publishing.
+message PublishConfigResponse {
+  // The config item.
+  ConfigItemInfo item = 1;
+  // The newly published version.
+  int32 version = 2;
+}
+
+// RollbackConfigRequest republishes an old version.
+message RollbackConfigRequest {
+  // Config item ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Version whose content is published again.
+  int32 version = 2 [(buf.validate.field).int32.gte = 1];
+  // Publish comment.
+  string comment = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// RollbackConfigResponse carries the item after the rollback.
+message RollbackConfigResponse {
+  // The config item.
+  ConfigItemInfo item = 1;
+  // The newly published version (its source_version is the requested version).
+  int32 version = 2;
+}
+
+// DeleteConfigItemRequest identifies the config item to delete.
+message DeleteConfigItemRequest {
+  // Config item ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// DeleteConfigItemResponse is empty.
+message DeleteConfigItemResponse {}
+
+// ListConfigVersionsRequest selects a page of versions of a config item.
+message ListConfigVersionsRequest {
+  // Config item ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Page size, 0 = default (50).
+  int32 page_size = 2 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListConfigVersionsResponse is a page of versions, newest first.
+message ListConfigVersionsResponse {
+  // Versions of this page.
+  repeated ConfigVersion versions = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of versions.
+  int32 total = 3;
+}
+
+// DiffConfigVersionsRequest selects the two sides of a diff.
+message DiffConfigVersionsRequest {
+  // Config item ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Left side version; 0 = the current published version.
+  int32 from_version = 2 [(buf.validate.field).int32.gte = 0];
+  // Right side version; 0 = the draft.
+  int32 to_version = 3 [(buf.validate.field).int32.gte = 0];
+}
+
+// DiffConfigVersionsResponse carries both sides and their unified diff.
+message DiffConfigVersionsResponse {
+  // Left side content.
+  string from_content = 1;
+  // Right side content.
+  string to_content = 2;
+  // Unified diff from from_content to to_content.
+  string unified_diff = 3;
+}

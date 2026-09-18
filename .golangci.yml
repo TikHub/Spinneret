@@ -1,0 +1,44 @@
+version: "2"
+
+run:
+  timeout: 10m
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - nilerr
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+    - wastedassign
+  settings:
+    gosec:
+      excludes:
+        - G115 # integer conversions are range-checked explicitly where needed
+    errorlint:
+      errorf: true
+  exclusions:
+    generated: strict
+    paths:
+      - gen/
+      - ".*db/"
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx, bodyclose]
+      - path: test/
+        linters: [gosec, noctx]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: strict
+    paths:
+      - gen/

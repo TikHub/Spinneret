@@ -1,0 +1,63 @@
+# Spinneret — end-to-end test overlay. Always used together with docker-compose.yml:
+#
+#   make e2e
+#
+# which runs:
+#
+#   docker compose -f deploy/compose/docker-compose.yml -f deploy/compose/docker-compose.e2e.yml \
+#     --profile test up -d --wait spinneret lb mocktarget
+#   docker compose -f deploy/compose/docker-compose.yml -f deploy/compose/docker-compose.e2e.yml \
+#     --profile test run --rm --use-aliases e2e
+#
+# The overlay shortens background intervals of the server so that scenarios that wait for periodic jobs
+# (proxy health checks) finish quickly, and adds the "e2e" service that runs `go test -tags e2e ./test/e2e/...`
+# inside the compose network against the load balancer, the mock target site/proxy and Valkey.
+#
+# `--use-aliases` registers the service name "e2e" in DNS for the one-off container so the servers can
+# deliver webhook notifications to the test's sink (SPINNERET_E2E_CALLBACK).
+services:
+  spinneret:
+    environment:
+      # Proxy health checks every 5 s against the mock target: a proxy turns dead after 3 failed checks.
+      SPINNERET_PROXY_CHECK_URL: http://mocktarget:9090/healthz
+      SPINNERET_PROXY_CHECK_INTERVAL: 5s
+      SPINNERET_PROXY_CHECK_TIMEOUT: 3s
+
+  e2e:
+    profiles: ["test"]
+    image: golang:1.27-alpine
+    working_dir: /src
+    volumes:
+      - ../..:/src
+      - e2e-gomod:/go/pkg/mod
+      - e2e-gocache:/root/.cache/go-build
+    environment:
+      CGO_ENABLED: "0"
+      GOFLAGS: -mod=readonly
+      SPINNERET_E2E_URL: http://lb:8080
+      SPINNERET_E2E_ADMIN_USER: ${SPINNERET_ADMIN_USERNAME:-admin}
+      SPINNERET_E2E_ADMIN_PASSWORD: ${SPINNERET_ADMIN_PASSWORD:?set SPINNERET_ADMIN_PASSWORD in .env}
+      SPINNERET_E2E_TENANT: ${SPINNERET_E2E_TENANT:-default}
+      SPINNERET_E2E_MOCK_URL: http://mocktarget:9090
+      SPINNERET_E2E_PROXY_HOST: mocktarget:9091
+      SPINNERET_E2E_PROXY_PASSWORD: ${SPINNERET_MOCK_PROXY_PASSWORD:-secret}
+      SPINNERET_E2E_REDIS: valkey:6379
+      SPINNERET_E2E_REDIS_PREFIX: sp
+      SPINNERET_E2E_REPORT_SHARDS: ${SPINNERET_REPORT_SHARDS:-16}
+      SPINNERET_E2E_REPLICAS: ${SPINNERET_REPLICAS:-2}
+      SPINNERET_E2E_CALLBACK: http://e2e:18099
+      SPINNERET_E2E_SINK_ADDR: :18099
+      SPINNERET_E2E_CRAWL_DURATION: ${SPINNERET_E2E_CRAWL_DURATION:-60s}
+      SPINNERET_E2E_KEEP: ${SPINNERET_E2E_KEEP:-}
+    command: ["go", "test", "-tags", "e2e", "-count=1", "-v", "-timeout", "20m", "./test/e2e/..."]
+    depends_on:
+      lb:
+        condition: service_healthy
+      mocktarget:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+volumes:
+  e2e-gomod:
+  e2e-gocache:

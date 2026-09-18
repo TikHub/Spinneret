@@ -1,0 +1,501 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "spinneret/v1/auth.proto";
+import "spinneret/v1/common.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// AccessAdminService manages API tokens, tenant members, role bindings and
+// the audit log of the active tenant (`X-Spinneret-Tenant` header). Token
+// RPCs require `token:read` / `token:write` on the namespace, user and
+// binding RPCs `user:read` / `user:write`, audit queries `audit:read`.
+service AccessAdminService {
+  // ListTokens lists API tokens (never their secrets).
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse);
+  // CreateToken creates an API token; the plaintext is returned only once.
+  rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse);
+  // RevokeToken revokes an API token immediately on every instance.
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+  // ListUsers lists the members of the active tenant with their bindings.
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  // CreateUser creates a user account and binds it to the active tenant.
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  // UpdateUser changes profile fields or disables a user; unset fields keep
+  // their value.
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  // ResetPassword sets a new password for a user and ends its sessions.
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  // ListRoleBindings lists role bindings of the active tenant.
+  rpc ListRoleBindings(ListRoleBindingsRequest) returns (ListRoleBindingsResponse);
+  // CreateRoleBinding grants a role in the active tenant to an existing user.
+  rpc CreateRoleBinding(CreateRoleBindingRequest) returns (CreateRoleBindingResponse);
+  // DeleteRoleBinding removes a role binding.
+  rpc DeleteRoleBinding(DeleteRoleBindingRequest) returns (DeleteRoleBindingResponse);
+  // ListAuditLogs queries the audit log, newest first.
+  rpc ListAuditLogs(ListAuditLogsRequest) returns (ListAuditLogsResponse);
+}
+
+// ApiToken describes an API token without its secret.
+message ApiToken {
+  // Token ID (`tok_...`).
+  string id = 1;
+  // Namespace name the token is bound to.
+  string namespace = 2;
+  // Name, unique inside the namespace.
+  string name = 3;
+  // Description.
+  string description = 4;
+  // First 12 characters of the token (including `spn_`) for identification.
+  string token_prefix = 5;
+  // Granted scopes, e.g. "lease:acquire:shop", "config:read:crawler*".
+  repeated string scopes = 6;
+  // Allowed client IPs or CIDRs; empty = any address.
+  repeated string ip_allowlist = 7;
+  // Per-instance request rate limit in requests per second; 0 = unlimited.
+  int32 rate_limit_rps = 8;
+  // Expiry time; null when the token does not expire.
+  google.protobuf.Timestamp expires_at = 9;
+  // Revocation time; null while the token is not revoked.
+  google.protobuf.Timestamp revoked_at = 10;
+  // Time of last use (flushed periodically); null when never used.
+  google.protobuf.Timestamp last_used_at = 11;
+  // Client IP of the last use.
+  string last_used_ip = 12;
+  // Actor that created the token ("user:<id>").
+  string created_by = 13;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 14;
+}
+
+// ListTokensRequest filters and pages API tokens.
+message ListTokensRequest {
+  // Namespace name; empty lists tokens of every namespace the caller can read
+  // tokens in.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // When true revoked tokens are included.
+  bool include_revoked = 2;
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 4 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListTokensResponse is one page of tokens.
+message ListTokensResponse {
+  // Tokens, newest first.
+  repeated ApiToken tokens = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of matching tokens.
+  int32 total = 3;
+}
+
+// CreateTokenRequest describes a new API token.
+message CreateTokenRequest {
+  // Namespace name the token is bound to.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Name, unique inside the namespace.
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Description.
+  string description = 3 [(buf.validate.field).string.max_len = 1024];
+  // Scopes to grant (at least one), e.g. "lease:acquire", "report:write",
+  // "config:read:crawler*", "secret:read:prod/signing/*", "admin".
+  repeated string scopes = 4 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 64
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 256
+      }
+    }
+  }];
+  // Allowed client IPs or CIDRs (e.g. "203.0.113.7", "10.0.0.0/8",
+  // "2001:db8::/32"); empty = any address.
+  repeated string ip_allowlist = 5 [(buf.validate.field).repeated = {
+    max_items: 256
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+      cel: {
+        id: "create_token.ip_or_cidr"
+        message: "must be an IP address or CIDR prefix"
+        expression: "this.isIp() || this.isIpPrefix()"
+      }
+    }
+  }];
+  // Per-instance rate limit in requests per second; 0 = unlimited.
+  int32 rate_limit_rps = 6 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1000000
+  }];
+  // Optional expiry time; must be in the future.
+  google.protobuf.Timestamp expires_at = 7 [(buf.validate.field).timestamp.gt_now = true];
+}
+
+// CreateTokenResponse returns the created token and its plaintext secret.
+message CreateTokenResponse {
+  // The created token.
+  ApiToken token = 1;
+  // Plaintext token (`spn_...`); shown only in this response.
+  string plaintext = 2;
+}
+
+// RevokeTokenRequest addresses a token.
+message RevokeTokenRequest {
+  // Token ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// RevokeTokenResponse returns the revoked token.
+message RevokeTokenResponse {
+  // The revoked token.
+  ApiToken token = 1;
+}
+
+// TenantUser is a user together with its role bindings.
+message TenantUser {
+  // The user.
+  User user = 1;
+  // Role bindings of the user in the active tenant (every tenant when listed
+  // with `all_users`).
+  repeated RoleBinding bindings = 2;
+}
+
+// ListUsersRequest filters and pages users.
+message ListUsersRequest {
+  // Case-insensitive substring filter over username, display name and email.
+  string query = 1 [(buf.validate.field).string.max_len = 256];
+  // Platform admins only: list every user, including users without bindings
+  // in the active tenant.
+  bool all_users = 2;
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 4 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListUsersResponse is one page of users.
+message ListUsersResponse {
+  // Users ordered by username.
+  repeated TenantUser users = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of matching users.
+  int32 total = 3;
+}
+
+// CreateUserRequest describes a new user and its initial binding in the
+// active tenant.
+message CreateUserRequest {
+  option (buf.validate.message).cel = {
+    id: "create_user.sites_require_namespace"
+    message: "sites require a namespace"
+    expression: "size(this.sites) == 0 || this.namespace != ''"
+  };
+
+  // Username: lower-case letters, digits, '.', '_' and '-', 3..64 characters.
+  string username = 1 [(buf.validate.field).string.pattern = "^[a-z0-9][a-z0-9._-]{2,63}$"];
+  // Display name.
+  string display_name = 2 [(buf.validate.field).string.max_len = 128];
+  // Email address; optional.
+  string email = 3 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string = {
+      email: true
+      max_len: 254
+    }
+  ];
+  // Initial password (at least 10 characters).
+  string password = 4 [(buf.validate.field).string = {
+    min_len: 10
+    max_len: 1024
+  }];
+  // Role of the initial binding.
+  string role = 5 [(buf.validate.field).string = {
+    in: [
+      "owner",
+      "admin",
+      "operator",
+      "viewer"
+    ]
+  }];
+  // Namespace name the binding is narrowed to; empty = all namespaces.
+  string namespace = 6 [(buf.validate.field).string.max_len = 64];
+  // Site names the binding is narrowed to (requires `namespace`); empty = all
+  // sites.
+  repeated string sites = 7 [(buf.validate.field).repeated = {
+    max_items: 500
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+    }
+  }];
+  // Extra permissions on top of the role.
+  repeated string extra_permissions = 8 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      string: {
+        in: [
+          "config:publish",
+          "secret:reveal",
+          "identity:reveal",
+          "policy:publish"
+        ]
+      }
+    }
+  }];
+}
+
+// CreateUserResponse returns the created user and binding.
+message CreateUserResponse {
+  // The created user.
+  User user = 1;
+  // The initial role binding.
+  RoleBinding binding = 2;
+}
+
+// UpdateUserRequest changes a user; unset fields keep their value.
+message UpdateUserRequest {
+  // User ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New display name.
+  optional string display_name = 2 [(buf.validate.field).string.max_len = 128];
+  // New email address; empty clears it.
+  optional string email = 3 [
+    (buf.validate.field).string.max_len = 254,
+    (buf.validate.field).cel = {
+      id: "update_user.email"
+      message: "must be empty or a valid email address"
+      expression: "this == '' || this.isEmail()"
+    }
+  ];
+  // New UI locale (BCP 47, e.g. "en", "zh-CN"); empty resets to default.
+  optional string locale = 4 [(buf.validate.field).string.pattern = "^([A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*)?$"];
+  // Disable or enable the account; disabling ends its sessions.
+  optional bool disabled = 5;
+}
+
+// UpdateUserResponse returns the updated user.
+message UpdateUserResponse {
+  // The updated user.
+  User user = 1;
+}
+
+// ResetPasswordRequest sets a user's password.
+message ResetPasswordRequest {
+  // User ID.
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New password (at least 10 characters).
+  string new_password = 2 [(buf.validate.field).string = {
+    min_len: 10
+    max_len: 1024
+  }];
+}
+
+// ResetPasswordResponse is empty.
+message ResetPasswordResponse {}
+
+// ListRoleBindingsRequest filters and pages role bindings.
+message ListRoleBindingsRequest {
+  // Optional user ID filter.
+  string user_id = 1 [(buf.validate.field).string.max_len = 64];
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListRoleBindingsResponse is one page of role bindings.
+message ListRoleBindingsResponse {
+  // Role bindings ordered by username, then creation time.
+  repeated RoleBinding bindings = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of matching bindings.
+  int32 total = 3;
+}
+
+// CreateRoleBindingRequest grants a role in the active tenant.
+message CreateRoleBindingRequest {
+  option (buf.validate.message).cel = {
+    id: "create_role_binding.sites_require_namespace"
+    message: "sites require a namespace"
+    expression: "size(this.sites) == 0 || this.namespace != ''"
+  };
+
+  // User ID.
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Role to grant.
+  string role = 2 [(buf.validate.field).string = {
+    in: [
+      "owner",
+      "admin",
+      "operator",
+      "viewer"
+    ]
+  }];
+  // Namespace name the binding is narrowed to; empty = all namespaces.
+  string namespace = 3 [(buf.validate.field).string.max_len = 64];
+  // Site names the binding is narrowed to (requires `namespace`); empty = all
+  // sites.
+  repeated string sites = 4 [(buf.validate.field).repeated = {
+    max_items: 500
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+    }
+  }];
+  // Extra permissions on top of the role.
+  repeated string extra_permissions = 5 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      string: {
+        in: [
+          "config:publish",
+          "secret:reveal",
+          "identity:reveal",
+          "policy:publish"
+        ]
+      }
+    }
+  }];
+}
+
+// CreateRoleBindingResponse returns the created binding.
+message CreateRoleBindingResponse {
+  // The created binding.
+  RoleBinding binding = 1;
+}
+
+// DeleteRoleBindingRequest addresses a binding.
+message DeleteRoleBindingRequest {
+  // Role binding ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// DeleteRoleBindingResponse is empty.
+message DeleteRoleBindingResponse {}
+
+// ListAuditLogsRequest filters and pages audit log entries. Empty filters
+// match everything.
+message ListAuditLogsRequest {
+  option (buf.validate.message).cel = {
+    id: "time_range.ordered"
+    message: "time_range.end must be after time_range.start"
+    expression: "!has(this.time_range) || !has(this.time_range.start) || !has(this.time_range.end) || this.time_range.end > this.time_range.start"
+  };
+
+  // Namespace name filter.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // Actor filter, matching the actor ID or actor name.
+  string actor = 2 [(buf.validate.field).string.max_len = 128];
+  // Action filter, e.g. "secret.read".
+  string action = 3 [(buf.validate.field).string.max_len = 128];
+  // Resource kind filter, e.g. "identity".
+  string resource_kind = 4 [(buf.validate.field).string.max_len = 64];
+  // Resource ID filter.
+  string resource_id = 5 [(buf.validate.field).string.max_len = 128];
+  // Result filter.
+  string result = 6 [(buf.validate.field).string = {
+    in: [
+      "",
+      "ok",
+      "denied",
+      "error"
+    ]
+  }];
+  // Time range; defaults to the last 24 hours when unset.
+  TimeRange time_range = 7;
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 8 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 9 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListAuditLogsResponse is one page of audit log entries.
+message ListAuditLogsResponse {
+  // Entries, newest first.
+  repeated AuditLog logs = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+}
+
+// AuditLog is one audited operation.
+message AuditLog {
+  // Entry ID (`aud_...`).
+  string id = 1;
+  // Time of the operation.
+  google.protobuf.Timestamp created_at = 2;
+  // Namespace name; empty for tenant-level operations.
+  string namespace = 3;
+  // Actor kind: user | token | system.
+  string actor_kind = 4;
+  // Actor ID (user or token ID; empty for system).
+  string actor_id = 5;
+  // Actor name (username, token name or job name).
+  string actor_name = 6;
+  // Action, e.g. "identity.ban", "secret.read", "config.publish".
+  string action = 7;
+  // Kind of the affected resource.
+  string resource_kind = 8;
+  // ID of the affected resource.
+  string resource_id = 9;
+  // Name of the affected resource.
+  string resource_name = 10;
+  // Result: ok | denied | error.
+  string result = 11;
+  // Client IP.
+  string ip = 12;
+  // Client user agent.
+  string user_agent = 13;
+  // Operation-specific details (never contains secrets).
+  google.protobuf.Struct details = 14;
+}

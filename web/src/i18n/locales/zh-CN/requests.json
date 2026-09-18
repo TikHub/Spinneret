@@ -1,0 +1,120 @@
+{
+  "title": "请求明细",
+  "description": "存储在 ClickHouse 中的全部已处理上报，按时间倒序",
+  "noNamespace": "请选择命名空间以查看请求明细。",
+  "autoRefresh": "自动刷新（{{seconds}} 秒）",
+  "filters": {
+    "outcomes": "结果",
+    "allOutcomes": "全部",
+    "identity": "身份 ID",
+    "proxy": "代理 ID",
+    "node": "节点",
+    "status": "HTTP 状态码",
+    "minLatency": "最小耗时（毫秒）"
+  },
+  "shared": {
+    "site": "站点",
+    "selectSite": "选择站点",
+    "allSites": "全部站点",
+    "noSites": "暂无站点",
+    "endpointGroup": "端点组",
+    "allGroups": "全部端点组",
+    "groupNeedsSite": "先选择站点才能按端点组筛选",
+    "timeRange": "时间范围",
+    "presets": {
+      "15m": "最近 15 分钟",
+      "1h": "最近 1 小时",
+      "6h": "最近 6 小时",
+      "24h": "最近 24 小时",
+      "7d": "最近 7 天",
+      "custom": "自定义范围…"
+    },
+    "editRange": "编辑自定义范围",
+    "customLabel": "{{from}} – {{to}}",
+    "from": "开始时间",
+    "to": "结束时间",
+    "invalidRange": "请填写开始和结束时间，且结束时间须晚于开始时间。",
+    "outcomes": {
+      "success": "成功",
+      "empty": "空结果",
+      "rate_limited": "限流",
+      "captcha": "验证码",
+      "auth_invalid": "认证失效",
+      "forbidden": "拒绝访问",
+      "banned": "封禁",
+      "proxy_error": "代理错误",
+      "network_error": "网络错误",
+      "target_error": "目标站错误",
+      "client_error": "客户端错误",
+      "unknown": "未知"
+    },
+    "noResponse": "无响应",
+    "openIdentity": "打开身份 {{id}}",
+    "unknownGroup": "未知端点组"
+  },
+  "summary": {
+    "total": "匹配事件",
+    "successRatio": "成功率",
+    "riskRatio": "风险率",
+    "latency": "耗时",
+    "avg": "平均",
+    "p50": "p50",
+    "p95": "p95",
+    "p99": "p99",
+    "outcomes": "结果分布",
+    "otherOutcomes": "其他",
+    "noEvents": "该时间范围内没有事件"
+  },
+  "columns": {
+    "time": "时间",
+    "target": "站点 / 端点组",
+    "outcome": "结果",
+    "httpStatus": "HTTP",
+    "businessCode": "业务码",
+    "errorKind": "错误类型",
+    "markers": "标记",
+    "latency": "耗时",
+    "bytes": "响应大小",
+    "identity": "身份",
+    "proxy": "代理",
+    "node": "节点",
+    "lease": "租约 ID",
+    "report": "上报 ID",
+    "flags": "标志",
+    "request": "请求",
+    "blame": "归因",
+    "rule": "规则",
+    "identityType": "身份类型",
+    "receivedAt": "接收时间",
+    "outcomeHint": "结果提示",
+    "token": "令牌"
+  },
+  "flags": {
+    "suppressed": "已抑制",
+    "suppressedHint": "熔断器处于打开状态，未更新健康度也未执行动作",
+    "late": "迟到",
+    "lateHint": "上报在租约结束之后才到达",
+    "probe": "探测",
+    "probeHint": "该租约是熔断器半开状态下的探测请求"
+  },
+  "detail": {
+    "title": "请求事件",
+    "site": "站点",
+    "endpointGroup": "端点组",
+    "startedAt": "开始时间",
+    "finishedAt": "结束时间",
+    "yes": "是",
+    "no": "否"
+  },
+  "clickhouse": {
+    "title": "请求明细未启用",
+    "description": "原始请求事件存储在 ClickHouse 中，而当前服务器未配置 ClickHouse。",
+    "howTo": "在服务器环境变量中设置 ClickHouse 连接地址并重启服务：",
+    "riskEventsHint": "非成功事件仍会记录在 PostgreSQL 中，可在风险事件页面查看。",
+    "openRiskEvents": "查看风险事件"
+  },
+  "empty": {
+    "title": "没有请求事件",
+    "description": "该时间范围内没有符合筛选条件的上报。"
+  }
+}

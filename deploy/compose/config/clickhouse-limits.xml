@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!--
+  Memory caps for the compose ClickHouse.
+
+  Out of the box ClickHouse sizes itself for the whole machine: max_server_memory_usage
+  is 90 % of RAM and the mark cache alone is allowed 5 GiB. In a laptop Docker VM that is
+  shared with PostgreSQL, Valkey, the server replicas and the k6 load generator, that made
+  ClickHouse grow past 1.1 GiB and get picked by the kernel OOM killer during the 5,000/s
+  load run — which froze the whole VM, not just ClickHouse (docs/benchmarks.md, Scenario A).
+
+  Spinneret uses ClickHouse for batched append-only analytics writes and for console
+  queries over them, so it needs a working set, not a cache of the whole dataset.
+-->
+<clickhouse>
+    <!--
+      Safety net, not a diet: max_server_memory_usage is compared against the process RSS,
+      which for this image idles around 1.2 GiB whatever the caches are set to (jemalloc
+      arenas). Setting it below that does not shrink ClickHouse, it makes every INSERT fail
+      with MEMORY_LIMIT_EXCEEDED — which in this deployment shows up as "clickhouse batch
+      insert failed" in the server log and as a stalled report worker under load. 2.5 GiB leaves room for the batched writes plus one bounded console query
+      (analytics caps every query at max_memory_usage = 512 MiB) and still stops a runaway
+      query from taking the VM. 1.5 GiB was too tight: the request explorer over ~16 M rows
+      failed with MEMORY_LIMIT_EXCEEDED (code 241).
+      The caches below are what actually reduces the footprint.
+    -->
+    <max_server_memory_usage>2684354560</max_server_memory_usage>
+    <!-- Default 5 GiB. The hot path is inserts; marks are re-read cheaply. -->
+    <mark_cache_size>67108864</mark_cache_size>
+    <index_mark_cache_size>16777216</index_mark_cache_size>
+    <!-- Caches that only pay off for repeated large scans this deployment does not run. -->
+    <uncompressed_cache_size>0</uncompressed_cache_size>
+    <index_uncompressed_cache_size>0</index_uncompressed_cache_size>
+    <mmap_cache_size>0</mmap_cache_size>
+    <compiled_expression_cache_size>0</compiled_expression_cache_size>
+    <!-- Return freed arenas to the OS instead of holding them for reuse. -->
+    <jemalloc_enable_background_threads>true</jemalloc_enable_background_threads>
+    <!--
+      background_pool_size is deliberately left alone: lowering it to 4 makes the server
+      refuse to start, because MergeTree's sanity check requires
+      background_pool_size * background_merges_mutations_concurrency_ratio to exceed
+      number_of_free_entries_in_pool_to_execute_mutation (20 by default) — BAD_ARGUMENTS
+      (exit 36). The caches above are where the memory actually is.
+    -->
+</clickhouse>

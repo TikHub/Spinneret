@@ -1,0 +1,67 @@
+# Built-in default action policy (used when nothing is bound).
+# Every matching rule is evaluated; the most severe action per subject wins.
+name: default-action
+description: Built-in default action policy.
+mode: enforce                     # enforce | shadow
+rules:
+  - name: rate-limited-cooldown
+    when: { outcome: rate_limited }
+    action: cooldown
+    scope: identity_endpoint
+    base: 60s
+    multiplier: 2
+    max: 30m
+  - name: empty-cooldown
+    when: { outcome: empty, count: { gte: 3, within: 10m } }
+    action: cooldown
+    scope: identity_endpoint
+    base: 5m
+  - name: captcha-cooldown
+    when: { outcome: captcha }
+    action: cooldown
+    scope: identity_site
+    base: 30m
+    multiplier: 2
+    max: 6h
+  - name: captcha-ban
+    when: { outcome: captcha, count: { gte: 3, within: 24h } }
+    action: ban
+    scope: identity
+    duration: 12h
+  - name: auth-invalid-expire
+    when: { outcome: auth_invalid }
+    action: expire
+    scope: identity
+  - name: banned-account
+    when: { outcome: banned }
+    action: ban
+    scope: account
+    duration: permanent
+  - name: proxy-error-cooldown
+    when: { outcome: proxy_error }
+    action: cooldown
+    scope: proxy_site
+    base: 2m
+    max: 30m
+escalation:                       # evaluated when a temporary ban is applied
+  - when: { bans: { gte: 2, within: 7d } }
+    duration: 72h
+  - when: { bans: { gte: 3, within: 30d } }
+    duration: permanent
+health:
+  alpha: 0.1
+  baseline: 70
+  tau: 6h
+  observations: {}                # overrides of success 100, empty 60, network_error 50, rate_limited 30, forbidden 10, captcha 0
+  endpoint_low_score: 15
+  endpoint_low_min_samples: 10
+  endpoint_low_cooldown: 6h
+  quarantine_score: 20
+  quarantine_min_samples: 10
+  quarantine_duration: 24h
+ban_expiry_state: pending         # pending | active
+cross_attribution:
+  enabled: true
+  window: 10m
+  proxy_distinct_identities: 3
+  identity_distinct_proxies: 3

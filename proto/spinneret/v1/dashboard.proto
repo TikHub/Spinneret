@@ -1,0 +1,630 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "spinneret/v1/common.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// DashboardService serves console statistics: live counts from Redis,
+// aggregates from PostgreSQL and raw request events from ClickHouse. All RPCs
+// require `dashboard:read` and results are limited to accessible sites.
+service DashboardService {
+  // GetOverview returns per-site health and throughput of a namespace.
+  rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse);
+  // GetTimeSeries returns a metric over time from the minute aggregates.
+  rpc GetTimeSeries(GetTimeSeriesRequest) returns (GetTimeSeriesResponse);
+  // GetHeatmap returns the identity × endpoint group matrix of a site client.
+  rpc GetHeatmap(GetHeatmapRequest) returns (GetHeatmapResponse);
+  // ListRiskEvents lists non-success report events stored in PostgreSQL,
+  // newest first.
+  rpc ListRiskEvents(ListRiskEventsRequest) returns (ListRiskEventsResponse);
+  // QueryRequestEvents searches all report events in ClickHouse, newest
+  // first, optionally with an aggregate summary. Fails with unavailable when
+  // ClickHouse is not configured.
+  rpc QueryRequestEvents(QueryRequestEventsRequest) returns (QueryRequestEventsResponse);
+  // GetNodeStats returns per-node lease and report counters.
+  rpc GetNodeStats(GetNodeStatsRequest) returns (GetNodeStatsResponse);
+}
+
+// GetOverviewRequest selects the namespace and window of the overview.
+message GetOverviewRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Optional site name filter; empty = all accessible sites.
+  repeated string sites = 2 [(buf.validate.field).repeated = {
+    max_items: 500
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+    }
+  }];
+  // Window for rates and ratios; empty defaults to "5m".
+  string window = 3 [(buf.validate.field).string = {
+    in: [
+      "",
+      "1m",
+      "5m",
+      "15m",
+      "1h"
+    ]
+  }];
+}
+
+// GetOverviewResponse is the namespace overview.
+message GetOverviewResponse {
+  // Per-site overview ordered by site name.
+  repeated SiteOverview sites = 1;
+  // Aggregate over all returned sites (`site` and `site_id` are empty).
+  SiteOverview totals = 2;
+  // Report stream entries not yet processed by workers (all shards).
+  int32 streams_pending = 3;
+  // Effective window of rates and ratios, e.g. "5m".
+  string window = 4;
+  // Time the overview was computed.
+  google.protobuf.Timestamp generated_at = 5;
+}
+
+// SiteOverview summarizes the state and throughput of one site.
+message SiteOverview {
+  // Site name.
+  string site = 1;
+  // Site ID.
+  string site_id = 2;
+  // Site display name.
+  string display_name = 3;
+  // True when the site switch is off.
+  bool paused = 4;
+  // Identity counts by state (pending, active, expired, banned, quarantined,
+  // disabled, retired).
+  map<string, int32> identities_by_state = 5;
+  // Identities available for leasing now in at least one endpoint group.
+  int32 available_identities = 6;
+  // Proxy counts by state (active, disabled, dead, banned, quarantined,
+  // retired) for proxies usable by the site.
+  map<string, int32> proxies_by_state = 7;
+  // Acquire calls per second over the window.
+  double acquire_qps = 8;
+  // Reports per second over the window.
+  double report_qps = 9;
+  // Share of reports classified `success` over the window (0..1).
+  double success_ratio = 10;
+  // Share of risk outcome reports (rate_limited, captcha, forbidden, banned).
+  double risk_ratio = 11;
+  // Share of reports classified `unknown`.
+  double unknown_ratio = 12;
+  // Share of reports classified `client_error`.
+  double client_error_ratio = 13;
+  // Share of acquire calls that failed (exhausted, circuit_open, site_paused,
+  // no_proxy).
+  double acquire_failure_ratio = 14;
+  // Endpoint groups whose breaker is open.
+  int32 open_breakers = 15;
+  // Endpoint groups whose breaker is half-open.
+  int32 half_open_breakers = 16;
+  // Endpoint groups below their low watermark of available identities.
+  repeated LowWatermarkWarning low_watermark_warnings = 17;
+}
+
+// LowWatermarkWarning flags an endpoint group with too few available
+// identities.
+message LowWatermarkWarning {
+  // Client type.
+  string client = 1;
+  // Endpoint group name.
+  string endpoint_group = 2;
+  // Endpoint group ID.
+  string endpoint_group_id = 3;
+  // Identities currently available.
+  int32 available = 4;
+  // Configured low watermark.
+  int32 low_watermark = 5;
+}
+
+// GetTimeSeriesRequest selects a metric, scope and range.
+message GetTimeSeriesRequest {
+  option (buf.validate.message).cel = {
+    id: "get_time_series.client_requires_site"
+    message: "client requires a site"
+    expression: "this.client == '' || this.site != ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "time_range.ordered"
+    message: "time_range.end must be after time_range.start"
+    expression: "!has(this.time_range) || !has(this.time_range.start) || !has(this.time_range.end) || this.time_range.end > this.time_range.start"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Optional site name filter.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Optional client filter (requires `site`).
+  string client = 3 [(buf.validate.field).string.max_len = 32];
+  // Optional endpoint group ID filter.
+  string endpoint_group_id = 4 [(buf.validate.field).string.max_len = 64];
+  // Metric: acquire_rate (acquires/s, one series), acquire_results (count per
+  // result, one series per result), outcomes (count per outcome, one series
+  // per outcome), success_ratio, risk_ratio (0..1, one series), latency_avg
+  // (ms, one series).
+  string metric = 5 [(buf.validate.field).string = {
+    in: [
+      "acquire_rate",
+      "acquire_results",
+      "outcomes",
+      "success_ratio",
+      "risk_ratio",
+      "latency_avg"
+    ]
+  }];
+  // Time range; unset defaults to the last hour.
+  TimeRange time_range = 6;
+  // Bucket size; empty selects a step from the range length.
+  string step = 7 [(buf.validate.field).string = {
+    in: [
+      "",
+      "1m",
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "1d"
+    ]
+  }];
+}
+
+// GetTimeSeriesResponse carries the series of a metric.
+message GetTimeSeriesResponse {
+  // Requested metric.
+  string metric = 1;
+  // Effective bucket size.
+  string step = 2;
+  // Series of the metric.
+  repeated Series series = 3;
+}
+
+// Series is one time series.
+message Series {
+  // Series name, e.g. "rate_limited" or "acquire_rate".
+  string name = 1;
+  // Series labels, e.g. {"outcome": "rate_limited"}.
+  map<string, string> labels = 2;
+  // Points ordered by time; buckets without data have value 0.
+  repeated Point points = 3;
+}
+
+// Point is one bucket of a series.
+message Point {
+  // Bucket start time.
+  google.protobuf.Timestamp ts = 1;
+  // Bucket value.
+  double value = 2;
+}
+
+// GetHeatmapRequest selects the site client and identities of the heatmap.
+message GetHeatmapRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Client type.
+  string client = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  // Cell metric used for colouring: cooldown (remaining cooldown) or score
+  // (health score). Both values are always filled.
+  string metric = 4 [(buf.validate.field).string = {
+    in: [
+      "cooldown",
+      "score"
+    ]
+  }];
+  // Identity state filter; empty = all states except retired.
+  repeated string states = 5 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      string: {
+        in: [
+          "pending",
+          "active",
+          "expired",
+          "banned",
+          "quarantined",
+          "disabled",
+          "retired"
+        ]
+      }
+    }
+  }];
+  // Maximum number of identity rows (0 = default 100, max 500).
+  int32 limit = 6 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 7 [(buf.validate.field).string.max_len = 1024];
+}
+
+// GetHeatmapResponse is a sparse identity × endpoint group matrix.
+message GetHeatmapResponse {
+  // Requested metric.
+  string metric = 1;
+  // Endpoint group names (matrix columns).
+  repeated string columns = 2;
+  // Endpoint group IDs, parallel to `columns`.
+  repeated string column_ids = 3;
+  // Identities (matrix rows).
+  repeated HeatmapRow rows = 4;
+  // Cells with hot state; missing cells have baseline score, no cooldown and
+  // follow the identity availability.
+  repeated HeatmapCell cells = 5;
+  // Cursor of the next page of rows; empty when there are no more results.
+  string next_page_token = 6;
+  // Total number of matching identities.
+  int32 total = 7;
+  // Time the matrix was read.
+  google.protobuf.Timestamp generated_at = 8;
+}
+
+// HeatmapRow is one identity of the heatmap.
+message HeatmapRow {
+  // Identity ID.
+  string identity_id = 1;
+  // Short label (account reference, region or ID suffix).
+  string label = 2;
+  // Identity state.
+  string state = 3;
+}
+
+// HeatmapCell is the hot state of one identity in one endpoint group.
+message HeatmapCell {
+  // Index into GetHeatmapResponse.rows.
+  int32 row = 1;
+  // Index into GetHeatmapResponse.columns.
+  int32 col = 2;
+  // Decayed health score (0..100).
+  double score = 3;
+  // Remaining cooldown in milliseconds (endpoint, site and account level);
+  // 0 when not cooling down.
+  int64 cooldown_remaining_ms = 4;
+  // True when the identity can be leased in this group now.
+  bool available = 5;
+}
+
+// ListRiskEventsRequest filters and pages risk events. Empty filters match
+// everything.
+message ListRiskEventsRequest {
+  option (buf.validate.message).cel = {
+    id: "time_range.ordered"
+    message: "time_range.end must be after time_range.start"
+    expression: "!has(this.time_range) || !has(this.time_range.start) || !has(this.time_range.end) || this.time_range.end > this.time_range.start"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Site name filter.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Endpoint group ID filter.
+  string endpoint_group_id = 3 [(buf.validate.field).string.max_len = 64];
+  // Outcome filter.
+  string outcome = 4 [(buf.validate.field).string = {
+    in: [
+      "",
+      "empty",
+      "rate_limited",
+      "captcha",
+      "auth_invalid",
+      "forbidden",
+      "banned",
+      "proxy_error",
+      "network_error",
+      "target_error",
+      "client_error",
+      "unknown"
+    ]
+  }];
+  // Identity ID filter.
+  string identity_id = 5 [(buf.validate.field).string.max_len = 64];
+  // Proxy ID filter.
+  string proxy_id = 6 [(buf.validate.field).string.max_len = 64];
+  // Node name filter.
+  string node = 7 [(buf.validate.field).string.max_len = 128];
+  // Time range; unset defaults to the last 24 hours.
+  TimeRange time_range = 8;
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 9 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 10 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListRiskEventsResponse is one page of risk events.
+message ListRiskEventsResponse {
+  // Events, newest first.
+  repeated RiskEvent events = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+}
+
+// RiskEvent is a report with a non-success outcome.
+message RiskEvent {
+  // Event ID (`rsk_...`).
+  string id = 1;
+  // Time the report was processed.
+  google.protobuf.Timestamp created_at = 2;
+  // Namespace name.
+  string namespace = 3;
+  // Site name.
+  string site = 4;
+  // Site ID.
+  string site_id = 5;
+  // Client type of the endpoint group.
+  string client = 6;
+  // Endpoint group name; empty when the lease was unknown.
+  string endpoint_group = 7;
+  // Endpoint group ID; empty when the lease was unknown.
+  string endpoint_group_id = 8;
+  // Identity ID.
+  string identity_id = 9;
+  // Proxy ID; empty when no proxy was used.
+  string proxy_id = 10;
+  // Lease ID.
+  string lease_id = 11;
+  // Report ID.
+  string report_id = 12;
+  // Reporting node name.
+  string node = 13;
+  // Reporting token ID.
+  string token_id = 14;
+  // Requested URI.
+  string uri = 15;
+  // HTTP method.
+  string method = 16;
+  // HTTP status; 0 when no response was received.
+  int32 http_status = 17;
+  // Business status code.
+  string business_code = 18;
+  // Node-side transport error kind.
+  string error_kind = 19;
+  // Markers reported by the node.
+  repeated string markers = 20;
+  // Classified outcome.
+  string outcome = 21;
+  // Blame: none | identity | proxy | both.
+  string blame = 22;
+  // Name of the signal rule that matched; empty when unmatched.
+  string rule = 23;
+  // Request latency in milliseconds.
+  int32 latency_ms = 24;
+  // Response body size in bytes.
+  int64 response_bytes = 25;
+  // Time the request started.
+  google.protobuf.Timestamp started_at = 26;
+  // Time the request finished.
+  google.protobuf.Timestamp finished_at = 27;
+}
+
+// QueryRequestEventsRequest filters and pages raw report events. Empty
+// filters match everything.
+message QueryRequestEventsRequest {
+  option (buf.validate.message).cel = {
+    id: "time_range.ordered"
+    message: "time_range.end must be after time_range.start"
+    expression: "!has(this.time_range) || !has(this.time_range.start) || !has(this.time_range.end) || this.time_range.end > this.time_range.start"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Site name filter.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Client filter.
+  string client = 3 [(buf.validate.field).string.max_len = 32];
+  // Endpoint group ID filter.
+  string endpoint_group_id = 4 [(buf.validate.field).string.max_len = 64];
+  // Outcome filter; empty = all outcomes.
+  repeated string outcomes = 5 [(buf.validate.field).repeated = {
+    unique: true
+    items: {
+      string: {
+        in: [
+          "success",
+          "empty",
+          "rate_limited",
+          "captcha",
+          "auth_invalid",
+          "forbidden",
+          "banned",
+          "proxy_error",
+          "network_error",
+          "target_error",
+          "client_error",
+          "unknown"
+        ]
+      }
+    }
+  }];
+  // Identity ID filter.
+  string identity_id = 6 [(buf.validate.field).string.max_len = 64];
+  // Proxy ID filter.
+  string proxy_id = 7 [(buf.validate.field).string.max_len = 64];
+  // Node name filter.
+  string node = 8 [(buf.validate.field).string.max_len = 128];
+  // Lease ID filter.
+  string lease_id = 9 [(buf.validate.field).string.max_len = 128];
+  // Report ID filter.
+  string report_id = 10 [(buf.validate.field).string.max_len = 64];
+  // HTTP status filter; unset = any status, 0 = no response.
+  optional int32 http_status = 11 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 999
+  }];
+  // Only events with at least this latency in milliseconds; 0 = no bound.
+  int32 min_latency_ms = 12 [(buf.validate.field).int32.gte = 0];
+  // Time range; unset defaults to the last hour.
+  TimeRange time_range = 13;
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 14 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 15 [(buf.validate.field).string.max_len = 1024];
+  // When true the response carries a summary over all matching events (not
+  // only the returned page). Intended for the first page of a query.
+  bool include_summary = 16;
+}
+
+// QueryRequestEventsResponse is one page of report events.
+message QueryRequestEventsResponse {
+  // Events, newest first.
+  repeated RequestEvent events = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Aggregate over all matching events; null unless `include_summary` was
+  // set.
+  RequestEventsSummary summary = 3;
+}
+
+// RequestEventsSummary aggregates the report events matching a query
+// (outcome and latency breakdown of the request explorer).
+message RequestEventsSummary {
+  // Number of matching events.
+  int64 total = 1;
+  // Matching events per outcome (outcomes without events are omitted).
+  map<string, int64> outcomes = 2;
+  // Average latency in milliseconds; 0 when there are no events.
+  double latency_avg_ms = 3;
+  // Median latency in milliseconds.
+  double latency_p50_ms = 4;
+  // 95th percentile latency in milliseconds.
+  double latency_p95_ms = 5;
+  // 99th percentile latency in milliseconds.
+  double latency_p99_ms = 6;
+}
+
+// RequestEvent is one processed report as stored in ClickHouse.
+message RequestEvent {
+  // Time the request finished (event time).
+  google.protobuf.Timestamp event_time = 1;
+  // Time the server received the report.
+  google.protobuf.Timestamp received_at = 2;
+  // Time the request started.
+  google.protobuf.Timestamp started_at = 3;
+  // Namespace name.
+  string namespace = 4;
+  // Site name.
+  string site = 5;
+  // Site ID.
+  string site_id = 6;
+  // Client type.
+  string client = 7;
+  // Endpoint group name; empty when the lease was unknown.
+  string endpoint_group = 8;
+  // Identity ID.
+  string identity_id = 9;
+  // Identity type name.
+  string identity_type = 10;
+  // Proxy ID; empty when no proxy was used.
+  string proxy_id = 11;
+  // Lease ID.
+  string lease_id = 12;
+  // Report ID.
+  string report_id = 13;
+  // Reporting node name.
+  string node = 14;
+  // Reporting token ID.
+  string token_id = 15;
+  // Requested URI.
+  string uri = 16;
+  // HTTP method.
+  string method = 17;
+  // HTTP status; 0 when no response was received.
+  int32 http_status = 18;
+  // Business status code.
+  string business_code = 19;
+  // Node-side transport error kind.
+  string error_kind = 20;
+  // Markers reported by the node.
+  repeated string markers = 21;
+  // Classified outcome.
+  string outcome = 22;
+  // Outcome hint sent by the node.
+  string outcome_hint = 23;
+  // Blame: none | identity | proxy | both.
+  string blame = 24;
+  // Name of the signal rule that matched; empty when unmatched.
+  string rule = 25;
+  // Request latency in milliseconds.
+  int32 latency_ms = 26;
+  // Response body size in bytes.
+  int64 response_bytes = 27;
+  // True when health updates and actions were suppressed (breaker open).
+  bool suppressed = 28;
+  // True when the report arrived after the lease had ended.
+  bool late = 29;
+  // True when the lease was a probe.
+  bool probe = 30;
+}
+
+// GetNodeStatsRequest selects the namespace and range of node statistics.
+message GetNodeStatsRequest {
+  option (buf.validate.message).cel = {
+    id: "time_range.ordered"
+    message: "time_range.end must be after time_range.start"
+    expression: "!has(this.time_range) || !has(this.time_range.start) || !has(this.time_range.end) || this.time_range.end > this.time_range.start"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Time range; unset defaults to the last hour.
+  TimeRange time_range = 2;
+}
+
+// GetNodeStatsResponse lists statistics per node.
+message GetNodeStatsResponse {
+  // Nodes ordered by acquires, descending.
+  repeated NodeStats nodes = 1;
+}
+
+// NodeStats aggregates lease and report counters of one node.
+message NodeStats {
+  // Node name from the `X-Spinneret-Node` header ("_" when absent).
+  string node = 1;
+  // Leases issued.
+  int64 acquires = 2;
+  // Reports accepted.
+  int64 reports = 3;
+  // Leases that expired without any report.
+  int64 abandoned = 4;
+  // Reports rejected.
+  int64 rejected = 5;
+  // abandoned / acquires; 0 when there were no acquires.
+  double unreported_ratio = 6;
+}

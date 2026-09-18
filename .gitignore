@@ -1,0 +1,35 @@
+# Binaries and build output
+/.loadtest/
+/bin/
+/dist/
+*.test
+*.out
+coverage.*
+
+# Local environment
+.env
+*.local
+kek.key
+deploy/compose/secrets/
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Web
+web/node_modules/
+web/dist/*
+!web/dist/.keep
+web/test-results/
+web/playwright-report/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+sdk/python/dist/
+.mypy_cache/
+.ruff_cache/

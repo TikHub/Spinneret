@@ -1,0 +1,501 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "spinneret/v1/report.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// PolicyAdminService manages rotation, signal, action and breaker policies:
+// drafts, versions, bindings, resolution and rule debugging.
+service PolicyAdminService {
+  // ListPolicies lists policies of a namespace (policy:read).
+  rpc ListPolicies(ListPoliciesRequest) returns (ListPoliciesResponse);
+  // GetPolicy returns one policy with its bindings (policy:read).
+  rpc GetPolicy(GetPolicyRequest) returns (GetPolicyResponse);
+  // CreatePolicy creates a policy from YAML as a draft or published version (policy:write, policy:publish to publish).
+  rpc CreatePolicy(CreatePolicyRequest) returns (CreatePolicyResponse);
+  // SaveDraft stores draft YAML without affecting the published version (policy:write).
+  rpc SaveDraft(SaveDraftRequest) returns (SaveDraftResponse);
+  // PublishPolicy validates the draft and publishes it as a new version (policy:publish).
+  rpc PublishPolicy(PublishPolicyRequest) returns (PublishPolicyResponse);
+  // RollbackPolicy publishes the YAML of an old version as a new version (policy:publish).
+  rpc RollbackPolicy(RollbackPolicyRequest) returns (RollbackPolicyResponse);
+  // DeletePolicy deletes a policy that is not bound anywhere (policy:write).
+  rpc DeletePolicy(DeletePolicyRequest) returns (DeletePolicyResponse);
+  // ListPolicyVersions lists published versions, newest first (policy:read).
+  rpc ListPolicyVersions(ListPolicyVersionsRequest) returns (ListPolicyVersionsResponse);
+  // DiffPolicyVersions compares two versions or a version and the draft (policy:read).
+  rpc DiffPolicyVersions(DiffPolicyVersionsRequest) returns (DiffPolicyVersionsResponse);
+  // ListBindings lists policy bindings (policy:read).
+  rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
+  // SetBinding binds a policy at namespace, site, client or endpoint group level, replacing the
+  // binding of the same kind at that level (policy:publish).
+  rpc SetBinding(SetBindingRequest) returns (SetBindingResponse);
+  // DeleteBinding deletes a policy binding (policy:publish).
+  rpc DeleteBinding(DeleteBindingRequest) returns (DeleteBindingResponse);
+  // ResolvePolicies returns the effective policy of every kind for a site, client and endpoint group (policy:read).
+  rpc ResolvePolicies(ResolvePoliciesRequest) returns (ResolvePoliciesResponse);
+  // DebugReport classifies a sample report and evaluates action rules without side effects, optionally with the
+  // draft of one policy instead of its published version (policy:read).
+  rpc DebugReport(DebugReportRequest) returns (DebugReportResponse);
+  // ValidatePolicy validates policy YAML and returns its normalized form (policy:read).
+  rpc ValidatePolicy(ValidatePolicyRequest) returns (ValidatePolicyResponse);
+}
+
+// PolicyBinding attaches a policy to a level of the namespace hierarchy.
+message PolicyBinding {
+  // Binding ID ("pbd_...").
+  string id = 1;
+  // Bound policy ID.
+  string policy_id = 2;
+  // Bound policy name.
+  string policy_name = 3;
+  // Policy kind: rotation | signal | action | breaker.
+  string kind = 4;
+  // Namespace name.
+  string namespace = 5;
+  // Site name; empty for a namespace-level binding.
+  string site = 6;
+  // Client; empty for namespace- and site-level bindings.
+  string client = 7;
+  // Endpoint group name; empty unless level is endpoint_group.
+  string endpoint_group = 8;
+  // Endpoint group ID; empty unless level is endpoint_group.
+  string endpoint_group_id = 9;
+  // Level: namespace | site | client | endpoint_group.
+  string level = 10;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 11;
+}
+
+// Policy is a named, versioned policy of one kind.
+message Policy {
+  // Policy ID ("pol_...").
+  string id = 1;
+  // Namespace name.
+  string namespace = 2;
+  // Kind: rotation | signal | action | breaker.
+  string kind = 3;
+  // Name, unique per namespace and kind.
+  string name = 4;
+  // Description from the published (or, before the first publish, draft) YAML.
+  string description = 5;
+  // Current published version; 0 when never published.
+  int32 current_version = 6;
+  // YAML of the current published version.
+  string published_yaml = 7;
+  // Draft YAML; empty when there is no draft.
+  string draft_yaml = 8;
+  // Whether a draft exists.
+  bool has_draft = 9;
+  // Actor ("user:<id>" or "token:<id>") that last saved the draft.
+  string draft_updated_by = 10;
+  // Time the draft was last saved.
+  google.protobuf.Timestamp draft_updated_at = 11;
+  // Bindings of this policy.
+  repeated PolicyBinding bindings = 12;
+  // Actor that created the policy.
+  string created_by = 13;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 14;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// PolicyVersion is an immutable published version of a policy.
+message PolicyVersion {
+  // Version number, starting at 1.
+  int32 version = 1;
+  // Published YAML.
+  string spec_yaml = 2;
+  // Publish comment.
+  string comment = 3;
+  // Actor that published the version.
+  string created_by = 4;
+  // Publish time.
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// ListPoliciesRequest selects a page of policies.
+message ListPoliciesRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Kind filter; empty matches all kinds.
+  string kind = 2 [(buf.validate.field).string = {in: ["", "rotation", "signal", "action", "breaker"]}];
+  // Substring match on the policy name.
+  string search = 3 [(buf.validate.field).string.max_len = 256];
+  // Page size, 0 = default (50).
+  int32 page_size = 4 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 5 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListPoliciesResponse is a page of policies.
+message ListPoliciesResponse {
+  // Policies of this page.
+  repeated Policy policies = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of matching policies.
+  int32 total = 3;
+}
+
+// GetPolicyRequest identifies a policy.
+message GetPolicyRequest {
+  // Policy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// GetPolicyResponse carries the policy.
+message GetPolicyResponse {
+  // The policy.
+  Policy policy = 1;
+}
+
+// CreatePolicyRequest creates a policy. The name, description and optional
+// bind section come from the YAML.
+message CreatePolicyRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Policy kind.
+  string kind = 2 [(buf.validate.field).string = {in: ["rotation", "signal", "action", "breaker"]}];
+  // Policy YAML (max 1 MiB).
+  string yaml = 3 [(buf.validate.field).string = {min_len: 1, max_bytes: 1048576}];
+  // Publish as version 1 (requires policy:publish); otherwise stored as a draft.
+  bool publish = 4;
+  // Publish comment.
+  string comment = 5 [(buf.validate.field).string.max_len = 1024];
+}
+
+// CreatePolicyResponse carries the created policy.
+message CreatePolicyResponse {
+  // The created policy.
+  Policy policy = 1;
+}
+
+// SaveDraftRequest stores draft YAML. The policy name and kind cannot change.
+message SaveDraftRequest {
+  // Policy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Draft YAML (max 1 MiB); syntax is checked, full validation happens on publish.
+  string yaml = 2 [(buf.validate.field).string = {min_len: 1, max_bytes: 1048576}];
+}
+
+// SaveDraftResponse carries the policy with the saved draft.
+message SaveDraftResponse {
+  // The updated policy.
+  Policy policy = 1;
+}
+
+// PublishPolicyRequest publishes the draft of a policy.
+message PublishPolicyRequest {
+  // Policy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Publish comment.
+  string comment = 2 [(buf.validate.field).string.max_len = 1024];
+  // Optimistic concurrency check: when > 0 the publish fails with reason
+  // conflict unless current_version equals it; 0 skips the check.
+  int32 expected_version = 3 [(buf.validate.field).int32.gte = 0];
+}
+
+// PublishPolicyResponse carries the published policy.
+message PublishPolicyResponse {
+  // The policy after publishing; current_version is the new version.
+  Policy policy = 1;
+}
+
+// RollbackPolicyRequest republishes an old version.
+message RollbackPolicyRequest {
+  // Policy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Version whose YAML is published again.
+  int32 version = 2 [(buf.validate.field).int32.gte = 1];
+  // Publish comment.
+  string comment = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// RollbackPolicyResponse carries the policy after the rollback.
+message RollbackPolicyResponse {
+  // The policy; current_version is the newly created version.
+  Policy policy = 1;
+}
+
+// DeletePolicyRequest identifies the policy to delete.
+message DeletePolicyRequest {
+  // Policy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// DeletePolicyResponse is empty.
+message DeletePolicyResponse {}
+
+// ListPolicyVersionsRequest selects a page of versions of a policy.
+message ListPolicyVersionsRequest {
+  // Policy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Page size, 0 = default (50).
+  int32 page_size = 2 [(buf.validate.field).int32 = {gte: 0, lte: 500}];
+  // Opaque cursor from a previous response.
+  string page_token = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListPolicyVersionsResponse is a page of versions, newest first.
+message ListPolicyVersionsResponse {
+  // Versions of this page.
+  repeated PolicyVersion versions = 1;
+  // Cursor of the next page; empty when this is the last page.
+  string next_page_token = 2;
+  // Total number of versions.
+  int32 total = 3;
+}
+
+// DiffPolicyVersionsRequest selects the two sides of a diff.
+message DiffPolicyVersionsRequest {
+  // Policy ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Left side version; 0 = the current published version.
+  int32 from_version = 2 [(buf.validate.field).int32.gte = 0];
+  // Right side version; 0 = the draft.
+  int32 to_version = 3 [(buf.validate.field).int32.gte = 0];
+}
+
+// DiffPolicyVersionsResponse carries both sides and their unified diff.
+message DiffPolicyVersionsResponse {
+  // Left side YAML.
+  string from_yaml = 1;
+  // Right side YAML.
+  string to_yaml = 2;
+  // Unified diff from from_yaml to to_yaml.
+  string unified_diff = 3;
+}
+
+// ListBindingsRequest selects policy bindings.
+message ListBindingsRequest {
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Kind filter; empty matches all kinds.
+  string kind = 2 [(buf.validate.field).string = {in: ["", "rotation", "signal", "action", "breaker"]}];
+  // Site filter; empty matches all levels of all accessible sites.
+  string site = 3 [(buf.validate.field).string.max_len = 64];
+}
+
+// ListBindingsResponse lists bindings ordered by kind and level.
+message ListBindingsResponse {
+  // Matching bindings.
+  repeated PolicyBinding bindings = 1;
+}
+
+// SetBindingRequest binds a policy. The level follows from the fields set:
+// no site = namespace, site = site, site + client = client,
+// site + client + endpoint_group = endpoint_group.
+message SetBindingRequest {
+  option (buf.validate.message).cel = {
+    id: "set_binding.client_requires_site"
+    message: "client requires site"
+    expression: "this.client == '' || this.site != ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "set_binding.endpoint_group_requires_client"
+    message: "endpoint_group requires client"
+    expression: "this.endpoint_group == '' || this.client != ''"
+  };
+
+  // Policy ID; the binding kind is the policy kind.
+  string policy_id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name; empty = namespace level.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Client of the site.
+  string client = 3 [(buf.validate.field).string.max_len = 64];
+  // Endpoint group name.
+  string endpoint_group = 4 [(buf.validate.field).string.max_len = 128];
+}
+
+// SetBindingResponse carries the stored binding.
+message SetBindingResponse {
+  // The created or replaced binding.
+  PolicyBinding binding = 1;
+}
+
+// DeleteBindingRequest identifies the binding to delete.
+message DeleteBindingRequest {
+  // Binding ID.
+  string id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+}
+
+// DeleteBindingResponse is empty.
+message DeleteBindingResponse {}
+
+// ResolvePoliciesRequest selects the scheduling scope to resolve policies for.
+message ResolvePoliciesRequest {
+  option (buf.validate.message).cel = {
+    id: "resolve_policies.client_requires_site"
+    message: "client requires site"
+    expression: "this.client == '' || this.site != ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "resolve_policies.endpoint_group_requires_client"
+    message: "endpoint_group requires client"
+    expression: "this.endpoint_group == '' || this.client != ''"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name; empty resolves namespace-level policies only.
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Client of the site.
+  string client = 3 [(buf.validate.field).string.max_len = 64];
+  // Endpoint group name.
+  string endpoint_group = 4 [(buf.validate.field).string.max_len = 128];
+}
+
+// ResolvedPolicy is the effective policy of one kind.
+message ResolvedPolicy {
+  // Kind: rotation | signal | action | breaker.
+  string kind = 1;
+  // Policy ID; empty for the built-in default.
+  string policy_id = 2;
+  // Policy name.
+  string name = 3;
+  // Published version in effect; 0 for the built-in default.
+  int32 version = 4;
+  // Level of the binding that won: endpoint_group | client | site | namespace | builtin.
+  string level = 5;
+  // Effective YAML (with extends applied for signal and action policies).
+  string yaml = 6;
+}
+
+// ResolvePoliciesResponse lists the effective policies.
+message ResolvePoliciesResponse {
+  // One entry per kind, ordered rotation, signal, action, breaker.
+  repeated ResolvedPolicy policies = 1;
+}
+
+// DebugReportRequest simulates the processing of one report with the policies
+// resolved for a site, client and endpoint group. Counters, scores and streaks
+// describe the assumed hot state after the report is observed.
+message DebugReportRequest {
+  option (buf.validate.message).cel = {
+    id: "debug_report.report_required"
+    message: "report is required"
+    expression: "has(this.report)"
+  };
+
+  // Namespace name.
+  string namespace = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Site name.
+  string site = 2 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Client of the site.
+  string client = 3 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  // Endpoint group selection; unset matches report.uri against the URI rules.
+  oneof target {
+    // Endpoint group name.
+    string endpoint_group = 4 [(buf.validate.field).string = {min_len: 1, max_len: 128}];
+    // URI path matched against the URI rules instead of report.uri.
+    string uri = 5 [(buf.validate.field).string = {min_len: 1, max_len: 2048}];
+  }
+  // Sample report. Node-side rules such as lease_id and report_id are not
+  // enforced here; only the classification facts matter.
+  Report report = 6 [(buf.validate.field).ignore = IGNORE_ALWAYS];
+  // Identity state before the report; empty = active.
+  string identity_state = 7 [(buf.validate.field).string = {in: ["", "pending", "active", "expired", "banned", "quarantined", "disabled", "retired"]}];
+  // Counter values including this report, keyed "<subject>:<outcome>:<window>",
+  // e.g. "identity:captcha:1h". Missing counters count only this report.
+  map<string, int64> counts = 8 [(buf.validate.field).map = {max_pairs: 256, keys: {string: {pattern: "^(identity|account|proxy):[a-z_]{1,32}:[0-9a-z.]{1,16}$"}}, values: {int64: {gte: 0}}}];
+  // Whether the identity belongs to an account.
+  bool has_account = 9;
+  // Whether a proxy was used.
+  bool has_proxy = 10;
+  // Identity × endpoint group score (0..100).
+  double endpoint_score = 11 [(buf.validate.field).double = {gte: 0, lte: 100}];
+  // Identity × endpoint group samples.
+  int32 endpoint_samples = 12 [(buf.validate.field).int32.gte = 0];
+  // Identity global score (0..100).
+  double global_score = 13 [(buf.validate.field).double = {gte: 0, lte: 100}];
+  // Identity global samples.
+  int32 global_samples = 14 [(buf.validate.field).int32.gte = 0];
+  // Identity × endpoint group consecutive failures after the report.
+  int32 endpoint_streak = 15 [(buf.validate.field).int32 = {gte: 0, lte: 1000000}];
+  // Identity site-level consecutive failures after the report; 0 = endpoint_streak.
+  int32 site_streak = 16 [(buf.validate.field).int32 = {gte: 0, lte: 1000000}];
+  // Proxy consecutive failures after the report.
+  int32 proxy_streak = 17 [(buf.validate.field).int32 = {gte: 0, lte: 1000000}];
+  // Earlier bans of the identity keyed by window (e.g. "30d"), excluding the ban
+  // being evaluated; used by escalation steps.
+  map<string, int64> ban_counts = 18 [(buf.validate.field).map = {max_pairs: 32, keys: {string: {pattern: "^[0-9a-z.]{1,16}$"}}, values: {int64: {gte: 0}}}];
+  // Policy whose draft (or published YAML when it has no draft) replaces the
+  // resolved policy of its kind, to test a draft before publishing; empty uses
+  // the resolved published policies only.
+  string draft_policy_id = 19 [(buf.validate.field).string.max_len = 64];
+  // Remaining identity × endpoint group cooldown before the report (e.g. "5m");
+  // a low-score cooldown is not planned again while one is running. Empty = none.
+  string endpoint_cooldown_remaining = 20 [(buf.validate.field).string = {max_len: 32, pattern: "^(0|([0-9]+d)?([0-9]+(\\.[0-9]+)?(ms|s|m|h))*)$"}];
+}
+
+// PlannedAction is an action the evaluator would apply.
+message PlannedAction {
+  // Action: cooldown | expire | quarantine | ban | activate.
+  string action = 1;
+  // Scope: identity_endpoint | identity_site | identity | account | proxy_site | proxy.
+  string scope = 2;
+  // Duration (e.g. "30m"); "permanent" for a permanent ban, empty for activate.
+  string duration = 3;
+  // Whether the action is permanent.
+  bool permanent = 4;
+  // Severity used to pick one action per subject (5 permanent ban .. 1 cooldown).
+  int32 severity = 5;
+  // Name of the rule that produced the action; empty for health and lifecycle actions.
+  string rule_name = 6;
+  // Origin: rule | health | lifecycle | escalation.
+  string source = 7;
+  // 0-based index of the rule in the resolved rule list; -1 when not produced by a rule.
+  int32 rule_index = 8;
+}
+
+// CounterRequirement is a counter the action rules read for an outcome.
+message CounterRequirement {
+  // Subject: identity | account | proxy.
+  string subject = 1;
+  // Outcome counted.
+  string outcome = 2;
+  // Window (e.g. "1h").
+  string window = 3;
+}
+
+// DebugReportResponse is the simulated classification and action plan.
+message DebugReportResponse {
+  // Classified outcome.
+  string outcome = 1;
+  // Blame: none | identity | proxy | both.
+  string blame = 2;
+  // 0-based index of the matched signal rule; -1 when no rule matched.
+  int32 matched_rule_index = 3;
+  // Name of the matched signal rule.
+  string matched_rule_name = 4;
+  // Actions that would be applied, at most one per subject.
+  repeated PlannedAction actions = 5;
+  // Counters the action rules need for this outcome (keys usable in counts).
+  repeated CounterRequirement counters = 6;
+  // Action policy mode: enforce | shadow.
+  string mode = 7;
+}
+
+// ValidatePolicyRequest carries policy YAML to validate.
+message ValidatePolicyRequest {
+  // Policy kind.
+  string kind = 1 [(buf.validate.field).string = {in: ["rotation", "signal", "action", "breaker"]}];
+  // Policy YAML (max 1 MiB).
+  string yaml = 2 [(buf.validate.field).string = {min_len: 1, max_bytes: 1048576}];
+}
+
+// ValidatePolicyResponse is the validation result.
+message ValidatePolicyResponse {
+  // Whether the YAML is a valid policy of the kind.
+  bool valid = 1;
+  // Validation errors.
+  repeated string errors = 2;
+  // YAML with defaults applied; empty when invalid.
+  string normalized_yaml = 3;
+}

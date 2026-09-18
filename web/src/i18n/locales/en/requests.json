@@ -1,0 +1,120 @@
+{
+  "title": "Request explorer",
+  "description": "Every processed report stored in ClickHouse, newest first",
+  "noNamespace": "Select a namespace to explore its requests.",
+  "autoRefresh": "Auto refresh ({{seconds}} s)",
+  "filters": {
+    "outcomes": "Outcomes",
+    "allOutcomes": "All",
+    "identity": "Identity ID",
+    "proxy": "Proxy ID",
+    "node": "Node",
+    "status": "HTTP status",
+    "minLatency": "Min latency (ms)"
+  },
+  "shared": {
+    "site": "Site",
+    "selectSite": "Select a site",
+    "allSites": "All sites",
+    "noSites": "No sites",
+    "endpointGroup": "Endpoint group",
+    "allGroups": "All endpoint groups",
+    "groupNeedsSite": "Select a site to filter by endpoint group",
+    "timeRange": "Time range",
+    "presets": {
+      "15m": "Last 15 minutes",
+      "1h": "Last hour",
+      "6h": "Last 6 hours",
+      "24h": "Last 24 hours",
+      "7d": "Last 7 days",
+      "custom": "Custom range…"
+    },
+    "editRange": "Edit custom range",
+    "customLabel": "{{from}} – {{to}}",
+    "from": "From",
+    "to": "To",
+    "invalidRange": "Enter both times; the end must be after the start.",
+    "outcomes": {
+      "success": "Success",
+      "empty": "Empty",
+      "rate_limited": "Rate limited",
+      "captcha": "Captcha",
+      "auth_invalid": "Auth invalid",
+      "forbidden": "Forbidden",
+      "banned": "Banned",
+      "proxy_error": "Proxy error",
+      "network_error": "Network error",
+      "target_error": "Target error",
+      "client_error": "Client error",
+      "unknown": "Unknown"
+    },
+    "noResponse": "No response",
+    "openIdentity": "Open identity {{id}}",
+    "unknownGroup": "Unknown group"
+  },
+  "summary": {
+    "total": "Matching events",
+    "successRatio": "Success",
+    "riskRatio": "Risk",
+    "latency": "Latency",
+    "avg": "Average",
+    "p50": "p50",
+    "p95": "p95",
+    "p99": "p99",
+    "outcomes": "Outcome distribution",
+    "otherOutcomes": "Other",
+    "noEvents": "No events in this range"
+  },
+  "columns": {
+    "time": "Time",
+    "target": "Site / group",
+    "outcome": "Outcome",
+    "httpStatus": "HTTP",
+    "businessCode": "Business code",
+    "errorKind": "Error kind",
+    "markers": "Markers",
+    "latency": "Latency",
+    "bytes": "Bytes",
+    "identity": "Identity",
+    "proxy": "Proxy",
+    "node": "Node",
+    "lease": "Lease ID",
+    "report": "Report ID",
+    "flags": "Flags",
+    "request": "Request",
+    "blame": "Blame",
+    "rule": "Rule",
+    "identityType": "Identity type",
+    "receivedAt": "Received",
+    "outcomeHint": "Outcome hint",
+    "token": "Token"
+  },
+  "flags": {
+    "suppressed": "Suppressed",
+    "suppressedHint": "Health updates and actions were suppressed because the breaker was open",
+    "late": "Late",
+    "lateHint": "The report arrived after the lease had ended",
+    "probe": "Probe",
+    "probeHint": "The lease was a half-open breaker probe"
+  },
+  "detail": {
+    "title": "Request event",
+    "site": "Site",
+    "endpointGroup": "Endpoint group",
+    "startedAt": "Started",
+    "finishedAt": "Finished",
+    "yes": "yes",
+    "no": "no"
+  },
+  "clickhouse": {
+    "title": "The request explorer is disabled",
+    "description": "Raw request events are stored in ClickHouse, which is not configured on this server.",
+    "howTo": "Set the ClickHouse connection URL in the server environment and restart the server:",
+    "riskEventsHint": "Non-success events are still recorded in PostgreSQL and available on the risk events page.",
+    "openRiskEvents": "Open risk events"
+  },
+  "empty": {
+    "title": "No request events",
+    "description": "No report matches the filters in this time range."
+  }
+}

@@ -1,0 +1,17 @@
+# App crawler: device parameter identity (design doc section 5.1).
+name: app_device
+site: shop
+client: app
+fields:
+  device_id:  { type: string, required: true }
+  install_id: { type: string, required: true }
+  cookies:    { type: cookie_map, sensitive: true }
+  extra:      { type: json }
+unique_by: [device_id]
+activation: immediate
+deliver:
+  query:
+    device_id: "{{ device_id }}"
+    iid: "{{ install_id }}"
+  cookie_header: "{{ cookies }}"
+  json: "{{ extra }}"

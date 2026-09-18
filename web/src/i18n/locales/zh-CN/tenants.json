@@ -1,0 +1,98 @@
+{
+  "title": "租户与命名空间",
+  "description": "你所属的租户，以及当前租户下的命名空间。",
+  "descriptionAdmin": "管理所有租户，以及当前租户下的命名空间。",
+  "active": "当前",
+  "columns": {
+    "name": "名称",
+    "displayName": "显示名称",
+    "description": "描述",
+    "id": "ID",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间",
+    "actions": "操作"
+  },
+  "tenants": {
+    "title": "租户",
+    "description": "你拥有角色绑定的租户。点击某一行即可切换到该租户。",
+    "descriptionAdmin": "本系统中的全部租户。点击某一行即可切换到该租户。",
+    "create": "创建租户",
+    "empty": "暂无租户",
+    "emptyDescription": "你在任何租户中都没有角色绑定。",
+    "emptyAdminDescription": "请先创建第一个租户。",
+    "switchTo": "切换到该租户",
+    "alreadyActive": "这是当前租户",
+    "notAccessible": "你无法访问该租户",
+    "created": "租户 {{name}} 已创建",
+    "updated": "租户 {{name}} 已更新",
+    "deleted": "租户 {{name}} 已删除",
+    "deleteTitle": "删除租户 {{name}}？",
+    "deleteDescription": "该租户及其用户角色绑定和通知渠道将被永久删除。请先删除其下所有命名空间；租户下仍有命名空间时服务器会拒绝删除。"
+  },
+  "namespaces": {
+    "title": "{{tenant}} 的命名空间",
+    "titleNoTenant": "命名空间",
+    "description": "命名空间用于组织站点、代理、配置、密钥、令牌和策略。创建时会自动发布内置的默认策略。",
+    "noTenant": "没有当前租户",
+    "noTenantDescription": "请创建或选择一个租户来管理其命名空间。",
+    "create": "创建命名空间",
+    "empty": "暂无命名空间",
+    "emptyDescription": "创建命名空间后即可添加站点、代理和令牌。",
+    "switchTo": "切换到该命名空间",
+    "alreadyActive": "这是当前命名空间",
+    "notAccessible": "你无法访问该命名空间",
+    "created": "命名空间 {{name}} 已创建",
+    "updated": "命名空间 {{name}} 已更新",
+    "deleted": "命名空间 {{name}} 已删除",
+    "deleteTitle": "删除命名空间 {{name}}？",
+    "deleteDescription": "该命名空间将被永久删除。命名空间中仍有站点、代理、配置、密钥、令牌或策略时，服务器会拒绝删除。"
+  },
+  "form": {
+    "displayName": "显示名称",
+    "name": "名称（标识）",
+    "nameHint": "2–63 个小写字母、数字和连字符；创建后不可修改。",
+    "nameImmutable": "名称不可修改。",
+    "description": "描述",
+    "ownerUserId": "所有者用户 ID",
+    "ownerUserIdHint": "可选：该用户将获得新租户的所有者角色。",
+    "tenant": {
+      "createTitle": "创建租户",
+      "createDescription": "租户是团队或组织之间的隔离边界。",
+      "editTitle": "编辑租户 {{name}}",
+      "editDescription": "修改租户的显示信息。"
+    },
+    "namespace": {
+      "createTitle": "创建命名空间",
+      "createDescription": "命名空间将创建在租户 {{tenant}} 中。",
+      "editTitle": "编辑命名空间 {{name}}",
+      "editDescription": "修改命名空间的显示信息。"
+    },
+    "errors": {
+      "displayName": "最多 128 个字符。",
+      "description": "最多 1024 个字符。",
+      "name": {
+        "required": "请输入名称。",
+        "pattern": "请使用 2–63 个小写字母、数字和连字符，并以字母或数字开头。"
+      },
+      "ownerUserId": {
+        "tooLong": "最多 64 个字符。",
+        "invalid": "用户 ID 不能包含空格。"
+      }
+    }
+  },
+  "intro": {
+    "tenantTitle": "租户 = 一个团队或组织",
+    "tenantPoints": [
+      "硬隔离边界：令牌、命名空间、站点、代理、配置、密钥和告警渠道都只属于一个租户，其他租户看不到它们。",
+      "用户是全局账号。真正让用户能访问某个租户的是角色绑定（角色 + 可选命名空间 + 可选站点列表）。",
+      "由 “spnr admin init” 创建的平台管理员可以在所有租户中操作。"
+    ],
+    "namespaceTitle": "命名空间 = 租户内部的一个环境或业务线",
+    "namespacePoints": [
+      "站点、代理、配置项、密钥、API 令牌和策略属于命名空间；端点组、身份类型、身份和账号属于站点。",
+      "绑定到命名空间 A 的用户看不到命名空间 B 的站点、身份和凭证内容，还可以进一步收窄到指定站点。",
+      "查看身份载荷明文还需要额外的 identity:reveal 权限。"
+    ],
+    "mapping": "一句话：一个团队就是一个租户，团队内部的一个项目或环境就是一个命名空间。"
+  }
+}

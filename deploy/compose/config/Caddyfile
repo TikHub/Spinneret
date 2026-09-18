@@ -1,0 +1,69 @@
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	# Liveness of the load balancer itself.
+	handle /healthz {
+		reverse_proxy spinneret:8080 {
+			lb_policy round_robin
+		}
+	}
+
+	handle {
+		reverse_proxy {
+			dynamic a spinneret 8080 {
+				refresh 5s
+			}
+			# least_conn keeps long polls (WatchConfig, SSE) spread evenly. The failover drill
+			# (scripts/e2e-failover.sh) measured the same tiny error window with round_robin.
+			lb_policy least_conn
+			# Retries cover dial failures (a replica that is gone) within the try duration.
+			# lb_try_duration also covers the window in which *every* upstream is parked: Caddy
+			# then waits lb_try_interval and selects again instead of answering 503 at once, so
+			# a passive ejection costs latency rather than errors.
+			# lb_retries caps the loop: without enough retries lb_try_duration is never reached
+			# (2 retries × lb_try_interval = 0.5 s). 20 × 250 ms covers the 2 s parking window
+			# below, and lb_try_duration is the real bound.
+			lb_retries 20
+			lb_try_duration 10s
+			lb_try_interval 250ms
+			# Passive health: one failed dial parks an instance, so the retry of the failed
+			# request (and the requests right behind it) goes to a live replica instead of the
+			# one that just stopped or has not finished starting. Ejecting on the first failure
+			# matters with lb_policy least_conn, which otherwise keeps picking the dead replica
+			# (it has the fewest active connections). The window is short on purpose: under a
+			# connection burst a healthy upstream can be parked too, and 2 s of parking fits
+			# inside lb_try_duration, where a longer one turns a burst into "no upstreams
+			# available" (HTTP 503) — a load test measured 76,857 of those with 5 s.
+			fail_duration 2s
+			max_fails 1
+			# Readiness, not liveness: an instance that is shutting down answers /readyz with
+			# "draining" for SPINNERET_SHUTDOWN_TIMEOUT/4 (max 5 s) before it closes its listener,
+			# so a 2 s check interval takes it out of the pool before requests can be cut off.
+			# It also parks instances whose PostgreSQL, Redis or hot state is not usable.
+			health_uri /readyz
+			health_interval 2s
+			health_timeout 2s
+			# Node calls (Acquire, Report) are POSTs: their body must be buffered for the proxy to
+			# be able to replay the request on another replica. 128 KiB covers every node and
+			# console call; larger bodies (identity and proxy imports) stream and are not retried.
+			request_buffers 128KiB
+			# Long polls (WatchConfig, up to 60s) and SSE streams must not be buffered or cut.
+			flush_interval -1
+			transport http {
+				# A stopped replica refuses the connection immediately, so this timeout only
+				# bounds dials to a replica that is alive but saturated (or to a host that
+				# dropped off the network). Keep it well above the worst-case accept latency of
+				# a connection burst: a dial that times out is counted as a failure and parks a
+				# replica that is merely busy.
+				dial_timeout 5s
+				read_timeout 90s
+				write_timeout 90s
+				keepalive 90s
+				keepalive_idle_conns_per_host 512
+			}
+		}
+	}
+}

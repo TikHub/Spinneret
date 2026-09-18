@@ -1,0 +1,97 @@
+{
+  "title": "Identity Types",
+  "description": "Payload fields, deduplication, activation and delivery format of each family of identities",
+  "noNamespace": "Select a namespace to see its identity types.",
+  "filters": {
+    "search": "Search type names…"
+  },
+  "columns": {
+    "name": "Name",
+    "site": "Site",
+    "fields": "Fields",
+    "uniqueBy": "Unique by",
+    "activation": "Activation",
+    "version": "Version",
+    "identities": "Identities",
+    "updated": "Updated",
+    "actions": "Actions"
+  },
+  "fields": {
+    "site": "Site",
+    "count_one": "{{count}} field",
+    "count_other": "{{count}} fields",
+    "requiredShort": "required",
+    "sensitive": "Sensitive"
+  },
+  "activation": {
+    "probe": "Probe",
+    "immediate": "Immediate"
+  },
+  "actions": {
+    "create": "New type",
+    "view": "View",
+    "preview": "Delivery preview"
+  },
+  "empty": {
+    "title": "No identity types yet",
+    "description": "Create an identity type to describe payload fields and how credentials are delivered.",
+    "filteredTitle": "No matching identity types",
+    "filteredDescription": "No identity type matches the current filters."
+  },
+  "editor": {
+    "createTitle": "New identity type",
+    "createDescription": "Describe the payload fields, unique key, activation and delivery mapping in YAML.",
+    "editTitle": "Identity type {{name}}",
+    "editDescription": "Site {{site}} · version {{version}}. Saving creates the next version; the site cannot change.",
+    "siteHint": "Overrides any site set in the YAML.",
+    "tabSpec": "Spec (YAML)",
+    "tabPreview": "Delivery preview",
+    "specHint": "Field types: string, number, bool, cookie_map, json, secret_ref. Templates only support placeholders such as {{placeholder}}.",
+    "specLabel": "Identity type YAML",
+    "insertExample": "Insert example",
+    "examples": {
+      "webCookie": "Web cookie",
+      "appDevice": "App device"
+    },
+    "replaceTitle": "Replace the current YAML?",
+    "replaceDescription": "The editor content is replaced by the example. Unsaved changes are lost.",
+    "replace": "Replace",
+    "create": "Create",
+    "save": "Save new version",
+    "created": "Identity type {{name}} created",
+    "updated": "Identity type {{name}} saved as version {{version}}"
+  },
+  "delete": {
+    "title": "Delete identity type {{name}}?",
+    "description": "The type is removed from site {{site}}. This cannot be undone.",
+    "hasIdentities_one": "{{formatted}} identity still uses this type. Deletion fails until no identities remain.",
+    "hasIdentities_other": "{{formatted}} identities still use this type. Deletion fails until no identities remain.",
+    "deleted": "Identity type {{name}} deleted"
+  },
+  "preview": {
+    "payload": "Sample payload",
+    "payloadHint": "A JSON object as it would be imported. Nothing is stored; secret references are not resolved.",
+    "payloadErrors": {
+      "empty": "Enter a JSON object.",
+      "invalidJson": "Invalid JSON.",
+      "notObject": "The payload must be a JSON object.",
+      "tooLarge": "The payload exceeds 1 MiB."
+    },
+    "render": "Render",
+    "credential": "Delivered credential",
+    "notRendered": "Render the sample payload to see the credential a node would receive.",
+    "emptyCredential": "The delivery mapping produces an empty credential.",
+    "normalized": "Normalized payload",
+    "unusedSegments": "Unused segments:",
+    "name": "Name",
+    "value": "Value",
+    "segments": {
+      "cookies": "Cookies for the HTTP client",
+      "cookie_header": "Cookie request header",
+      "headers": "Merged into request headers",
+      "query": "Merged into query parameters",
+      "json": "Merged into the request body",
+      "values": "Custom values, e.g. signing tokens"
+    }
+  }
+}

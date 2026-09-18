@@ -1,0 +1,181 @@
+{
+  "title": "配置中心",
+  "description": "命名空间 {{namespace}} 的版本化配置：编辑草稿、发布、对比与回滚",
+  "noNamespace": "请选择一个命名空间以管理其配置。",
+  "selectItem": "请选择一个配置项",
+  "selectItemDescription": "从左侧树中选择一个键，编辑草稿、发布或查看版本历史。",
+  "tree": {
+    "label": "配置项",
+    "search": "搜索键或描述…",
+    "empty": "暂无配置项",
+    "emptyDescription": "创建配置项，将设置下发给节点。",
+    "noMatches": "没有匹配搜索的配置项",
+    "systemGroup": "由 Spinneret 维护的系统分组（只读）",
+    "hasDraft": "有未发布的草稿",
+    "unpublished": "草稿"
+  },
+  "formats": {
+    "json": "JSON",
+    "yaml": "YAML",
+    "text": "文本"
+  },
+  "fields": {
+    "group": "分组",
+    "key": "键",
+    "format": "格式",
+    "description": "描述",
+    "content": "内容",
+    "schema": "JSON Schema",
+    "comment": "备注"
+  },
+  "tabs": {
+    "content": "内容",
+    "schema": "Schema 与详情",
+    "versions": "版本"
+  },
+  "item": {
+    "copyLocator": "复制 分组/键",
+    "version": "v{{version}}",
+    "neverPublished": "从未发布",
+    "draft": "草稿",
+    "unsaved": "有未保存的修改",
+    "readOnly": "只读",
+    "readOnlyHint": "该配置项属于由 Spinneret 维护的系统分组，无法在控制台中编辑。",
+    "id": "ID",
+    "published": "发布于",
+    "draftSaved": "草稿保存于",
+    "notFound": "未找到配置项",
+    "notFoundDescription": "当前命名空间中不存在 {{label}}，可能已被删除。",
+    "clearSelection": "取消选择",
+    "remoteChanged": "在你编辑期间，该配置项已被他人修改。保存将覆盖对方的草稿。",
+    "reloadDiscard": "放弃我的修改并重新加载"
+  },
+  "actions": {
+    "saveDraft": "保存草稿",
+    "discard": "放弃修改",
+    "publish": "发布",
+    "rollback": "回滚",
+    "readOnly": "系统配置项为只读",
+    "fixErrors": "请先修正校验错误",
+    "noChanges": "没有未保存的修改",
+    "noDraft": "没有可发布的草稿",
+    "noOlderVersion": "没有可回滚的旧版本"
+  },
+  "draft": {
+    "saved": "草稿已保存",
+    "matchesPublished": "内容与已发布版本一致，草稿已清除"
+  },
+  "editor": {
+    "jsonValid": "JSON 格式正确",
+    "jsonEmpty": "JSON 内容不能为空",
+    "jsonInvalid": "内容不是合法的 JSON",
+    "jsonError": "JSON 格式错误（第 {{line}} 行，第 {{column}} 列）：{{message}}",
+    "tooLarge": "内容不能超过 4 MiB",
+    "size": "{{size}} / {{max}}",
+    "yamlServerCheck": "YAML 语法与 Schema 将在保存和发布时由服务端校验。"
+  },
+  "schema": {
+    "hint": "可选的 JSON Schema（draft 2020-12），保存和发布时服务端会据此校验内容。留空表示不使用 Schema。",
+    "notSupported": "只有 JSON 和 YAML 配置项可以绑定 JSON Schema。"
+  },
+  "validation": {
+    "group": {
+      "required": "请输入分组",
+      "reserved": "以“_”开头的分组为系统保留",
+      "pattern": "1–64 个字符：字母、数字、“_”、“.”和“-”，须以字母或数字开头"
+    },
+    "key": {
+      "required": "请输入键",
+      "pattern": "1–128 个字符：字母、数字、“_”、“.”、“/”和“-”，须以字母或数字开头"
+    },
+    "schema": {
+      "syntax": "Schema 不是合法的 JSON",
+      "type": "Schema 必须是 JSON 对象或布尔值",
+      "size": "Schema 不能超过 1 MiB"
+    }
+  },
+  "secretRefs": {
+    "title": "密钥引用",
+    "short": "使用 <code>${secret:path}</code> 或 <code>${secret:path#version}</code> 引用密钥。控制台按原文显示引用，节点收到的是解析后的值。",
+    "syntax": "写 <code>${secret:signing/api_key}</code> 引用当前版本，写 <code>${secret:signing/api_key#3}</code> 引用固定版本。路径相对于当前命名空间。",
+    "resolution": "控制台从不解析引用，始终显示原文。节点读取配置时，只要其令牌有权读取对应路径，就会收到填入密钥值后的内容。",
+    "found_one": "{{count}} 个引用：",
+    "found_other": "{{count}} 个引用：",
+    "problems_one": "{{count}} 个格式错误的密钥引用",
+    "problems_other": "{{count}} 个格式错误的密钥引用",
+    "issues": {
+      "unterminated": "密钥引用未闭合或过长（缺少“}”）",
+      "path": "密钥路径无效：只能包含小写字母、数字、“_”、“.”、“/”和“-”，且不能有空段、“.”或“..”段",
+      "version": "版本号必须是正整数"
+    }
+  },
+  "create": {
+    "button": "新建配置项",
+    "title": "新建配置项",
+    "description": "在命名空间 {{namespace}} 中创建配置项。",
+    "groupHint": "例如 crawler",
+    "keyHint": "例如 search.json",
+    "publishNow": "立即发布为版本 1",
+    "publishHint": "否则内容将保存为草稿。",
+    "submitDraft": "创建草稿",
+    "submitPublish": "创建并发布",
+    "createdDraft": "配置项已创建为草稿",
+    "createdPublished": "配置项已创建并发布"
+  },
+  "publish": {
+    "title": "发布 {{label}}",
+    "description": "发布后版本 {{next}} 将替换版本 {{current}}，监听该配置项的节点会在数秒内收到更新。",
+    "firstDescription": "发布将创建版本 1，监听该配置项的节点会在数秒内收到更新。",
+    "savesDraftFirst": "发布前会先将你未保存的修改保存为草稿。",
+    "original": "已发布 v{{version}}",
+    "emptyOriginal": "尚未发布",
+    "modified": "草稿",
+    "noChanges": "草稿与已发布内容完全一致。",
+    "commentHint": "说明本次变更内容，将显示在版本历史中。",
+    "confirm": "发布 v{{version}}",
+    "success": "已将 {{label}} 发布为 v{{version}}"
+  },
+  "rollback": {
+    "title": "回滚 {{label}}",
+    "description": "所选版本的内容将重新发布为版本 {{next}}，历史保持线性。",
+    "version": "版本",
+    "pickVersion": "选择版本",
+    "pickHint": "选择一个版本以预览变更。",
+    "noVersions": "没有其他版本。",
+    "previewLabel": "当前 v{{current}} → v{{version}}",
+    "commentPlaceholder": "回滚到 v{{version}}",
+    "confirm": "回滚到 v{{version}}",
+    "confirmNone": "回滚",
+    "success": "已将 {{label}} 回滚到 v{{version}}（发布为 v{{newVersion}}）"
+  },
+  "delete": {
+    "title": "删除 {{label}}？",
+    "description": "该配置项及其所有版本将被永久删除，读取它的节点将收到“未找到”错误。",
+    "success": "已删除 {{label}}"
+  },
+  "versions": {
+    "version": "版本",
+    "current": "当前",
+    "publishedBy": "发布人",
+    "publishedAt": "发布时间",
+    "rollbackOf": "回滚自 v{{version}}",
+    "view": "查看内容",
+    "viewTitle": "{{label}} v{{version}}",
+    "noComment": "无备注",
+    "compareWithCurrent": "与当前版本对比",
+    "rollbackTo": "回滚到 v{{version}}",
+    "empty": "暂无已发布版本",
+    "emptyWithDraft": "发布草稿即可创建版本 1。",
+    "compareFrom": "对比",
+    "compareTo": "与",
+    "currentOption": "v{{version}}（当前）",
+    "draftOption": "草稿",
+    "pickTwo": "请选择两个不同的版本进行对比。"
+  },
+  "unsaved": {
+    "title": "放弃未保存的修改？",
+    "description": "该配置项有未保存的编辑，现在离开将丢弃这些修改。",
+    "stay": "继续编辑",
+    "discard": "放弃并离开"
+  }
+}

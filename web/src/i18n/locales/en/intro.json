@@ -1,0 +1,191 @@
+{
+  "label": "What this page is for",
+  "expand": "Show",
+  "collapse": "Hide",
+  "expandLabel": "Show page introduction",
+  "collapseLabel": "Hide page introduction",
+  "whenLabel": "When you need this:",
+  "relatedLabel": "Related",
+  "pages": {
+    "overview": {
+      "summary": "Live health of the active namespace: identity supply, acquire and report rates, success and risk ratios, per-site cards, open breakers, low-watermark warnings and node activity.",
+      "steps": [
+        "The window selector rescales the rates and ratios at the top; the two trend charts and the node table always cover the last hour.",
+        "The open-breaker and low-watermark cards name the endpoint groups that are refusing leases or running out of identities.",
+        "Each site card breaks its identities down by lifecycle state, so you can see which site is degrading."
+      ],
+      "when": "Crawlers suddenly return fewer results and you need to know whether identities, proxies or a tripped breaker are to blame."
+    },
+    "identities": {
+      "summary": "Every credential the scheduler leases to crawler nodes, with its lifecycle state, health score and manual operations.",
+      "steps": [
+        "Filter by site, identity type, state, tags, account or score range, then select rows.",
+        "Cooldown, ban, quarantine, expire, disable or archive the selection — and lift each of those again.",
+        "Import from JSON Lines or CSV, or revert the automatic actions a rule applied in a time range; reverted identities go back to pending."
+      ],
+      "when": "A rule banned a batch of cookies after a false captcha wave and you need them back in the pool."
+    },
+    "identity-detail": {
+      "summary": "One identity: its state timeline, payload versions, live scheduler state per endpoint group and recent risk events.",
+      "steps": [
+        "Edit region, tags, labels and the account reference without touching the payload.",
+        "Store a new payload version, or reveal the masked one — revealing needs identity:reveal and is audited.",
+        "Read the per-endpoint-group health scores and remaining cooldowns before operating on it."
+      ],
+      "when": "One account keeps failing on a single endpoint group and you want to see whether its payload expired or the proxy is at fault."
+    },
+    "identity-types": {
+      "summary": "The payload schema of each family of credentials on a site: fields, unique key, activation and the delivery mapping nodes receive.",
+      "steps": [
+        "Describe the fields (string, number, bool, cookie_map, json, secret_ref) in YAML.",
+        "Preview how a lease delivers them: cookies, a cookie header, request headers, query parameters, a JSON body or plain values.",
+        "Saving creates the next version; the site cannot be changed afterwards."
+      ],
+      "when": "You start crawling a site with a new login flow and must define what one cookie record contains before importing any."
+    },
+    "accounts": {
+      "summary": "Accounts group the identities of one site under a single external reference, so a ban or a disable applies to all of them at once.",
+      "steps": [
+        "Filter by site, state or external reference, then ban, cooldown, disable or enable an account.",
+        "Every operation reports its outcome per member identity.",
+        "Identity imports create accounts automatically from the _account column."
+      ],
+      "when": "An upstream account is flagged and every cookie derived from it must stop being leased immediately."
+    },
+    "proxies": {
+      "summary": "The outbound proxy pool of the namespace: health, per-site state, provider comparison and manual operations.",
+      "steps": [
+        "Import proxies as URL lines, JSON Lines or CSV; rows with the same URL are merged instead of duplicated.",
+        "Disable, ban, cooldown, quarantine or archive the selected proxies, or delete them outright.",
+        "The providers tab compares success and risk ratios per provider over the last hour, day or week."
+      ],
+      "when": "One provider's exit nodes start returning captchas and you want to cool them down before they burn identities."
+    },
+    "sites": {
+      "summary": "Sites, their client types, endpoint groups and URI rules — the structure every lease, cooldown and circuit breaker is scoped to.",
+      "steps": [
+        "Create a site with its client types; every client gets a _default endpoint group.",
+        "Group URIs with similar risk behaviour and add the group's exact, template, prefix or regex rules.",
+        "The URI tester shows which group a request resolves to and which policies apply to it."
+      ],
+      "when": "A new API path behaves differently from the rest of the site and needs its own rotation and breaker settings."
+    },
+    "policies": {
+      "summary": "The rotation, signal, action and breaker policies of the namespace, with drafts, published versions and bindings.",
+      "steps": [
+        "Edit a policy in the form or in YAML, then publish it as a version.",
+        "Bind it to the namespace, a site, a client or an endpoint group; the most specific binding wins.",
+        "The resolve tab shows what actually applies where; the debugger replays a report against it before you publish."
+      ],
+      "when": "Captchas rise on one endpoint group and you want a stricter cooldown there without touching the rest of the namespace."
+    },
+    "heatmap": {
+      "summary": "Identities × endpoint groups of one site client, coloured by remaining cooldown or by health score.",
+      "steps": [
+        "Choose the site, the client and the metric, then read the grid column by column.",
+        "The state filter starts at active and pending; widen it to see banned, quarantined or expired identities — even “All” leaves out retired ones.",
+        "Click a cell to open that identity, or switch to the table view for the same data as text."
+      ],
+      "when": "Throughput dropped and you need to see whether a whole endpoint group is cooling down or only a handful of identities are."
+    },
+    "breakers": {
+      "summary": "The circuit breakers of every endpoint group, the site switches, and the history of their transitions.",
+      "steps": [
+        "Open a breaker for a fixed duration or indefinitely to refuse every lease of that group; closing it resumes them at once, without half-open probing.",
+        "Pause a whole site for an emergency stop — pausing is the one action that requires a reason.",
+        "Every open, close, pause and resume is written to the audit log, together with the reason you gave."
+      ],
+      "when": "A site starts answering with bans and you must stop burning identities before the automatic breaker reacts."
+    },
+    "config": {
+      "summary": "Versioned configuration distributed to crawler nodes: groups and keys, drafts, published versions and secret references.",
+      "steps": [
+        "Edit the draft, validate it against the item's JSON Schema if it has one, then publish it as a version.",
+        "Compare any two versions and roll back to one of them.",
+        "Reference secrets as ${secret:path} instead of pasting values; the console keeps showing the reference, nodes receive the resolved value."
+      ],
+      "when": "You change a signing parameter for the whole fleet and want it live within seconds, with a version to roll back to."
+    },
+    "secrets": {
+      "summary": "The encrypted secret store of the namespace. Values are write-only in the console: nodes resolve them through their token, people need an audited reveal.",
+      "steps": [
+        "Create a secret under a path such as signing/api_key, then reference it from config items as ${secret:signing/api_key}.",
+        "A node reads a value with its own token — directly through GetSecret, or by reading a config item whose references the server resolves for it. Either way the token's secret:read glob must cover the path, or the read is refused with scope_missing.",
+        "Revealing a plaintext in the console needs secret:reveal; allowed and denied attempts alike are recorded in the audit log."
+      ],
+      "when": "A signing service key must reach every crawler node without ever appearing in a repository or a config file."
+    },
+    "requests": {
+      "summary": "Every processed report stored in ClickHouse: outcome, blame, the matching rule, latency, identity, proxy and node.",
+      "steps": [
+        "Narrow by site, endpoint group, outcome, identity, proxy, node or time range.",
+        "Read the summary strip for success, risk and latency percentiles.",
+        "Click a row to open the full event; without ClickHouse use risk events instead."
+      ],
+      "when": "You need the evidence behind a ban wave: which URIs, which proxies, and which rule classified them."
+    },
+    "risk-events": {
+      "summary": "Non-success reports kept in PostgreSQL for the server's retention window (30 days by default) — available even when ClickHouse is not configured.",
+      "steps": [
+        "Filter by site, endpoint group, outcome, identity, proxy, node and time range.",
+        "Expand a row for the request, its timings and its markers.",
+        "Blame says whether the identity, the proxy or both were faulted."
+      ],
+      "when": "A batch of identities was banned yesterday and you want to read the reports that triggered it."
+    },
+    "notifications": {
+      "summary": "Where alerts of this tenant are delivered, and what happened to every alert that fired.",
+      "steps": [
+        "Add a webhook, Feishu, DingTalk, WeCom or Telegram channel, for the whole tenant or for one namespace.",
+        "Limit a channel to certain alert kinds, sites and a minimum severity.",
+        "Send a test delivery, then watch the alert history for failed ones."
+      ],
+      "when": "The on-call group chat should hear about an open breaker or a low identity watermark before your customers do."
+    },
+    "tokens": {
+      "summary": "API tokens authenticate crawler nodes and automation. A token is bound to exactly one namespace and carries scopes: it may do what its scopes allow and nothing else, and every other call is refused with scope_missing.",
+      "steps": [
+        "Give every node its own token and grant only the scopes its job needs — lease:acquire:<site>, report:write:<site>, config:read:<group>, secret:read:<namespace>/<path>.",
+        "Add secret:read only to nodes that must read secrets — directly through GetSecret, or because their config items carry ${secret:...} references the server resolves on their behalf; paths the token's glob does not cover are refused.",
+        "The token is shown once; add an IP allowlist, a rate limit and an expiry, and revoking it rejects its nodes immediately."
+      ],
+      "when": "A new crawler fleet joins staging: it needs lease:acquire and report:write, plus secret:read only for the paths it actually reads."
+    },
+    "users": {
+      "summary": "The members of this tenant and their role bindings. A user is a global account; a role binding is what grants it access here.",
+      "steps": [
+        "A binding is a role plus an optional namespace and optional sites; without one the user sees nothing in this tenant.",
+        "viewer reads, operator operates, admin manages sites, publishing, secrets and tokens, owner also manages namespaces and users.",
+        "Extra permissions add one sensitive right — config:publish, secret:reveal, identity:reveal or policy:publish — without raising the role."
+      ],
+      "when": "A contractor should operate identities in staging only, and never see production credentials."
+    },
+    "audit": {
+      "summary": "Who did what in this tenant, whether it was allowed, and from which client — users, API tokens and the system itself.",
+      "steps": [
+        "Filter by namespace, actor, action, resource or result within a time range.",
+        "Expand an entry for its payload, actor ID and user agent.",
+        "Turn on auto-refresh to follow activity live."
+      ],
+      "when": "A secret was revealed or a batch of identities was banned and you need to know who did it and when."
+    },
+    "tenants": {
+      "summary": "A tenant is the isolation boundary of a team or organization; a namespace partitions one tenant into environments or business lines.",
+      "steps": [
+        "Platform admins create tenants; owners create the namespaces inside them.",
+        "Creating a namespace also publishes the built-in default policies.",
+        "A namespace must be emptied before it can be deleted."
+      ],
+      "when": "You separate production from staging, or onboard a second team that must never see your sites, proxies or credentials."
+    },
+    "profile": {
+      "summary": "Your account as the server stores it, the tenant access your role bindings give you, and the console preferences of this browser.",
+      "steps": [
+        "Language and theme are saved in this browser, not on the server.",
+        "Changing your password signs out all your other sessions.",
+        "Tenant access lists the tenants and namespaces your bindings cover."
+      ],
+      "when": "An administrator handed you an initial password and you want to replace it before doing anything else."
+    }
+  }
+}

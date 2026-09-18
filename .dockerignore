@@ -1,0 +1,20 @@
+.git
+.idea
+bin
+dist
+**/node_modules
+web/dist/*
+!web/dist/.keep
+sdk/python/.venv
+sdk/python/**/__pycache__
+deploy/compose/secrets
+coverage.*
+*.test
+# Local secrets and caches never belong in a build context.
+deploy/compose/.env
+**/.env
+**/.venv
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage

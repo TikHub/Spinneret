@@ -1,0 +1,63 @@
+{
+  "title": "Cooldown heatmap",
+  "description": "Identities × endpoint groups of a site client: remaining cooldown or health score",
+  "noNamespace": "Select a namespace to see its heatmap.",
+  "autoRefresh": "Refreshes every {{seconds}} s",
+  "noSites": "No sites yet",
+  "noSitesDescription": "Create a site with identities to see their cooldowns here.",
+  "noClient": "Select a client type of the site",
+  "noClients": "This site has no client types yet",
+  "emptyTitle": "No identities",
+  "emptyDescription": "No identity of this site client matches the state filter.",
+  "noGroups": "This client has no endpoint groups",
+  "clickHint": "Click a cell to open the identity.",
+  "controls": "Heatmap controls",
+  "client": "Client",
+  "metric": "Metric",
+  "metrics": {
+    "cooldown": "Cooldown remaining",
+    "score": "Score"
+  },
+  "states": "States",
+  "allStates": "All except retired",
+  "limit": "Identities per page",
+  "limitOption_one": "{{count}} identity",
+  "limitOption_other": "{{count}} identities",
+  "view": "View",
+  "views": {
+    "chart": "Chart",
+    "table": "Table"
+  },
+  "rowsRange": "Identities {{from}}–{{to}} of {{total}}",
+  "identity": "Identity",
+  "tableCaption": "Heatmap table: {{metric}} per identity and endpoint group",
+  "chartLabel": "Heatmap of {{rows}} identities and {{columns}} endpoint groups; use the table view for an accessible list",
+  "buckets": {
+    "cooling": "Cooling down",
+    "permanent": "Banned permanently",
+    "available": "Available",
+    "unavailable": "Not available",
+    "scored": "Score",
+    "baseline": "No hot state (baseline)"
+  },
+  "cell": {
+    "baseline": "baseline",
+    "available": "available",
+    "unavailable": "unavailable"
+  },
+  "tooltip": {
+    "identity": "Identity",
+    "label": "Label",
+    "state": "State",
+    "group": "Endpoint group",
+    "score": "Score",
+    "cooldown": "Cooldown remaining",
+    "noCooldown": "none",
+    "permanentBan": "permanent ban",
+    "available": "Available",
+    "yes": "yes",
+    "no": "no",
+    "hotState": "Hot state",
+    "noHotState": "none (baseline score)"
+  }
+}

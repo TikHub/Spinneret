@@ -1,0 +1,105 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spinneret"
+dynamic = ["version"]
+description = "Python SDK for Spinneret: identity leasing, proxy assignment, outcome reporting and config center for crawler nodes."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Evil0ctal" }]
+keywords = ["crawler", "scraping", "proxy", "identity", "rotation", "connectrpc"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Framework :: AsyncIO",
+  "Typing :: Typed",
+]
+dependencies = [
+  "httpx>=0.27",
+  "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+# Enables encrypted on-disk snapshots of config items that reference secrets
+# (ConfigWatcher(cache_secrets=True)).
+crypto = ["cryptography>=42"]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=5",
+  "respx>=0.22",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "cryptography>=42",
+]
+
+[project.urls]
+Homepage = "https://github.com/Evil0ctal/Spinneret"
+Source = "https://github.com/Evil0ctal/Spinneret/tree/main/sdk/python"
+
+[tool.hatch.version]
+path = "src/spinneret/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/spinneret"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/spinneret", "tests", "examples", "README.md", "README.zh-CN.md", "CHANGELOG.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["spinneret"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "@overload"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF", "C4", "PT", "RET", "PIE", "LOG", "G", "S", "ASYNC"]
+ignore = [
+  "S101", # assert is used in tests
+  "S311", # random is used for jitter, not cryptography
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108"]
+"examples/**" = ["S105", "S106"]
+
+[tool.ruff.lint.pyupgrade]
+# Pydantic evaluates annotations at runtime; keep typing.Optional/Union on 3.9.
+keep-runtime-typing = true
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true

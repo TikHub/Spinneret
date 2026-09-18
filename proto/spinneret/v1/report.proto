@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// ReportService ingests request outcome reports from crawler nodes. Nodes
+// report facts only; classification, blame and actions are decided by the
+// server-side signal and action policies. It requires the
+// `report:write[:<site>]` token scope.
+service ReportService {
+  // Report ingests up to 500 reports. Reports are validated individually:
+  // invalid ones are listed in `rejected` while the others are accepted.
+  // Reports are idempotent by `report_id` for the dedup window.
+  rpc Report(ReportRequest) returns (ReportResponse);
+}
+
+// ReportRequest is a batch of reports.
+message ReportRequest {
+  // Reports to ingest (1..500). The rules of each Report are not enforced at
+  // request level so that one invalid report does not reject the batch; the
+  // server validates every report and lists failures in
+  // ReportResponse.rejected.
+  repeated Report reports = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+    items: {ignore: IGNORE_ALWAYS}
+  }];
+}
+
+// Report describes the observed result of one request made with a lease.
+message Report {
+  option (buf.validate.message).cel = {
+    id: "report.finished_after_started"
+    message: "finished_at must not be before started_at"
+    expression: "!has(this.started_at) || !has(this.finished_at) || this.finished_at >= this.started_at"
+  };
+
+  // Client-generated idempotency key: 1..64 characters of [A-Za-z0-9_.:-]
+  // (a UUID is recommended).
+  string report_id = 1 [(buf.validate.field).string.pattern = "^[A-Za-z0-9_.:-]{1,64}$"];
+  // Lease the request was made with.
+  string lease_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 128
+  }];
+  // Requested path (optionally with query).
+  string uri = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
+  // HTTP method, e.g. "GET".
+  string method = 4 [(buf.validate.field).string.max_len = 16];
+  // HTTP status code; 0 means no response was received.
+  int32 http_status = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 999
+  }];
+  // Business status code extracted from the response body; empty when none.
+  string business_code = 6 [(buf.validate.field).string.max_len = 64];
+  // Node-side transport error; empty when the request completed.
+  string error_kind = 7 [(buf.validate.field).string = {
+    in: [
+      "",
+      "timeout",
+      "conn_reset",
+      "conn_refused",
+      "proxy_auth",
+      "tls",
+      "dns",
+      "other"
+    ]
+  }];
+  // Response features recognized by the node, e.g. "captcha_page",
+  // "login_redirect", "empty_list" (max 32 items of 1..64 characters).
+  repeated string markers = 8 [(buf.validate.field).repeated = {
+    max_items: 32
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+    }
+  }];
+  // Outcome proposed by the node; used only when the signal policy trusts
+  // hints and the value is a known outcome.
+  string outcome_hint = 9 [(buf.validate.field).string.max_len = 32];
+  // Request latency in milliseconds.
+  int32 latency_ms = 10 [(buf.validate.field).int32.gte = 0];
+  // Response body size in bytes.
+  int64 response_bytes = 11 [(buf.validate.field).int64.gte = 0];
+  // Time the request started.
+  google.protobuf.Timestamp started_at = 12 [(buf.validate.field).required = true];
+  // Time the request finished.
+  google.protobuf.Timestamp finished_at = 13 [(buf.validate.field).required = true];
+  // When true the lease is released after this report is processed.
+  bool release = 14;
+}
+
+// ReportResponse summarizes the ingestion of a batch.
+message ReportResponse {
+  // Number of reports accepted for processing.
+  int32 accepted = 1;
+  // Number of reports ignored because their report_id was already ingested.
+  int32 duplicated = 2;
+  // Reports that were not accepted.
+  repeated RejectedReport rejected = 3;
+}
+
+// RejectedReport explains why a report was not accepted.
+message RejectedReport {
+  // report_id of the rejected report (as sent, possibly empty or invalid).
+  string report_id = 1;
+  // Machine-readable reason: invalid_argument | lease_unknown | scope_missing.
+  string reason = 2;
+  // Human-readable detail.
+  string message = 3;
+}

@@ -1,0 +1,137 @@
+{
+  "title": "熔断",
+  "description": "命名空间 {{namespace}} 中端点组的熔断器与站点开关",
+  "noNamespace": "请选择命名空间以查看其熔断状态。",
+  "autoRefresh": "每 {{seconds}} 秒刷新一次",
+  "tabs": {
+    "breakers": "熔断器",
+    "sites": "站点开关",
+    "history": "历史"
+  },
+  "filters": {
+    "site": "站点",
+    "allSites": "全部站点",
+    "client": "客户端",
+    "allClients": "全部客户端",
+    "states": "状态",
+    "group": "端点组",
+    "allGroups": "全部端点组",
+    "trigger": "触发方式",
+    "allTriggers": "全部触发方式",
+    "range": "时间范围"
+  },
+  "columns": {
+    "group": "端点组",
+    "state": "状态",
+    "openUntil": "打开截止",
+    "consecutiveOpens": "连续打开次数",
+    "window": "窗口统计",
+    "probe": "探测",
+    "reason": "原因",
+    "lastTransition": "最近状态变化",
+    "policy": "策略",
+    "actions": "操作"
+  },
+  "actions": {
+    "open": "打开",
+    "close": "关闭"
+  },
+  "empty": "暂无熔断器",
+  "emptyDescription": "命名空间创建端点组后会显示对应的熔断器。",
+  "emptyFiltered": "没有符合筛选条件的熔断器。",
+  "manual": "人工",
+  "sitePaused": "站点已暂停",
+  "indefinite": "无限期",
+  "halfOpenSoon": "即将半开",
+  "noTraffic": "窗口内没有上报",
+  "windowSummary": "{{total}} 次上报 · 成功 {{success}} · 风控 {{risk}}",
+  "captchaIdentities_one": "{{count}} 个验证码身份",
+  "captchaIdentities_other": "{{count}} 个验证码身份",
+  "success": "成功",
+  "risk": "风控",
+  "probeSummary": "成功 {{successes}}/{{samples}} · 已发放 {{issued}}",
+  "lastOpened": "打开于",
+  "lastClosed": "关闭于",
+  "never": "从未",
+  "builtinPolicy": "内置默认策略",
+  "reason": "原因",
+  "reasonHint": "会记录在熔断事件和审计日志中。",
+  "open": {
+    "title": "打开熔断？",
+    "description": "熔断打开期间，{{target}} 的租约领取一律以 circuit_open 失败；已经发出的租约仍可上报，但不会再更新健康分。",
+    "confirm": "打开熔断",
+    "period": "打开时长",
+    "modes": {
+      "duration": "指定时长",
+      "indefinite": "直到人工关闭"
+    },
+    "duration": "时长",
+    "indefiniteHint": "熔断会一直保持打开，直到有人手动关闭。"
+  },
+  "close": {
+    "title": "关闭熔断？",
+    "description": "{{target}} 将立即恢复发放租约，不经过半开探测。",
+    "confirm": "关闭熔断"
+  },
+  "sites": {
+    "description": "暂停的站点会拒绝其所有端点组的全部租约请求，用于紧急止损或目标站大改版。",
+    "columns": {
+      "site": "站点",
+      "clients": "客户端",
+      "groups": "端点组",
+      "state": "状态",
+      "reason": "暂停原因",
+      "switch": "启用"
+    },
+    "empty": "暂无站点",
+    "emptyDescription": "请在“站点”页面创建站点。",
+    "noReason": "未填写原因",
+    "pauseLabel": "暂停站点 {{site}}",
+    "resumeLabel": "恢复站点 {{site}}",
+    "pauseTitle": "暂停站点 {{site}}？",
+    "resumeTitle": "恢复站点 {{site}}？",
+    "pauseDescription": "恢复之前，该站点的所有租约请求都会被拒绝。",
+    "resumeDescription": "该站点将重新发放租约；已打开的熔断器保持原状态。",
+    "pauseReasonHint": "必填：说明暂停站点的原因。",
+    "pause": "暂停站点",
+    "resume": "恢复站点"
+  },
+  "history": {
+    "columns": {
+      "time": "时间",
+      "target": "端点组",
+      "transition": "状态变化",
+      "trigger": "触发方式",
+      "reason": "原因",
+      "openUntil": "打开截止",
+      "actor": "操作者",
+      "metrics": "指标"
+    },
+    "siteSwitch": "站点开关",
+    "to": "变为",
+    "metrics": "指标",
+    "showMetrics": "查看状态变化时的指标",
+    "empty": "暂无状态变化",
+    "emptyDescription": "该时间范围内没有符合筛选条件的熔断状态变化。"
+  },
+  "triggers": {
+    "auto": "自动",
+    "manual": "人工",
+    "probe": "探测",
+    "site_switch": "站点开关"
+  },
+  "ranges": {
+    "1h": "最近 1 小时",
+    "6h": "最近 6 小时",
+    "24h": "最近 24 小时",
+    "7d": "最近 7 天",
+    "30d": "最近 30 天",
+    "all": "全部时间"
+  },
+  "toasts": {
+    "opened": "{{group}} 的熔断已打开",
+    "closed": "{{group}} 的熔断已关闭",
+    "paused": "站点 {{site}} 已暂停",
+    "resumed": "站点 {{site}} 已恢复"
+  }
+}

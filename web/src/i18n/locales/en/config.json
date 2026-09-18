@@ -1,0 +1,181 @@
+{
+  "title": "Config Center",
+  "description": "Versioned configuration of namespace {{namespace}}: edit drafts, publish, compare and roll back",
+  "noNamespace": "Select a namespace to manage its configuration.",
+  "selectItem": "Select a config item",
+  "selectItemDescription": "Pick a key from the tree to edit its draft, publish it or browse its versions.",
+  "tree": {
+    "label": "Config items",
+    "search": "Search keys or descriptions…",
+    "empty": "No config items yet",
+    "emptyDescription": "Create an item to distribute settings to your nodes.",
+    "noMatches": "No items match the search",
+    "systemGroup": "System group maintained by Spinneret (read-only)",
+    "hasDraft": "Has an unpublished draft",
+    "unpublished": "draft"
+  },
+  "formats": {
+    "json": "JSON",
+    "yaml": "YAML",
+    "text": "Text"
+  },
+  "fields": {
+    "group": "Group",
+    "key": "Key",
+    "format": "Format",
+    "description": "Description",
+    "content": "Content",
+    "schema": "JSON Schema",
+    "comment": "Comment"
+  },
+  "tabs": {
+    "content": "Content",
+    "schema": "Schema & details",
+    "versions": "Versions"
+  },
+  "item": {
+    "copyLocator": "Copy group/key",
+    "version": "v{{version}}",
+    "neverPublished": "Never published",
+    "draft": "Draft",
+    "unsaved": "Unsaved changes",
+    "readOnly": "Read-only",
+    "readOnlyHint": "This item belongs to a system group maintained by Spinneret and cannot be edited from the console.",
+    "id": "ID",
+    "published": "Published",
+    "draftSaved": "Draft saved",
+    "notFound": "Config item not found",
+    "notFoundDescription": "{{label}} does not exist in this namespace. It may have been deleted.",
+    "clearSelection": "Clear selection",
+    "remoteChanged": "This item was changed by someone else while you were editing. Saving overwrites their draft.",
+    "reloadDiscard": "Discard my changes and reload"
+  },
+  "actions": {
+    "saveDraft": "Save draft",
+    "discard": "Discard changes",
+    "publish": "Publish",
+    "rollback": "Roll back",
+    "readOnly": "System items are read-only",
+    "fixErrors": "Fix the validation errors first",
+    "noChanges": "No unsaved changes",
+    "noDraft": "There is no draft to publish",
+    "noOlderVersion": "There is no older version to roll back to"
+  },
+  "draft": {
+    "saved": "Draft saved",
+    "matchesPublished": "The content equals the published version; the draft was cleared"
+  },
+  "editor": {
+    "jsonValid": "Valid JSON",
+    "jsonEmpty": "JSON content must not be empty",
+    "jsonInvalid": "Content is not valid JSON",
+    "jsonError": "Invalid JSON at line {{line}}, column {{column}}: {{message}}",
+    "tooLarge": "Content must not exceed 4 MiB",
+    "size": "{{size}} of {{max}}",
+    "yamlServerCheck": "YAML syntax and schema are checked by the server when saving and publishing."
+  },
+  "schema": {
+    "hint": "Optional JSON Schema (draft 2020-12). The server validates the content against it when saving and publishing. Leave empty for no schema.",
+    "notSupported": "JSON Schemas can only be attached to JSON and YAML items."
+  },
+  "validation": {
+    "group": {
+      "required": "Enter a group",
+      "reserved": "Groups starting with \"_\" are reserved for the system",
+      "pattern": "1–64 characters: letters, digits, \"_\", \".\" and \"-\", starting with a letter or digit"
+    },
+    "key": {
+      "required": "Enter a key",
+      "pattern": "1–128 characters: letters, digits, \"_\", \".\", \"/\" and \"-\", starting with a letter or digit"
+    },
+    "schema": {
+      "syntax": "The schema is not valid JSON",
+      "type": "The schema must be a JSON object or a boolean",
+      "size": "The schema must be at most 1 MiB"
+    }
+  },
+  "secretRefs": {
+    "title": "Secret references",
+    "short": "Reference secrets with <code>${secret:path}</code> or <code>${secret:path#version}</code>. The console shows references as written; nodes receive resolved values.",
+    "syntax": "Write <code>${secret:signing/api_key}</code> for the current version or <code>${secret:signing/api_key#3}</code> for a fixed version. Paths are relative to this namespace.",
+    "resolution": "The console never resolves references and always shows them verbatim. Nodes receive the content with the secret values filled in, provided their token may read those paths.",
+    "found_one": "{{count}} reference:",
+    "found_other": "{{count}} references:",
+    "problems_one": "{{count}} malformed secret reference",
+    "problems_other": "{{count}} malformed secret references",
+    "issues": {
+      "unterminated": "Unterminated or too long secret reference (missing \"}\")",
+      "path": "Invalid secret path: lowercase letters, digits, \"_\", \".\", \"/\" and \"-\" without empty, \".\" or \"..\" segments",
+      "version": "The version must be a positive integer"
+    }
+  },
+  "create": {
+    "button": "New item",
+    "title": "New config item",
+    "description": "Create a config item in namespace {{namespace}}.",
+    "groupHint": "e.g. crawler",
+    "keyHint": "e.g. search.json",
+    "publishNow": "Publish as version 1",
+    "publishHint": "Otherwise the content is stored as a draft.",
+    "submitDraft": "Create draft",
+    "submitPublish": "Create and publish",
+    "createdDraft": "Config item created as a draft",
+    "createdPublished": "Config item created and published"
+  },
+  "publish": {
+    "title": "Publish {{label}}",
+    "description": "Publishing replaces version {{current}} with version {{next}}. Nodes watching this item receive it within seconds.",
+    "firstDescription": "Publishing creates version 1. Nodes watching this item receive it within seconds.",
+    "savesDraftFirst": "Your unsaved changes are saved as the draft before publishing.",
+    "original": "Published v{{version}}",
+    "emptyOriginal": "Nothing published yet",
+    "modified": "Draft",
+    "noChanges": "The draft is identical to the published content.",
+    "commentHint": "Describe what changed; shown in the version history.",
+    "confirm": "Publish v{{version}}",
+    "success": "Published {{label}} as v{{version}}"
+  },
+  "rollback": {
+    "title": "Roll back {{label}}",
+    "description": "The content of the selected version is published again as version {{next}}; history stays linear.",
+    "version": "Version",
+    "pickVersion": "Select a version",
+    "pickHint": "Select a version to preview the change.",
+    "noVersions": "There are no other versions.",
+    "previewLabel": "Current v{{current}} → v{{version}}",
+    "commentPlaceholder": "Roll back to v{{version}}",
+    "confirm": "Roll back to v{{version}}",
+    "confirmNone": "Roll back",
+    "success": "Rolled back {{label}} to v{{version}} (published as v{{newVersion}})"
+  },
+  "delete": {
+    "title": "Delete {{label}}?",
+    "description": "The item and all of its versions are deleted permanently. Nodes reading it will get not found errors.",
+    "success": "Deleted {{label}}"
+  },
+  "versions": {
+    "version": "Version",
+    "current": "Current",
+    "publishedBy": "Published by",
+    "publishedAt": "Published",
+    "rollbackOf": "Rollback of v{{version}}",
+    "view": "View content",
+    "viewTitle": "{{label}} v{{version}}",
+    "noComment": "No comment",
+    "compareWithCurrent": "Compare with current",
+    "rollbackTo": "Roll back to v{{version}}",
+    "empty": "No published versions",
+    "emptyWithDraft": "Publish the draft to create version 1.",
+    "compareFrom": "Compare",
+    "compareTo": "With",
+    "currentOption": "v{{version}} (current)",
+    "draftOption": "Draft",
+    "pickTwo": "Pick two different versions to compare."
+  },
+  "unsaved": {
+    "title": "Discard unsaved changes?",
+    "description": "You have unsaved edits to this config item. Leaving now discards them.",
+    "stay": "Keep editing",
+    "discard": "Discard and leave"
+  }
+}

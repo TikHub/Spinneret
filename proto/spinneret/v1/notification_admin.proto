@@ -1,0 +1,361 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "spinneret/v1/common.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// NotificationAdminService manages alert notification channels of the active
+// tenant and lists fired alerts. Reads require `notify:read`, writes
+// `notify:write`.
+service NotificationAdminService {
+  // ListChannels lists notification channels.
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  // CreateChannel creates a notification channel.
+  rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
+  // UpdateChannel replaces the mutable fields of a channel.
+  rpc UpdateChannel(UpdateChannelRequest) returns (UpdateChannelResponse);
+  // DeleteChannel deletes a channel.
+  rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse);
+  // TestChannel sends a `test` alert through a channel, ignoring its filters.
+  rpc TestChannel(TestChannelRequest) returns (TestChannelResponse);
+  // ListAlertEvents lists fired alerts with their deliveries, newest first.
+  rpc ListAlertEvents(ListAlertEventsRequest) returns (ListAlertEventsResponse);
+}
+
+// Channel is an alert delivery target.
+message Channel {
+  // Channel ID (`nch_...`).
+  string id = 1;
+  // Namespace name; empty for a tenant-wide channel.
+  string namespace = 2;
+  // Name, unique inside the tenant.
+  string name = 3;
+  // Kind: webhook | feishu | dingtalk | wecom | telegram.
+  string kind = 4;
+  // Kind-specific settings (for example a webhook URL or bot token). Secret
+  // values are masked on read; the settings are stored encrypted.
+  google.protobuf.Struct config = 5;
+  // Subscribed alert kinds (see CreateChannelRequest.event_types).
+  repeated string event_types = 6;
+  // Site names the channel is restricted to; empty = all sites.
+  repeated string sites = 7;
+  // Minimum severity delivered: info | warning | critical.
+  string min_severity = 8;
+  // True when deliveries are enabled.
+  bool enabled = 9;
+  // Time of the last delivery attempt; null when never.
+  google.protobuf.Timestamp last_delivery_at = 10;
+  // Status of the last delivery attempt: "ok" or an error summary.
+  string last_delivery_status = 11;
+  // Creation time.
+  google.protobuf.Timestamp created_at = 12;
+  // Last update time.
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+// ListChannelsRequest filters and pages channels.
+message ListChannelsRequest {
+  // Namespace name filter; empty lists every channel of the tenant.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 3 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListChannelsResponse is one page of channels.
+message ListChannelsResponse {
+  // Channels ordered by name.
+  repeated Channel channels = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+  // Total number of matching channels.
+  int32 total = 3;
+}
+
+// CreateChannelRequest describes a new channel.
+message CreateChannelRequest {
+  option (buf.validate.message).cel = {
+    id: "create_channel.sites_require_namespace"
+    message: "sites require a namespace"
+    expression: "size(this.sites) == 0 || this.namespace != ''"
+  };
+
+  // Namespace name; empty creates a tenant-wide channel.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // Name, unique inside the tenant.
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Channel kind.
+  string kind = 3 [(buf.validate.field).string = {
+    in: [
+      "webhook",
+      "feishu",
+      "dingtalk",
+      "wecom",
+      "telegram"
+    ]
+  }];
+  // Kind-specific settings, validated by the server.
+  google.protobuf.Struct config = 4 [(buf.validate.field).required = true];
+  // Subscribed alert kinds (at least one).
+  repeated string event_types = 5 [(buf.validate.field).repeated = {
+    min_items: 1
+    unique: true
+    items: {
+      string: {
+        in: [
+          "breaker_opened",
+          "breaker_reopened",
+          "breaker_closed",
+          "identity_low_watermark",
+          "proxy_low_watermark",
+          "ban_spike",
+          "report_backlog",
+          "unknown_ratio_high",
+          "client_error_spike",
+          "identity_expired",
+          "secret_expiring",
+          "test"
+        ]
+      }
+    }
+  }];
+  // Site names inside `namespace` the channel is restricted to; empty = all
+  // sites.
+  repeated string sites = 6 [(buf.validate.field).repeated = {
+    max_items: 500
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+    }
+  }];
+  // Minimum severity delivered; empty defaults to "warning".
+  string min_severity = 7 [(buf.validate.field).string = {
+    in: [
+      "",
+      "info",
+      "warning",
+      "critical"
+    ]
+  }];
+  // Whether deliveries are enabled; defaults to true when unset.
+  optional bool enabled = 8;
+}
+
+// CreateChannelResponse returns the created channel.
+message CreateChannelResponse {
+  // The created channel (config masked).
+  Channel channel = 1;
+}
+
+// UpdateChannelRequest replaces the mutable fields of a channel. The
+// namespace and kind of a channel cannot change.
+message UpdateChannelRequest {
+  // Channel ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // Name, unique inside the tenant.
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // New kind-specific settings; null keeps the stored settings. Secret values
+  // that are still masked (as returned by reads) keep their stored value.
+  google.protobuf.Struct config = 3;
+  // Subscribed alert kinds (at least one).
+  repeated string event_types = 4 [(buf.validate.field).repeated = {
+    min_items: 1
+    unique: true
+    items: {
+      string: {
+        in: [
+          "breaker_opened",
+          "breaker_reopened",
+          "breaker_closed",
+          "identity_low_watermark",
+          "proxy_low_watermark",
+          "ban_spike",
+          "report_backlog",
+          "unknown_ratio_high",
+          "client_error_spike",
+          "identity_expired",
+          "secret_expiring",
+          "test"
+        ]
+      }
+    }
+  }];
+  // Site names the channel is restricted to; empty = all sites. Only allowed
+  // for channels bound to a namespace.
+  repeated string sites = 5 [(buf.validate.field).repeated = {
+    max_items: 500
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+      }
+    }
+  }];
+  // Minimum severity delivered; empty defaults to "warning".
+  string min_severity = 6 [(buf.validate.field).string = {
+    in: [
+      "",
+      "info",
+      "warning",
+      "critical"
+    ]
+  }];
+  // Whether deliveries are enabled.
+  bool enabled = 7;
+}
+
+// UpdateChannelResponse returns the updated channel.
+message UpdateChannelResponse {
+  // The updated channel (config masked).
+  Channel channel = 1;
+}
+
+// DeleteChannelRequest addresses a channel.
+message DeleteChannelRequest {
+  // Channel ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// DeleteChannelResponse is empty.
+message DeleteChannelResponse {}
+
+// TestChannelRequest addresses the channel to test.
+message TestChannelRequest {
+  // Channel ID.
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+// TestChannelResponse reports the result of the test delivery.
+message TestChannelResponse {
+  // Result of the delivery attempt.
+  AlertDelivery delivery = 1;
+}
+
+// ListAlertEventsRequest filters and pages alert events.
+message ListAlertEventsRequest {
+  option (buf.validate.message).cel = {
+    id: "list_alert_events.site_requires_namespace"
+    message: "site requires a namespace"
+    expression: "this.site == '' || this.namespace != ''"
+  };
+  option (buf.validate.message).cel = {
+    id: "time_range.ordered"
+    message: "time_range.end must be after time_range.start"
+    expression: "!has(this.time_range) || !has(this.time_range.start) || !has(this.time_range.end) || this.time_range.end > this.time_range.start"
+  };
+
+  // Namespace name filter; empty = every namespace of the tenant.
+  string namespace = 1 [(buf.validate.field).string.max_len = 64];
+  // Site name filter (requires `namespace`).
+  string site = 2 [(buf.validate.field).string.max_len = 64];
+  // Alert kind filter.
+  string kind = 3 [(buf.validate.field).string = {
+    in: [
+      "",
+      "breaker_opened",
+      "breaker_reopened",
+      "breaker_closed",
+      "identity_low_watermark",
+      "proxy_low_watermark",
+      "ban_spike",
+      "report_backlog",
+      "unknown_ratio_high",
+      "client_error_spike",
+      "identity_expired",
+      "secret_expiring",
+      "test"
+    ]
+  }];
+  // Severity filter.
+  string severity = 4 [(buf.validate.field).string = {
+    in: [
+      "",
+      "info",
+      "warning",
+      "critical"
+    ]
+  }];
+  // Time range; unset = no bound.
+  TimeRange time_range = 5;
+  // Maximum number of results (0 = default 50, max 500).
+  int32 page_size = 6 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  // Cursor from a previous response; empty for the first page.
+  string page_token = 7 [(buf.validate.field).string.max_len = 1024];
+}
+
+// ListAlertEventsResponse is one page of alert events.
+message ListAlertEventsResponse {
+  // Alert events, newest first.
+  repeated AlertEvent events = 1;
+  // Cursor of the next page; empty when there are no more results.
+  string next_page_token = 2;
+}
+
+// AlertEvent is one fired alert.
+message AlertEvent {
+  // Alert ID (`alt_...`).
+  string id = 1;
+  // Time the alert fired.
+  google.protobuf.Timestamp created_at = 2;
+  // Namespace name; empty for tenant-level alerts.
+  string namespace = 3;
+  // Site name; empty when not site specific.
+  string site = 4;
+  // Alert kind, e.g. "breaker_opened".
+  string kind = 5;
+  // Severity: info | warning | critical.
+  string severity = 6;
+  // Short title.
+  string title = 7;
+  // Message body.
+  string message = 8;
+  // Kind-specific details.
+  google.protobuf.Struct details = 9;
+  // Delivery attempts per channel.
+  repeated AlertDelivery deliveries = 10;
+}
+
+// AlertDelivery is the result of delivering an alert through one channel.
+message AlertDelivery {
+  // Channel ID.
+  string channel_id = 1;
+  // Channel name.
+  string channel_name = 2;
+  // True when the channel accepted the message.
+  bool ok = 3;
+  // Error summary when delivery failed.
+  string error = 4;
+  // Time of the delivery attempt.
+  google.protobuf.Timestamp at = 5;
+}

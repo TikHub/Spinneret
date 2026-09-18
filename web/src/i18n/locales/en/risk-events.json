@@ -1,0 +1,58 @@
+{
+  "title": "Risk events",
+  "description": "Non-success reports stored in PostgreSQL (kept for the server's retention window, 30 days by default), newest first",
+  "noNamespace": "Select a namespace to see its risk events.",
+  "autoRefresh": "Auto refresh ({{seconds}} s)",
+  "filters": {
+    "outcome": "Outcome",
+    "allOutcomes": "All outcomes",
+    "identity": "Identity ID",
+    "proxy": "Proxy ID",
+    "node": "Node"
+  },
+  "columns": {
+    "time": "Time",
+    "site": "Site",
+    "group": "Endpoint group",
+    "outcome": "Outcome",
+    "blame": "Blame",
+    "rule": "Rule",
+    "httpStatus": "HTTP",
+    "businessCode": "Business code",
+    "errorKind": "Error kind",
+    "markers": "Markers",
+    "latency": "Latency",
+    "identity": "Identity",
+    "proxy": "Proxy",
+    "node": "Node",
+    "lease": "Lease ID",
+    "report": "Report ID"
+  },
+  "blame": {
+    "none": "None",
+    "identity": "Identity",
+    "proxy": "Proxy",
+    "both": "Both"
+  },
+  "unknownGroup": "Unknown group",
+  "expand": "Details",
+  "expandRow": "Show details",
+  "collapseRow": "Hide details",
+  "empty": {
+    "title": "No risk events",
+    "description": "No non-success report matches the filters in this time range."
+  },
+  "detail": {
+    "request": "Request",
+    "startedAt": "Started",
+    "finishedAt": "Finished",
+    "processedAt": "Processed",
+    "duration": "Duration",
+    "reported": "reported {{latency}}",
+    "bytes": "Response size",
+    "client": "Client",
+    "id": "Event ID",
+    "token": "Token",
+    "groupId": "Endpoint group ID"
+  }
+}

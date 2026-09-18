@@ -1,0 +1,210 @@
+{
+  "title": "Sites",
+  "description": "Sites, clients and endpoint groups of namespace {{namespace}}, with URI rules and the site switch",
+  "noNamespace": "Select a namespace to manage its sites.",
+  "list": {
+    "title": "Sites",
+    "create": "New site",
+    "filter": "Filter sites…",
+    "noMatch": "No site on this page matches.",
+    "empty": "No sites yet",
+    "emptyDescription": "Create a site to start scheduling identities and proxies for it.",
+    "endpointGroups": "Endpoint groups",
+    "identities": "Identities"
+  },
+  "detail": {
+    "clients": "Clients",
+    "endpointGroups": "Endpoint groups",
+    "identities": "Identities",
+    "created": "Created",
+    "updated": "Updated",
+    "pausedSince": "Paused",
+    "selectSite": "Select a site",
+    "notFound": "Site {{name}} was not found",
+    "clearSelection": "Show the first site"
+  },
+  "form": {
+    "createTitle": "New site",
+    "createDescription": "A _default endpoint group is created for every client.",
+    "editTitle": "Edit site",
+    "name": "Name",
+    "nameHint": "Lower-case letters, digits, _, . and -; up to 64 characters. Cannot be changed later.",
+    "nameImmutable": "The name cannot be changed.",
+    "displayName": "Display name",
+    "description": "Description",
+    "clients": "Clients",
+    "clientsHint": "Client types such as web or app (lower-case letters, digits, _ and -; up to 32 characters). Empty defaults to {{defaults}}.",
+    "clientsEditHint": "Adding a client creates its _default endpoint group. A client that still has identities cannot be removed.",
+    "clientsPlaceholder": "Add a client and press Enter",
+    "clientsRemoved": "Removing {{clients}} deletes their endpoint groups and rules; it fails while identities still use them.",
+    "noChanges": "Nothing changed",
+    "created": "Site {{name}} created",
+    "updated": "Site {{name}} updated",
+    "errors": {
+      "tooLong": "At most {{max}} characters.",
+      "name": {
+        "required": "Enter a name.",
+        "pattern": "Use 1 to 64 lower-case letters, digits, _, . or -, starting with a letter, digit or _."
+      },
+      "clients": {
+        "required": "A site needs at least one client.",
+        "too_many": "At most {{max}} clients.",
+        "invalid": "Client names must match ^[a-z0-9_-]{1,32}$.",
+        "duplicate": "Each client may appear only once."
+      }
+    }
+  },
+  "delete": {
+    "title": "Delete site {{name}}?",
+    "description": "Deletes the site with its endpoint groups, URI rules, identity types, identities, accounts and policy bindings. This cannot be undone.",
+    "identitiesWarning_one": "This site still has {{formatted}} identity. It is deleted permanently together with the site.",
+    "identitiesWarning_other": "This site still has {{formatted}} identities. They are deleted permanently together with the site.",
+    "force": "I understand: delete the site and all of its identities.",
+    "done": "Site {{name}} deleted"
+  },
+  "pause": {
+    "pauseLabel": "Pause site {{name}}",
+    "resumeLabel": "Resume site {{name}}",
+    "activeLabel": "Active",
+    "pausedLabel": "Paused",
+    "pauseTitle": "Pause site {{name}}?",
+    "pauseDescription": "While paused, every lease request for this site is refused with site_paused. Leases in flight continue until they are released.",
+    "resumeTitle": "Resume site {{name}}?",
+    "resumeDescription": "Lease requests for this site are accepted again.",
+    "pause": "Pause site",
+    "resume": "Resume site",
+    "reason": "Reason",
+    "reasonPlaceholder": "Why is the site paused? Shown to operators and recorded in the audit log.",
+    "paused": "Site {{name}} paused",
+    "resumed": "Site {{name}} resumed"
+  },
+  "groups": {
+    "create": "New endpoint group",
+    "createTitle": "New endpoint group",
+    "createDescription": "Endpoint groups are the unit of rotation, cooldown and circuit breaking. Add URI rules after creating it.",
+    "editTitle": "Edit endpoint group",
+    "client": "Client",
+    "name": "Name",
+    "nameImmutable": "Client and name cannot be changed.",
+    "description": "Description",
+    "lowWatermark": "Low watermark",
+    "lowWatermarkHint": "Alert when fewer identities are available; 0 disables the alert.",
+    "fallback": "fallback",
+    "alertOff": "off",
+    "belowWatermark": "Available identities are below the low watermark",
+    "editRules": "Edit URI rules",
+    "actionsFor": "Actions for {{name}}",
+    "defaultNotDeletable": "_default cannot be deleted",
+    "deleteTitle": "Delete endpoint group {{name}}?",
+    "deleteDescription": "Deletes the group with its URI rules and policy bindings. Requests that matched its rules fall back to other rules or _default. This cannot be undone.",
+    "created": "Endpoint group {{name}} created",
+    "updated": "Endpoint group {{name}} updated",
+    "deleted": "Endpoint group {{name}} deleted",
+    "empty": "No endpoint groups",
+    "emptyDescription": "Create an endpoint group for URIs with similar risk behavior.",
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "lowWatermark": "Low watermark",
+      "available": "Available",
+      "breaker": "Breaker",
+      "rules": "Rules",
+      "updated": "Updated",
+      "actions": "Actions"
+    },
+    "errors": {
+      "lowWatermark": "Enter a whole number of 0 or more.",
+      "name": {
+        "required": "Enter a name.",
+        "pattern": "Use 1 to 64 lower-case letters, digits, _, . or -, starting with a letter, digit or _.",
+        "reserved": "_default exists for every client and cannot be created."
+      }
+    }
+  },
+  "rules": {
+    "title": "URI rules of {{name}}",
+    "priority": "Match priority: exact, then template (more literal segments first), then prefix (longest first), then regex (in list order), then _default. Order matters for regex rules and template ties; drag the handle or use the arrows (or arrow keys on the handle) to reorder.",
+    "count_one": "{{count}} rule",
+    "count_other": "{{count}} rules",
+    "unsaved": "Unsaved changes",
+    "listLabel": "URI rules in evaluation order",
+    "empty": "No rules",
+    "emptyDescription": "Without rules no request matches this group; add rules below.",
+    "defaultTitle": "_default has no rules",
+    "defaultDescription": "The _default group receives every request whose path matches no rule of the client.",
+    "add": "Add rule",
+    "discard": "Discard changes",
+    "reload": "Reload",
+    "discardTitle": "Discard unsaved rule changes?",
+    "discardDescription": "Your edits to the rule list will be lost.",
+    "saved_one": "{{count}} rule saved for {{name}}",
+    "saved_other": "{{count}} rules saved for {{name}}",
+    "dragHandle": "Reorder rule {{position}}: drag, or press the up and down arrow keys",
+    "kindLabel": "Kind of rule {{position}}",
+    "patternLabel": "Pattern of rule {{position}}",
+    "moveUp": "Move rule {{position}} up",
+    "moveDown": "Move rule {{position}} down",
+    "remove": "Remove rule {{position}}",
+    "kinds": {
+      "exact": "Exact",
+      "template": "Template",
+      "prefix": "Prefix",
+      "regex": "Regex"
+    },
+    "placeholders": {
+      "exact": "/api/v1/item/detail",
+      "template": "/api/item/{id}/detail",
+      "prefix": "/api/v1/search/",
+      "regex": "^/api/v[0-9]+/feed$"
+    },
+    "hints": {
+      "required": "Enter a pattern.",
+      "too_long": "At most {{max}} characters.",
+      "must_start_with_slash": "The pattern must start with \"/\".",
+      "no_query_fragment": "Remove \"?\" and \"#\": only the path is matched, never the query or fragment.",
+      "whitespace": "The pattern must not contain spaces or control characters.",
+      "braces_literal": "Braces are matched literally here; use a template rule for {parameters}.",
+      "wildcard_literal": "\"*\" is matched literally; use a prefix or regex rule for wildcards.",
+      "prefix_no_trailing_slash": "Without a trailing \"/\" this prefix also matches longer names (for example /items for /item).",
+      "template_segment": "Segment {{segment}}: a parameter must fill the whole segment, like {name}.",
+      "template_param_name": "Segment {{segment}}: parameter names must match ^[a-zA-Z_][a-zA-Z0-9_]*$.",
+      "template_duplicate_param": "Parameter {{name}} is used twice.",
+      "template_no_params": "No {parameters}: this template behaves like an exact rule.",
+      "regex_unsupported": "RE2 does not support lookahead, lookbehind or backreferences.",
+      "regex_invalid": "The expression looks invalid ({{message}}); the server validates it as RE2.",
+      "regex_unanchored": "Regex rules match anywhere in the path; add ^ and $ to anchor them.",
+      "duplicate": "This kind and pattern already appear above."
+    }
+  },
+  "tester": {
+    "title": "URI tester",
+    "description": "Resolve a request URI to its endpoint group, matching rule and effective policies.",
+    "client": "Client",
+    "uri": "URI",
+    "uriPlaceholder": "/api/item/123?x=1 or https://example.com/api/item/123",
+    "run": "Test",
+    "group": "Endpoint group",
+    "defaultGroup": "default",
+    "rule": "Matched rule",
+    "noRuleMatched": "No rule matched; the _default group applies.",
+    "openRules": "Edit rules",
+    "policyKind": "Kind",
+    "policy": "Policy",
+    "version": "Version",
+    "level": "Bound at",
+    "builtin": "Built-in default",
+    "kinds": {
+      "rotation": "Rotation",
+      "signal": "Signal",
+      "action": "Action",
+      "breaker": "Breaker"
+    },
+    "levels": {
+      "endpoint_group": "Endpoint group",
+      "client": "Client",
+      "site": "Site",
+      "namespace": "Namespace",
+      "builtin": "Built-in"
+    }
+  }
+}

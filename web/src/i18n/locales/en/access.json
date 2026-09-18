@@ -1,0 +1,400 @@
+{
+  "tokens": {
+    "title": "API tokens",
+    "description": "Tokens authenticate crawler nodes and automation in namespace {{namespace}}. A token string is shown once, at creation, and never again.",
+    "noNamespace": "Select a namespace to manage its API tokens.",
+    "create": "Create token",
+    "includeRevoked": "Show revoked",
+    "empty": "No API tokens",
+    "emptyDescription": "Create a token for a crawler node, a cookie refresher or a CI pipeline.",
+    "columns": {
+      "name": "Name",
+      "prefix": "Prefix",
+      "scopes": "Scopes",
+      "ipAllowlist": "IP allowlist",
+      "rateLimit": "Rate limit",
+      "status": "Status",
+      "expires": "Expires",
+      "lastUsed": "Last used",
+      "createdBy": "Created by",
+      "createdAt": "Created",
+      "actions": "Actions"
+    },
+    "prefixHint": "First characters of the token, for identification only",
+    "anyIp": "Any address",
+    "unlimited": "Unlimited",
+    "rps": "{{value}} req/s",
+    "never": "Never",
+    "neverUsed": "Never used",
+    "status": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "revoke": "Revoke",
+    "alreadyRevoked": "Already revoked",
+    "revokeTitle": "Revoke token {{name}}?",
+    "revokeDescription": "Every node using this token is rejected immediately on all instances. Revocation cannot be undone; create a new token to restore access.",
+    "revokedToast": "Token {{name}} revoked",
+    "form": {
+      "title": "Create API token",
+      "description": "The token is bound to namespace {{namespace}}.",
+      "name": "Name",
+      "namePlaceholder": "e.g. crawler-node-01",
+      "descriptionLabel": "Description",
+      "rateLimit": "Rate limit (req/s)",
+      "rateLimitHint": "Per server instance; empty or 0 means unlimited.",
+      "rateLimitPlaceholder": "Unlimited",
+      "scopes": "Scopes",
+      "ipAllowlist": "IP allowlist",
+      "ipAllowlistHint": "IP addresses or CIDR ranges; empty allows any address.",
+      "ipAllowlistPlaceholder": "203.0.113.7 or 10.0.0.0/8",
+      "expiresIn": "Expires in",
+      "expiresInPlaceholder": "Never",
+      "expiresAt": "Expires at {{time}}",
+      "neverExpires": "The token never expires.",
+      "submit": "Create token",
+      "created": "Token {{name}} created",
+      "errors": {
+        "name": {
+          "required": "Enter a name.",
+          "tooLong": "At most 64 characters."
+        },
+        "description": "At most 1024 characters.",
+        "rateLimit": "Enter a whole number between 0 and {{max}}.",
+        "scopes": {
+          "required": "Add at least one scope.",
+          "tooMany": "At most 64 scopes.",
+          "invalidRows": "Fix the highlighted scopes."
+        },
+        "ipAllowlist": {
+          "invalid": "Every entry must be an IP address or CIDR range.",
+          "tooMany": "At most 256 entries."
+        },
+        "expiresIn": {
+          "invalid": "Use a duration such as 30d or 12h, or leave empty for no expiry.",
+          "notPositive": "The duration must be greater than zero."
+        }
+      }
+    },
+    "secret": {
+      "title": "Token {{name}} created",
+      "description": "Copy the token now and store it in a secret manager.",
+      "warning": "This is the only time the token is shown. Spinneret stores only a hash; if you lose it, revoke the token and create a new one.",
+      "plaintextLabel": "Token",
+      "copy": "Copy token",
+      "usage": "Nodes send it as the {{header}} header.",
+      "confirm": "I have saved the token in a safe place",
+      "close": "Done"
+    }
+  },
+  "scopes": {
+    "more_one": "+{{count}} more",
+    "more_other": "+{{count}} more",
+    "unknown": "Unknown scope",
+    "names": {
+      "lease_acquire": {
+        "grants": "Acquire identity and proxy leases",
+        "hint": "Acquire leases on every site or only on one site."
+      },
+      "report_write": {
+        "grants": "Report request outcomes",
+        "hint": "Report outcomes for every site or only for one site."
+      },
+      "config_read": {
+        "grants": "Read config (node config service and admin reads)",
+        "hint": "Optional group glob, e.g. crawler* ; empty means every group."
+      },
+      "config_publish": {
+        "grants": "Read, edit and publish config",
+        "hint": "Optional group glob, e.g. crawler.* ; empty means every group."
+      },
+      "secret_read": {
+        "grants": "Read secret values",
+        "hint": "Required glob over \"<namespace>/<path>\", e.g. {{namespace}}/signing/*"
+      },
+      "identity_write": {
+        "grants": "Read, write and operate identities",
+        "hint": "Manage identities on every site or only on one site (e.g. cookie refreshers)."
+      },
+      "proxy_write": {
+        "grants": "Read, write and operate proxies",
+        "hint": "Namespace-wide; takes no argument."
+      },
+      "admin": {
+        "grants": "Admin role within the token namespace",
+        "hint": "Grants the admin role in the namespace. Use sparingly."
+      }
+    },
+    "presets": {
+      "label": "Presets",
+      "crawlerNode": "Crawler node",
+      "cookieRefresher": "Cookie refresher",
+      "ciPublisher": "CI publisher"
+    },
+    "builder": {
+      "empty": "No scopes yet. Add a scope or start from a preset.",
+      "listLabel": "Token scopes",
+      "scopeLabel": "Scope {{index}}",
+      "argLabel": "Argument of scope {{index}}",
+      "remove": "Remove scope",
+      "removeRow": "Remove scope {{index}}",
+      "add": "Add scope",
+      "preview": "Granted scopes",
+      "noArgument": "No argument",
+      "loadingSites": "Loading sites…",
+      "allSites": "All sites",
+      "sitesUnavailable": "Sites could not be loaded; type site names instead.",
+      "sitePlaceholder": "Site name; empty for all sites",
+      "groupPlaceholder": "Group glob, e.g. crawler*",
+      "pathPlaceholder": "{{namespace}}/signing/*"
+    },
+    "errors": {
+      "argRequired": "A path glob is required, e.g. {{namespace}}/signing/*",
+      "argInvalid": "Invalid argument: site names are exact (no wildcards), globs use letters, digits, \".\", \"_\", \"-\", \"*\" and \"?\", and secret paths look like <namespace>/<path>.",
+      "duplicate": "This scope is already listed.",
+      "tooLong": "The scope is longer than 256 characters."
+    }
+  },
+  "roles": {
+    "names": {
+      "viewer": "Viewer",
+      "operator": "Operator",
+      "admin": "Admin",
+      "owner": "Owner"
+    },
+    "summaries": {
+      "viewer": "Read-only access to scheduling state, config, dashboards and audit logs.",
+      "operator": "Viewer plus day-to-day operations on identities, proxies, policies and breakers.",
+      "admin": "Operator plus sites, publishing, secrets, reveals, tokens and notifications.",
+      "owner": "Admin plus namespaces and user management."
+    },
+    "descriptions": {
+      "viewer": "Reads namespaces, sites, identities, proxies, policies, breakers, config, dashboards, audit logs and notifications; lists secrets without values.",
+      "operator": "Everything a viewer can do, plus writing and operating identities and proxies, editing policies and config drafts, and operating breakers.",
+      "admin": "Everything an operator can do, plus managing sites, publishing policies and config, writing and revealing secrets, revealing identity payloads, managing API tokens and notification channels.",
+      "owner": "Everything an admin can do, plus creating and deleting namespaces and managing users and role bindings."
+    },
+    "extra": {
+      "config_publish": "publish config drafts",
+      "secret_reveal": "reveal secret values",
+      "identity_reveal": "reveal identity payloads",
+      "policy_publish": "publish policies"
+    },
+    "help": {
+      "open": "What do the roles allow?",
+      "title": "Roles",
+      "extraTitle": "Extra permissions",
+      "extraDescription": "Add single sensitive permissions to any role without granting a higher role:",
+      "scope": "A binding applies to all namespaces or to one namespace, optionally narrowed to some of its sites. Users and bindings can only be managed with a binding that covers the whole tenant."
+    }
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password",
+    "hint": "At least {{count}} characters. Longer passphrases with mixed characters are stronger.",
+    "strength": {
+      "0": "Too weak",
+      "1": "Weak",
+      "2": "Fair",
+      "3": "Good",
+      "4": "Strong"
+    },
+    "errors": {
+      "required": "Enter a password.",
+      "tooShort": "At least {{count}} characters.",
+      "tooLong": "At most 1024 characters."
+    }
+  },
+  "users": {
+    "title": "Users & roles",
+    "description": "Members of tenant {{tenant}} and their role bindings.",
+    "searchPlaceholder": "Search username, name or email",
+    "allUsers": "All users",
+    "empty": "No users",
+    "emptyDescription": "Create a user to grant access to this tenant.",
+    "noMatches": "No matching users",
+    "noMatchesDescription": "Try another search term.",
+    "platformAdmin": "Platform admin",
+    "platformAdminHint": "Manages tenants and can act in every tenant",
+    "you": "You",
+    "noBindings": "No bindings in this tenant",
+    "columns": {
+      "username": "Username",
+      "displayName": "Display name",
+      "email": "Email",
+      "status": "Status",
+      "bindings": "Role bindings",
+      "lastLogin": "Last sign-in",
+      "createdAt": "Created",
+      "id": "User ID",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "actions": {
+      "bindings": "Role bindings",
+      "edit": "Edit user",
+      "resetPassword": "Reset password"
+    },
+    "fields": {
+      "username": "Username",
+      "usernameHint": "3–64 lower-case letters, digits, \".\", \"_\" or \"-\".",
+      "displayName": "Display name",
+      "email": "Email",
+      "password": "Initial password",
+      "locale": "Language",
+      "disabled": "Disabled"
+    },
+    "errors": {
+      "username": {
+        "required": "Enter a username.",
+        "pattern": "Use 3–64 lower-case letters, digits, \".\", \"_\" or \"-\", starting with a letter or digit."
+      },
+      "displayName": "At most 128 characters.",
+      "email": {
+        "invalid": "Enter a valid email address.",
+        "tooLong": "At most 254 characters."
+      },
+      "locale": "Invalid language tag."
+    },
+    "create": {
+      "button": "Create user",
+      "title": "Create user",
+      "description": "The user gets an initial role binding in tenant {{tenant}}.",
+      "bindingTitle": "Initial role binding",
+      "bindingDescription": "More bindings can be added later from the user's role bindings.",
+      "submit": "Create user",
+      "success": "User {{username}} created"
+    },
+    "edit": {
+      "title": "Edit {{username}}",
+      "description": "Profile fields apply to the user in every tenant.",
+      "emailHint": "Leave empty to clear the email address.",
+      "defaultLocale": "Browser default",
+      "disabledHint": "Disabled users cannot sign in; disabling ends their sessions.",
+      "success": "User {{username}} updated"
+    },
+    "disable": {
+      "title": "Disable {{username}}?",
+      "description": "The user is signed out everywhere and cannot sign in until the account is enabled again.",
+      "confirm": "Disable user"
+    },
+    "resetPassword": {
+      "title": "Reset password of {{username}}",
+      "description": "Set a new password and share it with the user through a secure channel.",
+      "warning": "All sessions of the user end immediately.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "submit": "Reset password",
+      "success": "Password of {{username}} reset"
+    }
+  },
+  "bindings": {
+    "title": "Role bindings of {{username}}",
+    "description": "Roles granted in tenant {{tenant}}.",
+    "count_one": "{{count}} binding",
+    "count_other": "{{count}} bindings",
+    "add": "Add binding",
+    "addTitle": "New role binding",
+    "added": "Role binding added for {{username}}",
+    "empty": "No role bindings",
+    "emptyDescription": "Without a binding the user cannot access this tenant.",
+    "truncated": "Only the first bindings are shown.",
+    "delete": "Delete binding",
+    "deleteTitle": "Delete role binding?",
+    "deleteDescription": "{{username}} loses the {{role}} role on {{scope}}. The server refuses to remove the last owner of a tenant.",
+    "deleted": "Role binding of {{username}} deleted",
+    "role": "Role",
+    "namespace": "Namespace",
+    "namespaceHint": "Narrow the binding to one namespace, or grant it on all namespaces.",
+    "allNamespaces": "All namespaces",
+    "sites": "Sites",
+    "sitesHint": "Restrict the binding to some sites of {{namespace}}; none selected means all sites.",
+    "allSites": "All sites",
+    "sitesSelected_one": "{{count}} site",
+    "sitesSelected_other": "{{count}} sites",
+    "filterSites": "Filter sites",
+    "noSites": "This namespace has no sites.",
+    "noMatchingSites": "No matching sites.",
+    "sitesManualPlaceholder": "Type site names and press Enter",
+    "sitesUnavailable": "Sites could not be listed ({{reason}}).",
+    "extraPermissions": "Extra permissions",
+    "redundantExtras": "{{role}} already includes {{permissions}}.",
+    "created": "Created",
+    "id": "Binding ID",
+    "otherTenant": "Binding in another tenant ({{tenant}})",
+    "errors": {
+      "sites": {
+        "requireNamespace": "Sites require a namespace.",
+        "tooMany": "At most 500 sites.",
+        "duplicate": "Sites must be unique."
+      },
+      "extraPermissions": "Invalid extra permissions."
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "description": "Who did what, and whether it was allowed. Newest entries first.",
+    "live": "Auto-refresh",
+    "empty": "No audit entries",
+    "emptyDescription": "Nothing matches the filters in the selected time range.",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "tenantLevel": "Tenant",
+    "columns": {
+      "expand": "Details",
+      "time": "Time",
+      "actor": "Actor",
+      "action": "Action",
+      "resource": "Resource",
+      "result": "Result",
+      "namespace": "Namespace",
+      "client": "Client"
+    },
+    "actorKinds": {
+      "user": "User",
+      "token": "Token",
+      "system": "System"
+    },
+    "results": {
+      "ok": "OK",
+      "denied": "Denied",
+      "error": "Error"
+    },
+    "ranges": {
+      "1h": "Last hour",
+      "24h": "Last 24 hours",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "custom": "Custom range"
+    },
+    "filters": {
+      "namespace": "Namespace",
+      "allNamespaces": "All namespaces",
+      "actor": "Actor",
+      "action": "Action, e.g. secret.read",
+      "resourceKind": "Resource kind",
+      "resourceId": "Resource ID",
+      "result": "Result",
+      "anyResult": "Any result",
+      "range": "Time range",
+      "from": "From",
+      "to": "To",
+      "rangeInvalid": "The end must be after the start.",
+      "rangeHint": "Local time; leave a bound empty to keep it open."
+    },
+    "details": {
+      "id": "Entry ID",
+      "time": "Time",
+      "actorId": "Actor ID",
+      "resourceKind": "Resource kind",
+      "resourceId": "Resource ID",
+      "userAgent": "User agent",
+      "payload": "Details",
+      "none": "No details recorded."
+    }
+  }
+}

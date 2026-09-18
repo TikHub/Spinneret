@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// TimeRange is a half-open interval [start, end). Unset bounds are open.
+message TimeRange {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+}
+
+// BulkFailure describes one item of a bulk operation that could not be applied.
+message BulkFailure {
+  string id = 1;
+  string reason = 2;
+  string message = 3;
+}
+
+// BulkResult summarizes a bulk operation.
+message BulkResult {
+  int32 matched = 1;
+  int32 succeeded = 2;
+  repeated BulkFailure failed = 3;
+}
+
+// StateEvent is one lifecycle or disposition change of an identity, account,
+// proxy, endpoint group or site.
+message StateEvent {
+  string id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  string namespace = 3;
+  string site = 4;
+  // identity | account | proxy | endpoint_group | site
+  string subject_kind = 5;
+  string subject_id = 6;
+  string endpoint_group = 7;
+  string from_state = 8;
+  string to_state = 9;
+  // cooldown | expire | quarantine | ban | unban | activate | enable | disable | archive | restore | reset_stats | rebind | revert
+  string action = 10;
+  string scope = 11;
+  google.protobuf.Timestamp until = 12;
+  bool permanent = 13;
+  string outcome = 14;
+  string policy_id = 15;
+  int32 policy_version = 16;
+  string rule = 17;
+  string report_id = 18;
+  string lease_id = 19;
+  // "user:<id>", "token:<id>" or "system"
+  string actor = 20;
+  string reason = 21;
+  bool shadow = 22;
+}
+
+// KeyValue is a generic string pair used for labels and small maps that need ordering.
+message KeyValue {
+  string key = 1;
+  string value = 2;
+}

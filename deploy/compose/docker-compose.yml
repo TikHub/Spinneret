@@ -1,0 +1,268 @@
+# Spinneret — full stack orchestration.
+#
+#   ./scripts/compose-init.sh            # once: generates .env passwords and the KEK secret
+#   docker compose -f deploy/compose/docker-compose.yml up -d --build --wait
+#   docker compose -f deploy/compose/docker-compose.yml --profile init run --rm init-admin
+#
+# Profiles: (default) core stack · init (bootstrap owner) · observability (Prometheus)
+#           · test (mock target site/proxy) · loadtest (mock target + k6)
+#           · example (FastAPI example crawler + mock target, see scripts/example-quickstart.sh)
+name: spinneret
+
+x-spinneret-build: &spinneret-build
+  context: ../..
+  dockerfile: deploy/docker/Dockerfile
+
+x-spinneret-env: &spinneret-env
+  SPINNERET_HTTP_ADDR: ":8080"
+  SPINNERET_DATABASE_URL: postgres://spinneret:${PG_PASSWORD:?run scripts/compose-init.sh}@postgres:5432/spinneret?sslmode=disable
+  SPINNERET_DATABASE_MAX_CONNS: ${SPINNERET_DATABASE_MAX_CONNS:-32}
+  SPINNERET_REDIS_URL: redis://valkey:6379/0
+  SPINNERET_CLICKHOUSE_URL: clickhouse://spinneret:${CLICKHOUSE_PASSWORD:?run scripts/compose-init.sh}@clickhouse:9000/spinneret
+  SPINNERET_KEK_FILE: /run/secrets/kek
+  SPINNERET_LOG_LEVEL: ${SPINNERET_LOG_LEVEL:-info}
+  SPINNERET_COOKIE_SECURE: ${SPINNERET_COOKIE_SECURE:-auto}
+  SPINNERET_TRUSTED_PROXIES: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16
+  SPINNERET_REPORT_SHARDS: ${SPINNERET_REPORT_SHARDS:-16}
+  # Report dedup markers (80 B each) also pin the ended lease hash (~290 B) for the same
+  # window, so this is the dominant traffic-proportional term of Valkey memory. The product
+  # default is 1h; see docs/benchmarks.md ("Redis sizing") for sizing it to the retry
+  # behaviour of your nodes rather than to an hour.
+  SPINNERET_REPORT_DEDUP_TTL: ${SPINNERET_REPORT_DEDUP_TTL:-1h}
+  # Empty means "use the server's built-in connectivity-check URL"; set it in .env to point the
+  # proxy health checker at a reachable endpoint (e.g. http://mocktarget:9090/healthz).
+  SPINNERET_PROXY_CHECK_URL: ${SPINNERET_PROXY_CHECK_URL:-}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spinneret
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: spinneret
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - wal_compression=on
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spinneret -d spinneret"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    # Durability is the AOF. The RDB `save` points are switched off because they would
+    # fork a second time for the same data: at 4,000 acquire->report cycles/s the default
+    # `save 60 10000` fired a background save every minute *on top of* an AOF rewrite every
+    # ~40 s, and a fork of a 1 GiB dataset is a multi-second I/O stall in a laptop VM.
+    #
+    # io-threads 4 buys latency, not throughput. Valkey executes every command (Lua included)
+    # on the main thread, so extra I/O threads only move socket read/write off it — worth about
+    # +3 % on the ceiling but a large difference to the tail once the main thread is busy:
+    # measured at 6,000 acquire->report cycles/s on one instance, acquire p99 went 18.9 ms -> 4.1 ms
+    # and report lag p99 4.66 s -> 41 ms, for +1.0 core of Valkey CPU (0.91 -> 1.92).
+    # Set VALKEY_IO_THREADS=1 to get the single-threaded behaviour back.
+    # See docs/benchmarks.md, "Valkey io-threads".
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --save
+      - ""
+      # Spinneret's hot state is mostly short-lived keys (lease hashes, report dedup markers,
+      # stream entries), so the AOF grows far faster than the dataset it describes. With the
+      # defaults (100 % growth, 64 MiB floor) a load run at 4,000 cycles/s rewrote the AOF
+      # every ~52 s — each rewrite forking a ~1 GiB process and writing ~290 MiB — which is a
+      # continuous I/O load on a laptop VM and the kind of multi-second stall that tips a
+      # loaded deployment over its congestion knee. Rewriting at 300 % growth with a 1 GiB
+      # floor keeps the AOF bounded at a few times the dataset for a fraction of the I/O.
+      - --auto-aof-rewrite-percentage
+      - "300"
+      - --auto-aof-rewrite-min-size
+      - "1gb"
+      - --io-threads
+      - "${VALKEY_IO_THREADS:-4}"
+      - --maxmemory-policy
+      - noeviction
+      - --maxclients
+      - "20000"
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8-alpine
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: spinneret
+      CLICKHOUSE_USER: spinneret
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    volumes:
+      - chdata:/var/lib/clickhouse
+      - ./config/clickhouse-listen.xml:/etc/clickhouse-server/config.d/listen.xml:ro
+      - ./config/clickhouse-limits.xml:/etc/clickhouse-server/config.d/limits.xml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  migrate:
+    image: spinneret:local
+    build: *spinneret-build
+    command: ["/usr/local/bin/spnr", "migrate", "up"]
+    entrypoint: []
+    environment: *spinneret-env
+    secrets: [kek]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  spinneret:
+    image: spinneret:local
+    build: *spinneret-build
+    restart: unless-stopped
+    environment: *spinneret-env
+    secrets: [kek]
+    deploy:
+      replicas: ${SPINNERET_REPLICAS:-2}
+    stop_grace_period: 40s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+
+  lb:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    # --watch reloads the Caddyfile in place when it is edited, so tuning the
+    # load balancer does not need "docker compose restart lb".
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile", "--watch"]
+    ports:
+      - "${SPINNERET_PORT:-8080}:8080"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      spinneret:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  init-admin:
+    profiles: ["init"]
+    image: spinneret:local
+    build: *spinneret-build
+    entrypoint: []
+    command:
+      - /usr/local/bin/spnr
+      - admin
+      - init
+      - --username
+      - ${SPINNERET_ADMIN_USERNAME:-admin}
+      - --password-env
+      - SPINNERET_ADMIN_PASSWORD
+    environment:
+      <<: *spinneret-env
+      SPINNERET_ADMIN_PASSWORD: ${SPINNERET_ADMIN_PASSWORD:?set SPINNERET_ADMIN_PASSWORD in .env}
+    secrets: [kek]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  prometheus:
+    profiles: ["observability"]
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+
+  mocktarget:
+    profiles: ["test", "loadtest", "example"]
+    image: spinneret-mocktarget:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/mocktarget.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${MOCK_TARGET_PORT:-19090}:9090"
+      - "${MOCK_PROXY_PORT:-19091}:9091"
+
+  # Example crawler node (examples/fastapi-crawler). EXAMPLE_TOKEN is written to .env by
+  # scripts/example-quickstart.sh; it is optional here so that the other services work without it
+  # (the crawler refuses to start without a token).
+  example-crawler:
+    profiles: ["example"]
+    image: spinneret-example-crawler:local
+    build:
+      context: ../..
+      dockerfile: examples/fastapi-crawler/Dockerfile
+    restart: unless-stopped
+    environment:
+      SPINNERET_URL: http://lb:8080
+      SPINNERET_TOKEN: ${EXAMPLE_TOKEN:-}
+      SPINNERET_NODE: example-crawler
+      MOCK_TARGET_URL: http://mocktarget:9090
+    ports:
+      - "${EXAMPLE_PORT:-18000}:8000"
+    depends_on:
+      lb:
+        condition: service_healthy
+      mocktarget:
+        condition: service_healthy
+
+  k6:
+    profiles: ["loadtest"]
+    image: grafana/k6:latest
+    volumes:
+      - ../../test/load:/scripts:ro
+    environment:
+      SPINNERET_URL: http://lb:8080
+      SPINNERET_TOKEN: ${LOADTEST_TOKEN:-}
+      K6_SCRIPT: ${K6_SCRIPT:-acquire_report.js}
+    entrypoint: ["sh", "-c", "k6 run /scripts/$${K6_SCRIPT}"]
+    depends_on:
+      lb:
+        condition: service_healthy
+
+secrets:
+  kek:
+    file: ./secrets/kek.key
+
+volumes:
+  pgdata:
+  valkeydata:
+  chdata:

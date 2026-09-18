@@ -1,0 +1,224 @@
+{
+  "title": "通知",
+  "description": "租户的告警通知渠道与已触发告警的历史记录",
+  "tabs": {
+    "channels": "通知渠道",
+    "alerts": "告警历史"
+  },
+  "kinds": {
+    "webhook": "Webhook",
+    "feishu": "飞书",
+    "dingtalk": "钉钉",
+    "wecom": "企业微信",
+    "telegram": "Telegram"
+  },
+  "severities": {
+    "info": "信息",
+    "warning": "警告",
+    "critical": "严重"
+  },
+  "scope": {
+    "all": "全部可访问的渠道",
+    "allAlerts": "全部可访问的告警",
+    "tenant": "租户级",
+    "namespaceNamed": "命名空间 {{namespace}}"
+  },
+  "fields": {
+    "name": "名称",
+    "kind": "类型",
+    "scope": "范围",
+    "eventTypes": "事件类型",
+    "sites": "站点",
+    "minSeverity": "最低级别",
+    "enabled": "启用",
+    "lastDelivery": "最近投递"
+  },
+  "alertKinds": {
+    "breaker_opened": {
+      "label": "熔断打开",
+      "description": "端点组熔断器打开，暂停分配身份。"
+    },
+    "breaker_reopened": {
+      "label": "熔断再次打开",
+      "description": "半开状态的熔断器探测失败，再次打开。"
+    },
+    "breaker_closed": {
+      "label": "熔断关闭",
+      "description": "熔断器恢复，流量重新放行。"
+    },
+    "identity_low_watermark": {
+      "label": "身份低于低水位",
+      "description": "端点组的可用身份数低于低水位。"
+    },
+    "proxy_low_watermark": {
+      "label": "代理低于低水位",
+      "description": "站点的可用代理数低于低水位。"
+    },
+    "ban_spike": {
+      "label": "封禁激增",
+      "description": "身份被封禁的速度明显高于平时。"
+    },
+    "report_backlog": {
+      "label": "上报积压",
+      "description": "节点上报的堆积速度超过 Worker 的处理速度。"
+    },
+    "unknown_ratio_high": {
+      "label": "未知占比过高",
+      "description": "过多上报未命中任何信号规则，可能需要补充规则。"
+    },
+    "client_error_spike": {
+      "label": "客户端错误激增",
+      "description": "爬虫自身错误（参数、签名等）急剧增加。"
+    },
+    "identity_expired": {
+      "label": "身份过期",
+      "description": "身份已过期，需要刷新载荷。"
+    },
+    "secret_expiring": {
+      "label": "密钥即将过期",
+      "description": "密钥将在 7 天内过期。"
+    },
+    "test": {
+      "label": "测试",
+      "description": "从控制台发送的测试告警。"
+    }
+  },
+  "channels": {
+    "create": "新建渠道",
+    "empty": "暂无通知渠道",
+    "emptyDescription": "添加 Webhook、飞书、钉钉、企业微信或 Telegram 渠道以接收告警。",
+    "autoRefresh": "每 5 秒自动刷新",
+    "neverDelivered": "从未投递",
+    "deliveryOk": "投递成功",
+    "deliveryFailed": "投递失败",
+    "toggle": "启用渠道 {{name}}",
+    "enabled": "渠道 {{name}} 已启用",
+    "disabled": "渠道 {{name}} 已停用",
+    "test": "发送测试告警",
+    "testOk": "测试告警已通过 {{name}} 投递",
+    "testFailed": "通过 {{name}} 投递测试告警失败：{{error}}",
+    "deleteTitle": "删除渠道 {{name}}？",
+    "deleteDescription": "告警将不再通过该渠道投递，其投递记录仍保留在告警历史中。",
+    "deleted": "渠道 {{name}} 已删除"
+  },
+  "form": {
+    "createTitle": "新建通知渠道",
+    "editTitle": "编辑 {{name}}",
+    "description": "选择告警的投递目标以及要发送的告警类型。",
+    "scopeFixed": "范围创建后不可修改。",
+    "kindFixed": "类型创建后不可修改。",
+    "minSeverityHint": "低于该级别的告警不会发送。",
+    "sitesHint": "留空表示接收所有站点的告警。",
+    "tenantSites": "租户级渠道接收所有命名空间和站点的告警。",
+    "created": "渠道 {{name}} 已创建",
+    "updated": "渠道 {{name}} 已更新"
+  },
+  "config": {
+    "url": "URL",
+    "webhookUrl": "Webhook 地址",
+    "secret": "签名密钥",
+    "headers": "请求头",
+    "headersHint": "额外的 HTTP 请求头。凭证类请求头（Authorization、token、key 等）的值保存后会被脱敏，除非整体替换，否则保持原值。",
+    "headerName": "请求头名称",
+    "headerValue": "值",
+    "botToken": "机器人令牌",
+    "chatId": "Chat ID",
+    "apiBase": "API 基础地址",
+    "placeholders": {
+      "url": "https://hooks.example.com/spinneret",
+      "webhookUrl": "https://…",
+      "secret": "可选",
+      "botToken": "123456789:AA…",
+      "chatId": "-1001234567890",
+      "apiBase": "https://api.telegram.org"
+    },
+    "hints": {
+      "webhook": {
+        "url": "每条告警发送一次 JSON POST 请求。",
+        "secret": "设置后，请求会携带 X-Spinneret-Timestamp 和 HMAC-SHA256 签名 X-Spinneret-Signature。"
+      },
+      "feishu": {
+        "webhookUrl": "飞书群自定义机器人的 Webhook 地址。",
+        "secret": "机器人的签名校验密钥（如已开启）。"
+      },
+      "dingtalk": {
+        "webhookUrl": "包含 access_token 的机器人 Webhook 地址。",
+        "secret": "机器人的加签密钥（SEC 开头，如已开启）。"
+      },
+      "wecom": {
+        "webhookUrl": "包含 key 的群机器人 Webhook 地址。"
+      },
+      "telegram": {
+        "botToken": "从 @BotFather 获取的令牌。",
+        "chatId": "机器人发送消息的用户、群组或频道 ID。",
+        "apiBase": "可选，默认为 https://api.telegram.org。"
+      }
+    }
+  },
+  "masked": {
+    "replace": "替换",
+    "replaceHint": "除非替换，否则保留已保存的值。",
+    "keep": "保留原值",
+    "keepHint": "恢复为已保存的值"
+  },
+  "picker": {
+    "all": "全选",
+    "selected": "已选 {{count}} / {{total}}",
+    "noOptions": "没有可选项",
+    "eventTypesNone": "选择事件类型",
+    "eventTypesAll": "全部事件类型",
+    "sitesAll": "全部站点",
+    "sitesManual": "输入站点名称后按回车"
+  },
+  "validation": {
+    "name": {
+      "required": "请输入名称",
+      "tooLong": "最多 64 个字符"
+    },
+    "eventTypes": "请至少选择一种事件类型",
+    "config": {
+      "required": "必填",
+      "url": "请输入以 http 或 https 开头的完整 URL",
+      "botToken": "机器人令牌格式应为 <bot id>:<secret>",
+      "masked": "该值已脱敏，请整体替换或保留原值",
+      "maskedDestination": "API 基础地址已更改，请重新输入完整的机器人令牌",
+      "headerName": "请求头名称只能包含字母、数字和 !#$%&'*+.^_`|~-",
+      "headerReserved": "该请求头由 Spinneret 设置，不能覆盖",
+      "headerDuplicate": "请求头名称不能重复（不区分大小写）",
+      "headerLimit": "最多 20 个请求头",
+      "headerMasked": "脱敏的请求头值被修改，请输入完整的值",
+      "headerMaskedDestination": "URL 已更改，请重新输入已脱敏凭证请求头的完整值"
+    }
+  },
+  "alerts": {
+    "time": "时间",
+    "severity": "级别",
+    "kind": "类型",
+    "title": "告警",
+    "scope": "命名空间 / 站点",
+    "site": "站点",
+    "range": "时间范围",
+    "deliveries": "投递",
+    "delivered": "已投递 {{ok}}/{{total}}",
+    "noDeliveries": "未投递",
+    "noDeliveriesHint": "没有渠道匹配该告警。",
+    "ok": "投递成功",
+    "failed": "投递失败",
+    "expand": "展开详情",
+    "collapse": "收起详情",
+    "anyKind": "全部类型",
+    "anySeverity": "全部级别",
+    "anySite": "全部站点",
+    "siteNeedsNamespace": "请先选择命名空间范围",
+    "empty": "暂无告警",
+    "emptyDescription": "告警触发后会显示在这里，并附带每个渠道的投递结果。",
+    "noMatches": "没有符合筛选条件的告警",
+    "ranges": {
+      "1h": "最近 1 小时",
+      "24h": "最近 24 小时",
+      "7d": "最近 7 天",
+      "30d": "最近 30 天",
+      "all": "全部时间"
+    }
+  }
+}

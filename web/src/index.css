@@ -1,0 +1,201 @@
+@import 'tailwindcss';
+
+/* Dark mode follows the `dark` class on <html> (set by ThemeProvider). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens: neutral slate palette with a single indigo accent.
+ * Components use the semantic names (bg-background, text-muted-foreground, ...).
+ */
+:root {
+  --radius: 0.5rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.208 0.042 265.755);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.208 0.042 265.755);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.511 0.262 276.966);
+  --primary-foreground: oklch(0.985 0.002 247.839);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.279 0.041 260.031);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.955 0.013 264.5);
+  --accent-foreground: oklch(0.279 0.041 260.031);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.596 0.145 163.225);
+  --warning: oklch(0.666 0.179 58.318);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.899 0.017 255.5);
+  --ring: oklch(0.585 0.233 277.117);
+
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.372 0.044 257.287);
+  --sidebar-accent: oklch(0.945 0.012 262);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-primary: oklch(0.511 0.262 276.966);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+
+  --chart-1: oklch(0.585 0.233 277.117);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.645 0.246 16.439);
+  --chart-4: oklch(0.769 0.188 70.08);
+  --chart-5: oklch(0.685 0.169 237.323);
+
+  --font-sans-stack:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  --font-mono-stack: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.dark {
+  --background: oklch(0.155 0.03 264.7);
+  --foreground: oklch(0.968 0.007 247.896);
+  --card: oklch(0.19 0.035 265);
+  --card-foreground: oklch(0.968 0.007 247.896);
+  --popover: oklch(0.2 0.037 265);
+  --popover-foreground: oklch(0.968 0.007 247.896);
+  --primary: oklch(0.673 0.182 276.935);
+  --primary-foreground: oklch(0.129 0.042 264.695);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.968 0.007 247.896);
+  --muted: oklch(0.249 0.04 262);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.968 0.007 247.896);
+  --destructive: oklch(0.645 0.246 16.439);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.696 0.17 162.48);
+  --warning: oklch(0.769 0.188 70.08);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.673 0.182 276.935);
+
+  --sidebar: oklch(0.175 0.033 265);
+  --sidebar-foreground: oklch(0.869 0.022 252.894);
+  --sidebar-accent: oklch(0.249 0.04 262);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.673 0.182 276.935);
+  --sidebar-border: oklch(1 0 0 / 10%);
+
+  --chart-1: oklch(0.673 0.182 276.935);
+  --chart-2: oklch(0.765 0.177 163.223);
+  --chart-3: oklch(0.712 0.194 13.428);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.746 0.16 232.661);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: var(--font-sans-stack);
+  --font-mono: var(--font-mono-stack);
+
+  --animate-fade-in: fade-in 120ms ease-out;
+  --animate-dialog-in: dialog-in 150ms ease-out;
+  --animate-sheet-in-right: sheet-in-right 200ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -48%) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  @keyframes sheet-in-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 14px;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    @apply font-mono;
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+/* Tabular numbers for metric values and tables. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

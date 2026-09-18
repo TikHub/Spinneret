@@ -1,0 +1,137 @@
+{
+  "title": "Breakers",
+  "description": "Circuit breakers of the endpoint groups and site switches in namespace {{namespace}}",
+  "noNamespace": "Select a namespace to see its breakers.",
+  "autoRefresh": "Refreshes every {{seconds}} s",
+  "tabs": {
+    "breakers": "Breakers",
+    "sites": "Site switches",
+    "history": "History"
+  },
+  "filters": {
+    "site": "Site",
+    "allSites": "All sites",
+    "client": "Client",
+    "allClients": "All clients",
+    "states": "States",
+    "group": "Endpoint group",
+    "allGroups": "All endpoint groups",
+    "trigger": "Trigger",
+    "allTriggers": "All triggers",
+    "range": "Time range"
+  },
+  "columns": {
+    "group": "Endpoint group",
+    "state": "State",
+    "openUntil": "Open until",
+    "consecutiveOpens": "Consecutive opens",
+    "window": "Window",
+    "probe": "Probes",
+    "reason": "Reason",
+    "lastTransition": "Last transitions",
+    "policy": "Policy",
+    "actions": "Actions"
+  },
+  "actions": {
+    "open": "Open",
+    "close": "Close"
+  },
+  "empty": "No breakers",
+  "emptyDescription": "Breakers appear once the namespace has endpoint groups.",
+  "emptyFiltered": "No breaker matches the filters.",
+  "manual": "Manual",
+  "sitePaused": "Site paused",
+  "indefinite": "Indefinitely",
+  "halfOpenSoon": "Half-open soon",
+  "noTraffic": "No reports in the window",
+  "windowSummary": "{{total}} reports · {{success}} ok · {{risk}} risk",
+  "captchaIdentities_one": "{{count}} captcha identity",
+  "captchaIdentities_other": "{{count}} captcha identities",
+  "success": "Success",
+  "risk": "Risk",
+  "probeSummary": "{{successes}}/{{samples}} ok · {{issued}} issued",
+  "lastOpened": "Opened",
+  "lastClosed": "Closed",
+  "never": "never",
+  "builtinPolicy": "Built-in default",
+  "reason": "Reason",
+  "reasonHint": "Recorded in the breaker event and the audit log.",
+  "open": {
+    "title": "Open breaker?",
+    "description": "While the breaker is open, every acquire for {{target}} fails with circuit_open; leases already handed out can still be reported, but their health updates are suppressed.",
+    "confirm": "Open breaker",
+    "period": "Open period",
+    "modes": {
+      "duration": "For a duration",
+      "indefinite": "Until closed manually"
+    },
+    "duration": "Duration",
+    "indefiniteHint": "The breaker stays open until someone closes it."
+  },
+  "close": {
+    "title": "Close breaker?",
+    "description": "Leases for {{target}} are issued again immediately, without half-open probing.",
+    "confirm": "Close breaker"
+  },
+  "sites": {
+    "description": "A paused site refuses all leases of all its endpoint groups. Use it for emergency stops or major site changes.",
+    "columns": {
+      "site": "Site",
+      "clients": "Clients",
+      "groups": "Endpoint groups",
+      "state": "State",
+      "reason": "Pause reason",
+      "switch": "Enabled"
+    },
+    "empty": "No sites",
+    "emptyDescription": "Create sites on the Sites page.",
+    "noReason": "No reason given",
+    "pauseLabel": "Pause site {{site}}",
+    "resumeLabel": "Resume site {{site}}",
+    "pauseTitle": "Pause site {{site}}?",
+    "resumeTitle": "Resume site {{site}}?",
+    "pauseDescription": "Every lease request for this site is refused until it is resumed.",
+    "resumeDescription": "Leases for this site are issued again; open breakers keep their state.",
+    "pauseReasonHint": "Required: explain why the site is paused.",
+    "pause": "Pause site",
+    "resume": "Resume site"
+  },
+  "history": {
+    "columns": {
+      "time": "Time",
+      "target": "Endpoint group",
+      "transition": "Transition",
+      "trigger": "Trigger",
+      "reason": "Reason",
+      "openUntil": "Open until",
+      "actor": "Actor",
+      "metrics": "Metrics"
+    },
+    "siteSwitch": "Site switch",
+    "to": "to",
+    "metrics": "Metrics",
+    "showMetrics": "Show metrics at transition time",
+    "empty": "No transitions",
+    "emptyDescription": "No breaker transitions match the filters in this time range."
+  },
+  "triggers": {
+    "auto": "Automatic",
+    "manual": "Manual",
+    "probe": "Probe",
+    "site_switch": "Site switch"
+  },
+  "ranges": {
+    "1h": "Last hour",
+    "6h": "Last 6 hours",
+    "24h": "Last 24 hours",
+    "7d": "Last 7 days",
+    "30d": "Last 30 days",
+    "all": "All time"
+  },
+  "toasts": {
+    "opened": "Breaker of {{group}} opened",
+    "closed": "Breaker of {{group}} closed",
+    "paused": "Site {{site}} paused",
+    "resumed": "Site {{site}} resumed"
+  }
+}
