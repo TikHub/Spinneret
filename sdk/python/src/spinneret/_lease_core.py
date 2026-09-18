@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional, Union
+from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
@@ -63,11 +63,11 @@ def _without_header(headers: Mapping[str, str], name: str) -> dict[str, str]:
 
 def build_httpx_kwargs(
     credential: Credential,
-    proxy: Optional[Proxy],
+    proxy: Proxy | None,
     *,
-    headers: Optional[Mapping[str, str]] = None,
-    params: Optional[Mapping[str, str]] = None,
-    cookies: Optional[Mapping[str, str]] = None,
+    headers: Mapping[str, str] | None = None,
+    params: Mapping[str, str] | None = None,
+    cookies: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Merge a credential and proxy into ``httpx.Client`` keyword arguments.
 
@@ -139,7 +139,7 @@ def report_fields_from_response(response: httpx.Response) -> dict[str, Any]:
     finished = utc_now()
     fields["finished_at"] = finished
     try:
-        elapsed: Optional[timedelta] = response.elapsed
+        elapsed: timedelta | None = response.elapsed
     except RuntimeError:
         elapsed = None
     if elapsed is not None:
@@ -179,7 +179,7 @@ class FinishPlan:
             is still open and nothing was reported).
     """
 
-    report: Optional[Report] = None
+    report: Report | None = None
     rpc_release: bool = False
 
 
@@ -193,9 +193,9 @@ class LeaseState:
 
     def __init__(self, request: AcquireRequest) -> None:
         self.request = request
-        self._response: Optional[AcquireResponse] = None
-        self._pending: Optional[Report] = None
-        self._expires_at: Optional[datetime] = None
+        self._response: AcquireResponse | None = None
+        self._pending: Report | None = None
+        self._expires_at: datetime | None = None
         self._released = False
 
     @property
@@ -221,7 +221,7 @@ class LeaseState:
         return self.response.lease
 
     @property
-    def expires_at(self) -> Optional[datetime]:
+    def expires_at(self) -> datetime | None:
         """Current expiry (updated by renewals)."""
         return self._expires_at if self._expires_at is not None else self.lease.expires_at
 
@@ -230,7 +230,7 @@ class LeaseState:
         self._response = response
         self._expires_at = None
 
-    def renewed(self, expires_at: Optional[datetime]) -> None:
+    def renewed(self, expires_at: datetime | None) -> None:
         """Record a new expiry after a renewal."""
         if expires_at is not None:
             self._expires_at = expires_at
@@ -244,18 +244,18 @@ class LeaseState:
         self,
         *,
         status: int = 0,
-        latency_ms: Optional[int] = None,
+        latency_ms: int | None = None,
         markers: Sequence[str] = (),
-        business_code: Union[str, int] = "",
+        business_code: str | int = "",
         error_kind: str = "",
         outcome_hint: str = "",
-        uri: Optional[str] = None,
+        uri: str | None = None,
         method: str = "",
         response_bytes: int = 0,
-        started_at: Optional[datetime] = None,
-        finished_at: Optional[datetime] = None,
+        started_at: datetime | None = None,
+        finished_at: datetime | None = None,
         release: bool = False,
-        report_id: Optional[str] = None,
+        report_id: str | None = None,
     ) -> Report:
         """Build a report for this lease, defaulting the URI to the acquired one."""
         data: dict[str, Any] = {

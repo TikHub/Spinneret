@@ -8,7 +8,6 @@ import time
 from collections import deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Optional
 
 from ._retry import Backoff, is_retryable_background_error
 from .errors import SpinneretError
@@ -42,7 +41,7 @@ class ReporterOptions:
     max_queue_size: int = 10_000
     backoff: Backoff = _DEFAULT_BACKOFF
     close_timeout: float = 5.0
-    on_rejected: Optional[Callable[[RejectedReport], None]] = None
+    on_rejected: Callable[[RejectedReport], None] | None = None
 
     def __post_init__(self) -> None:
         if self.flush_interval <= 0:
@@ -140,7 +139,7 @@ class ReportBuffer:
             return True
         return self._clock() - self._queue[0].enqueued_at >= self._options.flush_interval
 
-    def seconds_until_due(self) -> Optional[float]:
+    def seconds_until_due(self) -> float | None:
         """Seconds until the oldest report is due, or ``None`` when empty."""
         if not self._queue:
             return None
@@ -168,7 +167,7 @@ class ReportBuffer:
             logger.warning("spinneret reporter dropped %d queued reports: %s", count, why)
         return count
 
-    def next_delay(self, error: Optional[SpinneretError]) -> float:
+    def next_delay(self, error: SpinneretError | None) -> float:
         """Backoff before retrying after a failure (increments the failure count)."""
         self.failures += 1
         delay = self._options.backoff.delay(self.failures - 1, self._rng)

@@ -12,7 +12,7 @@ models evaluate on Python 3.9.
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from pydantic import (
     AfterValidator,
@@ -202,7 +202,7 @@ class Lease(SpinneretModel):
     identity_id: str = ""
     identity_type: str = ""
     endpoint_group: str = ""
-    expires_at: Optional[Timestamp] = None
+    expires_at: Timestamp | None = None
     sticky: bool = False
     probe: bool = False
 
@@ -242,7 +242,7 @@ class AcquireResponse(SpinneretModel):
 
     lease: Lease = Field(default_factory=Lease)
     credential: Credential = Field(default_factory=Credential)
-    proxy: Optional[Proxy] = None
+    proxy: Proxy | None = None
     hints: Hints = Field(default_factory=Hints)
 
 
@@ -263,7 +263,7 @@ class RenewRequest(SpinneretModel):
 class RenewResponse(SpinneretModel):
     """Response of ``LeaseService/Renew``."""
 
-    expires_at: Optional[Timestamp] = None
+    expires_at: Timestamp | None = None
 
 
 class ReleaseRequest(SpinneretModel):
@@ -412,7 +412,7 @@ class ConfigItem(SpinneretModel):
     format: str = ""
     version: int = 0
     content: str = Field(default="", repr=False)
-    updated_at: Optional[Timestamp] = None
+    updated_at: Timestamp | None = None
     has_secret_refs: bool = False
 
     @property
@@ -498,4 +498,4 @@ class GetSecretResponse(SpinneretModel):
     path: str = ""
     version: int = 0
     value: str = Field(default="", repr=False)
-    expires_at: Optional[Timestamp] = None
+    expires_at: Timestamp | None = None

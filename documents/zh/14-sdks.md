@@ -50,7 +50,7 @@
 
 | 客户端 | 位置 | 传输 | 适用场景 |
 | --- | --- | --- | --- |
-| Python SDK | `sdk/python` | Connect over HTTP + JSON | Python 3.9+ 节点，同步或 asyncio |
+| Python SDK | `sdk/python` | Connect over HTTP + JSON | Python 3.10+ 节点，同步或 asyncio |
 | Go SDK | `sdk/go/spinneret` | Connect JSON（默认）或 gRPC | Go 1.27+ 节点 |
 | 纯 HTTP + JSON | — | Connect over HTTP + JSON | 其他任何语言 |
 
@@ -62,7 +62,7 @@
 
 ## Python SDK
 
-源码：`sdk/python`。版本 0.1.0。要求 Python 3.9+、`httpx>=0.27` 和 `pydantic>=2.6`。
+源码：`sdk/python`。版本 0.1.0。要求 Python 3.10+、`httpx>=0.27` 和 `pydantic>=2.6`。
 
 ### 安装
 

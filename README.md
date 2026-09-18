@@ -907,7 +907,7 @@ Compatibility, as tested in CI and pinned in Compose:
 | --- | --- |
 | Go | 1.27 or newer |
 | Node and pnpm | Node 22, pnpm 10 |
-| Python (SDK) | 3.9, 3.12, 3.13 |
+| Python (SDK) | 3.10, 3.12, 3.13 |
 | PostgreSQL | 17 in Compose |
 | Valkey or Redis | Valkey 8 in Compose |
 | ClickHouse | 25.8 in Compose, optional |
@@ -1054,7 +1054,7 @@ The complete index, in both languages, is [`documents/README.md`](documents/READ
 ## 🛠 Development
 
 Requirements: Go 1.27 or newer, Node 22 with pnpm 10, Docker for the integration test infrastructure, and
-Python 3.9 or newer for the SDK.
+Python 3.10 or newer for the SDK.
 
 ```bash
 export PATH="$(go env GOPATH)/bin:$PATH"
@@ -1082,7 +1082,7 @@ make docker up down    # build the image, start and stop the Compose stack
 | `make load` | k6 load scenarios (profile `loadtest`) |
 
 `.github/workflows/ci.yml` runs the Go suite with `-race`, checks that generated code is up to date,
-builds and tests the console, tests the Python SDK on 3.9, 3.12 and 3.13, and builds the image.
+builds and tests the console, tests the Python SDK on 3.10, 3.12 and 3.13, and builds the image.
 
 The `spnr` CLI administers a deployment and reads the same `SPINNERET_*` environment as the server:
 

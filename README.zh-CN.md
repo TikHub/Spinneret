@@ -860,7 +860,7 @@ CI 里实测、Compose 里锁定的兼容版本：
 | --- | --- |
 | Go | 1.27 或更新 |
 | Node 与 pnpm | Node 22、pnpm 10 |
-| Python（SDK） | 3.9、3.12、3.13 |
+| Python（SDK） | 3.10、3.12、3.13 |
 | PostgreSQL | Compose 里是 17 |
 | Valkey 或 Redis | Compose 里是 Valkey 8 |
 | ClickHouse | Compose 里是 25.8，可选 |
@@ -997,7 +997,7 @@ Spinneret 遵循 SemVer 的 1.0 之前语义。在 1.0 之前，节点 API 的�
 
 ## 🛠 开发
 
-环境要求：Go 1.27 或更新，Node 22 配 pnpm 10，用于集成测试基础设施的 Docker，以及 Python 3.9 或更新
+环境要求：Go 1.27 或更新，Node 22 配 pnpm 10，用于集成测试基础设施的 Docker，以及 Python 3.10 或更新
 （给 SDK 用）。
 
 ```bash
@@ -1026,7 +1026,7 @@ make docker up down    # 构建镜像、启动和停止 Compose 栈
 | `make load` | k6 压测场景（profile `loadtest`） |
 
 `.github/workflows/ci.yml` 会用 `-race` 跑 Go 全量测试，检查生成代码是否是最新的，构建并测试控制台，
-在 3.9、3.12、3.13 上测试 Python SDK，并构建镜像。
+在 3.10、3.12、3.13 上测试 Python SDK，并构建镜像。
 
 `spnr` CLI 用来管理一套部署，读的是和服务端同一套 `SPINNERET_*` 环境变量：
 

@@ -9,7 +9,7 @@ import weakref
 from collections.abc import Iterable, Sequence
 from os import PathLike
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import httpx
 
@@ -65,16 +65,16 @@ class Client:
 
     def __init__(
         self,
-        url: Optional[str] = None,
-        token: Optional[str] = None,
+        url: str | None = None,
+        token: str | None = None,
         *,
-        node: Optional[str] = None,
-        cache_dir: Optional[Union[str, PathLike[str]]] = None,
-        settings: Optional[Settings] = None,
-        retry: Optional[RetryPolicy] = None,
-        timeouts: Optional[Timeouts] = None,
-        reporter_options: Optional[ReporterOptions] = None,
-        http_client: Optional[httpx.Client] = None,
+        node: str | None = None,
+        cache_dir: str | PathLike[str] | None = None,
+        settings: Settings | None = None,
+        retry: RetryPolicy | None = None,
+        timeouts: Timeouts | None = None,
+        reporter_options: ReporterOptions | None = None,
+        http_client: httpx.Client | None = None,
     ) -> None:
         """Create a client.
 
@@ -103,7 +103,7 @@ class Client:
         self._owns_http = http_client is None
         self._http = http_client or httpx.Client(timeout=self._timeouts.for_call())
         self._lock = threading.Lock()
-        self._reporter: Optional[Reporter] = None
+        self._reporter: Reporter | None = None
         self._watchers: weakref.WeakSet[ConfigWatcher] = weakref.WeakSet()
         self._closed = False
 
@@ -250,7 +250,7 @@ class Client:
 
     def watch_config(
         self,
-        items: Iterable[Union[WatchItem, dict[str, Any]]],
+        items: Iterable[WatchItem | dict[str, Any]],
         *,
         namespace: str = "",
         timeout_ms: int = 30_000,
@@ -270,11 +270,11 @@ class Client:
         *,
         namespace: str = "",
         timeout_ms: int = 30_000,
-        cache_dir: Optional[Union[str, PathLike[str]]] = None,
+        cache_dir: str | PathLike[str] | None = None,
         snapshots: bool = True,
         cache_secrets: bool = False,
-        treat_as_secret: Optional[SecretPredicate] = None,
-        on_change: Optional[ChangeCallback] = None,
+        treat_as_secret: SecretPredicate | None = None,
+        on_change: ChangeCallback | None = None,
     ) -> ConfigWatcher:
         """Create a :class:`ConfigWatcher` bound to this client (not started)."""
         from .watcher import ConfigWatcher
@@ -302,7 +302,7 @@ class Client:
 
     # -- lifecycle ----------------------------------------------------------
 
-    def close(self, timeout: Optional[float] = None) -> None:
+    def close(self, timeout: float | None = None) -> None:
         """Stop watchers, flush the reporter and close the HTTP client.
 
         Args:
@@ -331,9 +331,9 @@ class Client:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         self.close()
 
@@ -345,7 +345,7 @@ class Client:
     def _send_reports(self, reports: Sequence[Report]) -> ReportResponse:
         return self._call(calls.report(reports), retry=NO_RETRY)
 
-    def _call(self, call: Call[R], *, retry: Optional[RetryPolicy] = None) -> R:
+    def _call(self, call: Call[R], *, retry: RetryPolicy | None = None) -> R:
         if self._http.is_closed:
             raise FailedPrecondition(
                 f"{call.procedure}: the client has been closed", reason=REASON_CLIENT_CLOSED

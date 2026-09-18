@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from ._lease_base import LeaseBase
 from ._lease_core import FinishPlan, LeaseState
@@ -75,13 +75,13 @@ class ManagedLease(LeaseBase):
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         self._finish(may_raise=exc is None)
 
-    def renew(self, extend_ms: int = 0) -> Optional[datetime]:
+    def renew(self, extend_ms: int = 0) -> datetime | None:
         """Extend the lease and return the new expiry."""
         self._state.ensure_open()
         response = self._client.renew(self.lease_id, extend_ms)
@@ -106,9 +106,9 @@ class ManagedLease(LeaseBase):
         if error is not None and may_raise:
             raise error
 
-    def _execute(self, plan: FinishPlan) -> Optional[SpinneretError]:
+    def _execute(self, plan: FinishPlan) -> SpinneretError | None:
         reporter = self._client.reporter
-        error: Optional[SpinneretError] = None
+        error: SpinneretError | None = None
         if plan.report is not None:
             try:
                 reporter.submit(plan.report)

@@ -9,7 +9,7 @@ from collections.abc import Callable, Iterable
 from os import PathLike
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from . import _calls as calls
 from ._calls import ConfigKeyLike
@@ -63,12 +63,12 @@ class ConfigWatcher:
         *,
         namespace: str = "",
         timeout_ms: int = 30_000,
-        cache_dir: Optional[Union[str, PathLike[str]]] = None,
+        cache_dir: str | PathLike[str] | None = None,
         snapshots: bool = True,
         cache_secrets: bool = False,
-        treat_as_secret: Optional[SecretPredicate] = None,
-        on_change: Optional[ChangeCallback] = None,
-        options: Optional[WatchOptions] = None,
+        treat_as_secret: SecretPredicate | None = None,
+        on_change: ChangeCallback | None = None,
+        options: WatchOptions | None = None,
     ) -> None:
         """Create a watcher (not started).
 
@@ -95,7 +95,7 @@ class ConfigWatcher:
         self._options = options or WatchOptions(timeout_ms=timeout_ms)
         self._state = WatchState(calls.to_config_keys(items))
         settings = client.settings
-        self._store: Optional[SnapshotStore] = None
+        self._store: SnapshotStore | None = None
         if snapshots:
             self._store = SnapshotStore(
                 Path(cache_dir) if cache_dir is not None else settings.cache_dir,
@@ -108,7 +108,7 @@ class ConfigWatcher:
         self._listeners: list[ChangeCallback] = [on_change] if on_change is not None else []
         self._cond = threading.Condition()
         self._stop = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._loaded = False
         self._from_snapshot = False
 
@@ -124,11 +124,11 @@ class ConfigWatcher:
         return self._thread is not None and self._thread.is_alive()
 
     @property
-    def snapshot_store(self) -> Optional[SnapshotStore]:
+    def snapshot_store(self) -> SnapshotStore | None:
         """Snapshot store, or ``None`` when snapshots are disabled."""
         return self._store
 
-    def get(self, group: str, key: str) -> Optional[ConfigItem]:
+    def get(self, group: str, key: str) -> ConfigItem | None:
         """Latest known item, or ``None`` when it is unknown or missing."""
         with self._cond:
             return self._state.get(group, key)
@@ -186,10 +186,10 @@ class ConfigWatcher:
 
     def wait_for_change(
         self,
-        group: Optional[str] = None,
-        key: Optional[str] = None,
-        timeout: Optional[float] = None,
-    ) -> Optional[ConfigItem]:
+        group: str | None = None,
+        key: str | None = None,
+        timeout: float | None = None,
+    ) -> ConfigItem | None:
         """Block until an item (optionally a specific one) changes after this call.
 
         Returns:
@@ -214,9 +214,9 @@ class ConfigWatcher:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         self.stop()
 

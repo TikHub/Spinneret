@@ -10,7 +10,7 @@ from collections.abc import Awaitable, Callable, Iterable
 from os import PathLike
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from . import _calls as calls
 from ._calls import ConfigKeyLike
@@ -28,7 +28,7 @@ __all__ = ["AsyncChangeCallback", "AsyncConfigWatcher"]
 logger = logging.getLogger("spinneret.config")
 
 #: Callback invoked with every changed item; may be a plain function or a coroutine function.
-AsyncChangeCallback = Callable[[ConfigItem], Optional[Awaitable[None]]]
+AsyncChangeCallback = Callable[[ConfigItem], Awaitable[None] | None]
 
 _STOP_TIMEOUT = 1.0
 
@@ -53,12 +53,12 @@ class AsyncConfigWatcher:
         *,
         namespace: str = "",
         timeout_ms: int = 30_000,
-        cache_dir: Optional[Union[str, PathLike[str]]] = None,
+        cache_dir: str | PathLike[str] | None = None,
         snapshots: bool = True,
         cache_secrets: bool = False,
-        treat_as_secret: Optional[SecretPredicate] = None,
-        on_change: Optional[AsyncChangeCallback] = None,
-        options: Optional[WatchOptions] = None,
+        treat_as_secret: SecretPredicate | None = None,
+        on_change: AsyncChangeCallback | None = None,
+        options: WatchOptions | None = None,
     ) -> None:
         """Create a watcher (not started); see :class:`spinneret.ConfigWatcher`.
 
@@ -71,7 +71,7 @@ class AsyncConfigWatcher:
         self._options = options or WatchOptions(timeout_ms=timeout_ms)
         self._state = WatchState(calls.to_config_keys(items))
         settings = client.settings
-        self._store: Optional[SnapshotStore] = None
+        self._store: SnapshotStore | None = None
         if snapshots:
             self._store = SnapshotStore(
                 Path(cache_dir) if cache_dir is not None else settings.cache_dir,
@@ -82,9 +82,9 @@ class AsyncConfigWatcher:
                 treat_as_secret=treat_as_secret,
             )
         self._listeners: list[AsyncChangeCallback] = [on_change] if on_change else []
-        self._task: Optional[asyncio.Task[None]] = None
-        self._changed: Optional[asyncio.Condition] = None
-        self._stopped: Optional[asyncio.Event] = None
+        self._task: asyncio.Task[None] | None = None
+        self._changed: asyncio.Condition | None = None
+        self._stopped: asyncio.Event | None = None
         self._loaded = False
         self._from_snapshot = False
 
@@ -99,11 +99,11 @@ class AsyncConfigWatcher:
         return self._task is not None and not self._task.done()
 
     @property
-    def snapshot_store(self) -> Optional[SnapshotStore]:
+    def snapshot_store(self) -> SnapshotStore | None:
         """Snapshot store, or ``None`` when snapshots are disabled."""
         return self._store
 
-    def get(self, group: str, key: str) -> Optional[ConfigItem]:
+    def get(self, group: str, key: str) -> ConfigItem | None:
         """Latest known item, or ``None`` when it is unknown or missing."""
         return self._state.get(group, key)
 
@@ -150,10 +150,10 @@ class AsyncConfigWatcher:
 
     async def wait_for_change(
         self,
-        group: Optional[str] = None,
-        key: Optional[str] = None,
-        timeout: Optional[float] = None,
-    ) -> Optional[ConfigItem]:
+        group: str | None = None,
+        key: str | None = None,
+        timeout: float | None = None,
+    ) -> ConfigItem | None:
         """Wait until an item (optionally a specific one) changes after this call.
 
         Returns:
@@ -184,9 +184,9 @@ class AsyncConfigWatcher:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         await self.stop()
 

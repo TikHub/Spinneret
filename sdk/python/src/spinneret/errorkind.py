@@ -6,7 +6,6 @@ import asyncio
 import errno
 import socket
 import ssl
-from typing import Optional
 
 import httpx
 
@@ -61,15 +60,15 @@ _RESET_ERRNOS = frozenset(
 
 def _chain(exc: BaseException) -> list[BaseException]:
     seen: list[BaseException] = []
-    current: Optional[BaseException] = exc
+    current: BaseException | None = exc
     while current is not None and len(seen) < _MAX_CHAIN_DEPTH and current not in seen:
         seen.append(current)
         current = current.__cause__ or current.__context__
     return seen
 
 
-def _classify_builtin(exc: BaseException) -> Optional[str]:
-    kind: Optional[str] = None
+def _classify_builtin(exc: BaseException) -> str | None:
+    kind: str | None = None
     if isinstance(exc, socket.gaierror):
         kind = ErrorKind.DNS
     elif isinstance(exc, ssl.SSLError):
@@ -88,7 +87,7 @@ def _classify_builtin(exc: BaseException) -> Optional[str]:
     return kind
 
 
-def _classify_message(message: str) -> Optional[str]:
+def _classify_message(message: str) -> str | None:
     text = message.lower()
     for hints, kind in (
         (_PROXY_AUTH_HINTS, ErrorKind.PROXY_AUTH),

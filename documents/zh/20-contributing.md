@@ -441,7 +441,7 @@ mypy src
 ```
 
 `make python-test` 在 `sdk/python` 下执行 `python3 -m pytest -q`，所以要先激活虚拟环境，否则会用到没有
-测试依赖的系统解释器。测试使用 `respx` 和 `httpx.MockTransport`，完全不访问网络。SDK 必须在 Python 3.9
+测试依赖的系统解释器。测试使用 `respx` 和 `httpx.MockTransport`，完全不访问网络。SDK 必须在 Python 3.10
 上继续可用。
 
 ### 压测与性能
@@ -527,7 +527,7 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 
 ### `python-sdk`
 
-在 `sdk/python/` 下，在 Python 3.9、3.12、3.13 上：`pip install -e '.[dev]'`、`pytest -q`、
+在 `sdk/python/` 下，在 Python 3.10、3.12、3.13 上：`pip install -e '.[dev]'`、`pytest -q`、
 `ruff check . && ruff format --check .`，以及仅在 3.12 上执行的 `mypy src`。
 
 ### `image`
@@ -616,9 +616,9 @@ make web-test && (cd web && pnpm build)
 
 ### Python SDK
 
-Ruff（行宽 100，`target-version = "py39"`）、`ruff format`，以及对 `src` 开启 pydantic 插件的 `mypy`
+Ruff（行宽 100，`target-version = "py310"`）、`ruff format`，以及对 `src` 开启 pydantic 插件的 `mypy`
 严格模式。`pytest` 配置了 `filterwarnings = ["error"]`，因此新出现的警告会让测试失败。公开接口必须在
-Python 3.9 到 3.13 上都能原样工作。
+Python 3.10 到 3.13 上都能原样工作。
 
 ---
 

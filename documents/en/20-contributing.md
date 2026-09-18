@@ -465,7 +465,7 @@ mypy src
 
 `make python-test` runs `python3 -m pytest -q` from `sdk/python`, so activate the virtualenv first or
 it will use a system interpreter that has no test dependencies. The tests use `respx` and
-`httpx.MockTransport` and never touch the network. The SDK must keep working on Python 3.9.
+`httpx.MockTransport` and never touch the network. The SDK must keep working on Python 3.10.
 
 ### Load and performance
 
@@ -555,7 +555,7 @@ Prettier drift is caught by you rather than by CI.
 
 ### `python-sdk`
 
-In `sdk/python/`, on Python 3.9, 3.12 and 3.13: `pip install -e '.[dev]'`, `pytest -q`,
+In `sdk/python/`, on Python 3.10, 3.12 and 3.13: `pip install -e '.[dev]'`, `pytest -q`,
 `ruff check . && ruff format --check .`, and `mypy src` on 3.12 only.
 
 ### `image`
@@ -658,9 +658,9 @@ a link to `docs/`.
 
 ### Python SDK
 
-Ruff with line length 100 and `target-version = "py39"`, `ruff format`, and `mypy` in strict mode over
+Ruff with line length 100 and `target-version = "py310"`, `ruff format`, and `mypy` in strict mode over
 `src` with the pydantic plugin. `pytest` runs with `filterwarnings = ["error"]`, so a new warning
-fails the suite. The public surface must work unchanged on Python 3.9 through 3.13.
+fails the suite. The public surface must work unchanged on Python 3.10 through 3.13.
 
 ---
 

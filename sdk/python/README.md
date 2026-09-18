@@ -16,7 +16,7 @@ versioned configuration and secrets to the same fleet.
 - Config watchers with long polling, change callbacks and atomic local snapshots
 - Typed exceptions carrying the server reason and retry hint
 
-Requires Python 3.9+, `httpx>=0.27` and `pydantic>=2.6`.
+Requires Python 3.10+, `httpx>=0.27` and `pydantic>=2.6`.
 
 ## Installation
 

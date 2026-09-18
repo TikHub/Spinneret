@@ -8,7 +8,7 @@ import weakref
 from collections.abc import Iterable, Sequence
 from os import PathLike
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import httpx
 
@@ -61,16 +61,16 @@ class AsyncClient:
 
     def __init__(
         self,
-        url: Optional[str] = None,
-        token: Optional[str] = None,
+        url: str | None = None,
+        token: str | None = None,
         *,
-        node: Optional[str] = None,
-        cache_dir: Optional[Union[str, PathLike[str]]] = None,
-        settings: Optional[Settings] = None,
-        retry: Optional[RetryPolicy] = None,
-        timeouts: Optional[Timeouts] = None,
-        reporter_options: Optional[ReporterOptions] = None,
-        http_client: Optional[httpx.AsyncClient] = None,
+        node: str | None = None,
+        cache_dir: str | PathLike[str] | None = None,
+        settings: Settings | None = None,
+        retry: RetryPolicy | None = None,
+        timeouts: Timeouts | None = None,
+        reporter_options: ReporterOptions | None = None,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
         """Create a client; see :class:`spinneret.Client` for the arguments.
 
@@ -86,7 +86,7 @@ class AsyncClient:
         self._headers = calls.build_headers(self._settings)
         self._owns_http = http_client is None
         self._http = http_client or httpx.AsyncClient(timeout=self._timeouts.for_call())
-        self._reporter: Optional[AsyncReporter] = None
+        self._reporter: AsyncReporter | None = None
         self._watchers: weakref.WeakSet[AsyncConfigWatcher] = weakref.WeakSet()
         self._closed = False
 
@@ -208,7 +208,7 @@ class AsyncClient:
 
     async def watch_config(
         self,
-        items: Iterable[Union[WatchItem, dict[str, Any]]],
+        items: Iterable[WatchItem | dict[str, Any]],
         *,
         namespace: str = "",
         timeout_ms: int = 30_000,
@@ -224,11 +224,11 @@ class AsyncClient:
         *,
         namespace: str = "",
         timeout_ms: int = 30_000,
-        cache_dir: Optional[Union[str, PathLike[str]]] = None,
+        cache_dir: str | PathLike[str] | None = None,
         snapshots: bool = True,
         cache_secrets: bool = False,
-        treat_as_secret: Optional[SecretPredicate] = None,
-        on_change: Optional[AsyncChangeCallback] = None,
+        treat_as_secret: SecretPredicate | None = None,
+        on_change: AsyncChangeCallback | None = None,
     ) -> AsyncConfigWatcher:
         """Create an :class:`AsyncConfigWatcher` bound to this client (not started)."""
         from .async_watcher import AsyncConfigWatcher
@@ -255,7 +255,7 @@ class AsyncClient:
 
     # -- lifecycle ----------------------------------------------------------
 
-    async def aclose(self, timeout: Optional[float] = None) -> None:
+    async def aclose(self, timeout: float | None = None) -> None:
         """Stop watchers, flush the reporter and close the HTTP client."""
         if self._closed:
             return
@@ -274,9 +274,9 @@ class AsyncClient:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         await self.aclose()
 
@@ -288,7 +288,7 @@ class AsyncClient:
     async def _send_reports(self, reports: Sequence[Report]) -> ReportResponse:
         return await self._call(calls.report(reports), retry=NO_RETRY)
 
-    async def _call(self, call: Call[R], *, retry: Optional[RetryPolicy] = None) -> R:
+    async def _call(self, call: Call[R], *, retry: RetryPolicy | None = None) -> R:
         if self._http.is_closed:
             raise FailedPrecondition(
                 f"{call.procedure}: the client has been closed", reason=REASON_CLIENT_CLOSED

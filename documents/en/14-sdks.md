@@ -51,7 +51,7 @@ request time. Three ways to ask for it:
 
 | Client | Location | Transport | Use it when |
 | --- | --- | --- | --- |
-| Python SDK | `sdk/python` | Connect over HTTP with JSON | Python 3.9+ nodes, sync or asyncio |
+| Python SDK | `sdk/python` | Connect over HTTP with JSON | Python 3.10+ nodes, sync or asyncio |
 | Go SDK | `sdk/go/spinneret` | Connect JSON (default) or gRPC | Go 1.27+ nodes |
 | Plain HTTP + JSON | — | Connect over HTTP with JSON | Any other language |
 
@@ -63,7 +63,7 @@ administrative API; that is the console and [`spnr`](./15-cli.md).
 
 ## Python SDK
 
-Source: `sdk/python`. Version 0.1.0. Requires Python 3.9+, `httpx>=0.27` and `pydantic>=2.6`.
+Source: `sdk/python`. Version 0.1.0. Requires Python 3.10+, `httpx>=0.27` and `pydantic>=2.6`.
 
 ### Installation
 

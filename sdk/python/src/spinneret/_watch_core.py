@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Optional
 
 from ._retry import Backoff
 from .models import MAX_CONFIG_ITEMS, ConfigItem, ConfigKey, WatchItem
@@ -62,7 +61,7 @@ class WatchState:
         """Number of changes applied so far."""
         return self._seq
 
-    def get(self, group: str, key: str) -> Optional[ConfigItem]:
+    def get(self, group: str, key: str) -> ConfigItem | None:
         """Latest item, or ``None`` when unknown."""
         return self._items.get((group, key))
 
@@ -100,8 +99,8 @@ class WatchState:
         return changed
 
     def changed_since(
-        self, sequence: int, group: Optional[str] = None, key: Optional[str] = None
-    ) -> Optional[ConfigItem]:
+        self, sequence: int, group: str | None = None, key: str | None = None
+    ) -> ConfigItem | None:
         """First item changed after ``sequence`` that matches the optional filter."""
         candidates = [
             (seq, ident)

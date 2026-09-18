@@ -5,7 +5,6 @@ from __future__ import annotations
 import random
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Optional
 
 import httpx
 
@@ -99,9 +98,9 @@ class RetryPolicy:
     def delay(
         self,
         attempt: int,
-        retry_after_ms: Optional[int] = None,
+        retry_after_ms: int | None = None,
         rng: Callable[[], float] = random.random,
-    ) -> Optional[float]:
+    ) -> float | None:
         """Return the delay before retry ``attempt`` or ``None`` when the hint is too long."""
         delay = self.backoff.delay(attempt, rng)
         if retry_after_ms is not None:

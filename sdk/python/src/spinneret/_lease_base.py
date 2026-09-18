@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -63,7 +63,7 @@ class LeaseBase:
         return self._state.lease.identity_id
 
     @property
-    def expires_at(self) -> Optional[datetime]:
+    def expires_at(self) -> datetime | None:
         """Expiry of the lease, updated by :meth:`renew`."""
         return self._state.expires_at
 
@@ -73,7 +73,7 @@ class LeaseBase:
         return self._state.response.credential
 
     @property
-    def proxy(self) -> Optional[Proxy]:
+    def proxy(self) -> Proxy | None:
         """Assigned proxy, or ``None``."""
         return self._state.response.proxy
 
@@ -85,9 +85,9 @@ class LeaseBase:
     def httpx_kwargs(
         self,
         *,
-        headers: Optional[Mapping[str, str]] = None,
-        params: Optional[Mapping[str, str]] = None,
-        cookies: Optional[Mapping[str, str]] = None,
+        headers: Mapping[str, str] | None = None,
+        params: Mapping[str, str] | None = None,
+        cookies: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         """Keyword arguments for ``httpx.Client``/``httpx.AsyncClient``.
 
@@ -102,9 +102,9 @@ class LeaseBase:
     def _build(
         self,
         status: int,
-        latency_ms: Optional[int],
+        latency_ms: int | None,
         markers: Sequence[str],
-        business_code: Union[str, int],
+        business_code: str | int,
         error_kind: str,
         release: bool,
         extra: Mapping[str, Any],
@@ -125,9 +125,9 @@ class LeaseBase:
         self,
         status: int = 0,
         *,
-        latency_ms: Optional[int] = None,
+        latency_ms: int | None = None,
         markers: Sequence[str] = (),
-        business_code: Union[str, int] = "",
+        business_code: str | int = "",
         error_kind: str = "",
         release: bool = False,
         **extra: Any,
@@ -159,7 +159,7 @@ class LeaseBase:
         response: httpx.Response,
         *,
         markers: Sequence[str] = (),
-        business_code: Union[str, int] = "",
+        business_code: str | int = "",
         release: bool = False,
         **extra: Any,
     ) -> Report:
@@ -196,7 +196,7 @@ class LeaseBase:
         if not response.released:
             logger.debug("spinneret lease %s had already ended before release", self.lease_id)
 
-    def _release_rpc_failed(self, err: SpinneretError) -> Optional[SpinneretError]:
+    def _release_rpc_failed(self, err: SpinneretError) -> SpinneretError | None:
         """Log a failed ``LeaseService/Release`` call.
 
         Returns:

@@ -8,7 +8,6 @@ import logging
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from types import TracebackType
-from typing import Optional
 
 from ._report_buffer import QueuedReport, ReportBuffer, ReporterOptions, ReporterStats
 from .errors import ReporterClosedError, SpinneretError
@@ -35,7 +34,7 @@ class AsyncReporter:
     before the event loop stops, otherwise queued reports are lost.
     """
 
-    def __init__(self, send: AsyncSendFunc, options: Optional[ReporterOptions] = None) -> None:
+    def __init__(self, send: AsyncSendFunc, options: ReporterOptions | None = None) -> None:
         """Create a reporter.
 
         Args:
@@ -45,10 +44,10 @@ class AsyncReporter:
         self._send = send
         self._options = options or ReporterOptions()
         self._buffer = ReportBuffer(self._options)
-        self._task: Optional[asyncio.Task[None]] = None
-        self._wakeup: Optional[asyncio.Event] = None
-        self._closed_event: Optional[asyncio.Event] = None
-        self._progress: Optional[asyncio.Event] = None
+        self._task: asyncio.Task[None] | None = None
+        self._wakeup: asyncio.Event | None = None
+        self._closed_event: asyncio.Event | None = None
+        self._progress: asyncio.Event | None = None
         self._inflight = 0
         self._flush_waiters = 0
         self._closing = False
@@ -82,7 +81,7 @@ class AsyncReporter:
         self._buffer.add(report)
         self._wake()
 
-    async def flush(self, timeout: Optional[float] = None) -> bool:
+    async def flush(self, timeout: float | None = None) -> bool:
         """Send every queued report now and wait for the deliveries to finish.
 
         Returns:
@@ -114,7 +113,7 @@ class AsyncReporter:
         finally:
             self._flush_waiters -= 1
 
-    async def close(self, timeout: Optional[float] = None) -> None:
+    async def close(self, timeout: float | None = None) -> None:
         """Deliver the queued reports (for at most ``timeout`` seconds) and stop.
 
         Reports still queued when the timeout expires are dropped. Closing is
@@ -146,9 +145,9 @@ class AsyncReporter:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         await self.close()
 
@@ -197,7 +196,7 @@ class AsyncReporter:
                 self._inflight = 0
             self._notify_progress()
 
-    async def _next_batch(self) -> Optional[list[QueuedReport]]:
+    async def _next_batch(self) -> list[QueuedReport] | None:
         wakeup = self._wakeup
         if wakeup is None:  # pragma: no cover - the task is created with the event
             return None

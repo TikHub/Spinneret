@@ -9,7 +9,7 @@ import os
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import quote
 
 from pydantic import ValidationError
@@ -107,7 +107,7 @@ class SnapshotStore:
         namespace: str,
         token: str,
         cache_secrets: bool = False,
-        treat_as_secret: Optional[SecretPredicate] = None,
+        treat_as_secret: SecretPredicate | None = None,
     ) -> None:
         """Create a store.
 
@@ -115,7 +115,7 @@ class SnapshotStore:
             ConfigurationError: ``cache_secrets`` is set but ``cryptography`` is missing.
         """
         self._dir = Path(root) / _component(host) / _component(namespace or _DEFAULT_NAMESPACE_DIR)
-        self._cipher: Optional[SnapshotCipher] = SnapshotCipher(token) if cache_secrets else None
+        self._cipher: SnapshotCipher | None = SnapshotCipher(token) if cache_secrets else None
         self._treat_as_secret = treat_as_secret
 
     @property
@@ -183,7 +183,7 @@ class SnapshotStore:
             return False
         return True
 
-    def load(self, group: str, key: str) -> Optional[ConfigItem]:
+    def load(self, group: str, key: str) -> ConfigItem | None:
         """Read the snapshot of a config item, or ``None`` when unavailable."""
         path = self.path_for(group, key)
         try:
@@ -208,7 +208,7 @@ class SnapshotStore:
             return None
         return item
 
-    def _decode(self, raw: bytes, group: str, key: str) -> Optional[ConfigItem]:
+    def _decode(self, raw: bytes, group: str, key: str) -> ConfigItem | None:
         document = json.loads(raw.decode("utf-8"))
         if not isinstance(document, dict) or document.get("format") != SNAPSHOT_FORMAT:
             raise ValueError("unsupported snapshot format")

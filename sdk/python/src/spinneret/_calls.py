@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Generic, Optional, TypeVar, Union
+from typing import Any, Generic, TypeVar
 
 import httpx
 from pydantic import ValidationError
@@ -68,7 +68,7 @@ SECRET_SERVICE = "SecretService"  # noqa: S105 - service name
 DEFAULT_WATCH_TIMEOUT_MS = 30_000
 
 #: Accepted spellings of a config key: a model, ``(group, key)`` or ``"group/key"``.
-ConfigKeyLike = Union[ConfigKey, tuple[str, str], str]
+ConfigKeyLike = ConfigKey | tuple[str, str] | str
 
 R = TypeVar("R", bound=SpinneretModel)
 
@@ -91,7 +91,7 @@ class Timeouts:
     pool: float = 10.0
     watch_grace: float = 5.0
 
-    def for_call(self, extra_read: float = 0.0, read: Optional[float] = None) -> httpx.Timeout:
+    def for_call(self, extra_read: float = 0.0, read: float | None = None) -> httpx.Timeout:
         """Build the httpx timeout of one call."""
         return httpx.Timeout(
             connect=self.connect,
@@ -121,7 +121,7 @@ class Call(Generic[R]):
     response_type: type[R]
     idempotent: bool
     extra_read: float = 0.0
-    read: Optional[float] = None
+    read: float | None = None
 
     @property
     def procedure(self) -> str:
@@ -259,7 +259,7 @@ def batch_get_config(
 
 def watch_config(
     namespace: str,
-    items: Iterable[Union[WatchItem, Mapping[str, Any]]],
+    items: Iterable[WatchItem | Mapping[str, Any]],
     timeout_ms: int,
     grace: float,
 ) -> Call[WatchConfigResponse]:

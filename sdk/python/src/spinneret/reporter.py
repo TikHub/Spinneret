@@ -10,7 +10,6 @@ import time
 import weakref
 from collections.abc import Callable, Sequence
 from types import TracebackType
-from typing import Optional
 
 from ._report_buffer import QueuedReport, ReportBuffer, ReporterOptions, ReporterStats
 from .errors import ReporterClosedError, SpinneretError
@@ -49,7 +48,7 @@ class Reporter:
     def __init__(
         self,
         send: SendFunc,
-        options: Optional[ReporterOptions] = None,
+        options: ReporterOptions | None = None,
         *,
         name: str = "spinneret-reporter",
     ) -> None:
@@ -66,12 +65,12 @@ class Reporter:
         self._buffer = ReportBuffer(self._options)
         self._cond = threading.Condition(threading.Lock())
         self._backoff_wakeup = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._inflight = 0
         self._flush_waiters = 0
         self._closing = False
         self._close_deadline = 0.0
-        self._atexit_hook: Optional[Callable[[], None]] = None
+        self._atexit_hook: Callable[[], None] | None = None
         _LIVE_REPORTERS.add(self)
 
     @property
@@ -103,7 +102,7 @@ class Reporter:
             self._ensure_thread()
             self._cond.notify_all()
 
-    def flush(self, timeout: Optional[float] = None) -> bool:
+    def flush(self, timeout: float | None = None) -> bool:
         """Send every queued report now and wait for the deliveries to finish.
 
         Returns:
@@ -132,7 +131,7 @@ class Reporter:
             finally:
                 self._flush_waiters -= 1
 
-    def close(self, timeout: Optional[float] = None) -> None:
+    def close(self, timeout: float | None = None) -> None:
         """Deliver the queued reports (for at most ``timeout`` seconds) and stop.
 
         Reports still queued when the timeout expires are dropped. Closing is
@@ -163,9 +162,9 @@ class Reporter:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         self.close()
 
@@ -214,7 +213,7 @@ class Reporter:
                     self._cond.notify_all()
                 self._buffer.notify_rejected(rejected)
 
-    def _next_batch(self) -> Optional[list[QueuedReport]]:
+    def _next_batch(self) -> list[QueuedReport] | None:
         while True:
             if self._closing:
                 if not len(self._buffer):

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
 __all__ = [
     "HEADER_REASON",
@@ -73,20 +73,20 @@ class SpinneretError(Exception):
         self,
         message: str = "",
         *,
-        code: Optional[str] = None,
+        code: str | None = None,
         reason: str = "",
-        retry_after_ms: Optional[int] = None,
+        retry_after_ms: int | None = None,
         http_status: int = 0,
     ) -> None:
         super().__init__(message)
         self.code: str = code or self.default_code
         self.reason: str = reason
         self.message: str = message
-        self.retry_after_ms: Optional[int] = retry_after_ms
+        self.retry_after_ms: int | None = retry_after_ms
         self.http_status: int = http_status
 
     @property
-    def retry_after(self) -> Optional[float]:
+    def retry_after(self) -> float | None:
         """Server retry hint in seconds, or ``None`` when absent."""
         if self.retry_after_ms is None:
             return None
@@ -122,7 +122,7 @@ def _rebuild_error(
     message: str,
     code: str,
     reason: str,
-    retry_after_ms: Optional[int],
+    retry_after_ms: int | None,
     http_status: int,
 ) -> SpinneretError:
     err = cls.__new__(cls)
@@ -319,7 +319,7 @@ def error_class_for(code: str, reason: str) -> type[SpinneretError]:
     return base
 
 
-def _parse_retry_after(headers: Mapping[str, str]) -> Optional[int]:
+def _parse_retry_after(headers: Mapping[str, str]) -> int | None:
     raw = _header(headers, HEADER_RETRY_AFTER_MS)
     if raw is None:
         return None
@@ -330,7 +330,7 @@ def _parse_retry_after(headers: Mapping[str, str]) -> Optional[int]:
     return value if value >= 0 else None
 
 
-def _header(headers: Mapping[str, str], name: str) -> Optional[str]:
+def _header(headers: Mapping[str, str], name: str) -> str | None:
     value = headers.get(name)
     if value is not None:
         return value
@@ -341,7 +341,7 @@ def _header(headers: Mapping[str, str], name: str) -> Optional[str]:
     return None
 
 
-def _parse_body(content: bytes) -> tuple[Optional[str], str]:
+def _parse_body(content: bytes) -> tuple[str | None, str]:
     """Return the Connect ``code`` (or ``None``) and message of an error body."""
     try:
         payload = json.loads(content.decode("utf-8")) if content else None

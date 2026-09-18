@@ -7,7 +7,7 @@ name = "spinneret"
 dynamic = ["version"]
 description = "Python SDK for Spinneret: identity leasing, proxy assignment, outcome reporting and config center for crawler nodes."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{ name = "TikHub", email = "support@tikhub.io" }]
 keywords = ["crawler", "scraping", "proxy", "identity", "rotation", "connectrpc"]
 classifiers = [
@@ -16,7 +16,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -73,7 +72,7 @@ skip_covered = true
 exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "@overload"]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 100
 src = ["src", "tests"]
 
@@ -89,7 +88,7 @@ ignore = [
 "examples/**" = ["S105", "S106"]
 
 [tool.ruff.lint.pyupgrade]
-# Pydantic evaluates annotations at runtime; keep typing.Optional/Union on 3.9.
+# Pydantic evaluates annotations at runtime; keep typing.Optional/Union explicit.
 keep-runtime-typing = true
 
 [tool.mypy]

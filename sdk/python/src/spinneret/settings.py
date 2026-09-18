@@ -8,7 +8,6 @@ import socket
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Union
 from urllib.parse import urlsplit
 
 from .errors import ConfigurationError
@@ -108,12 +107,12 @@ class Settings:
     @classmethod
     def from_env(
         cls,
-        environ: Optional[Mapping[str, str]] = None,
+        environ: Mapping[str, str] | None = None,
         *,
-        url: Optional[str] = None,
-        token: Optional[str] = None,
-        node: Optional[str] = None,
-        cache_dir: Optional[Union[str, os.PathLike[str]]] = None,
+        url: str | None = None,
+        token: str | None = None,
+        node: str | None = None,
+        cache_dir: str | os.PathLike[str] | None = None,
     ) -> Settings:
         """Build settings from explicit values, falling back to environment variables.
 

@@ -45,9 +45,12 @@ def _chained(outer: BaseException, cause: BaseException) -> BaseException:
         (httpx.ProxyError("502 Bad Gateway"), "other"),
         (httpx.UnsupportedProtocol("Request URL is missing a scheme"), "other"),
         (httpx.DecodingError("bad gzip"), "other"),
+        # Three spellings of the same class on modern Python. The point of the three
+        # cases is the spelling a caller might hand us, so UP041 must not collapse
+        # socket.timeout into the builtin here.
         (TimeoutError(), "timeout"),
         (asyncio.TimeoutError(), "timeout"),
-        (socket.timeout(), "timeout"),
+        (socket.timeout(), "timeout"),  # noqa: UP041
         (ConnectionRefusedError(), "conn_refused"),
         (ConnectionResetError(), "conn_reset"),
         (BrokenPipeError(), "conn_reset"),
