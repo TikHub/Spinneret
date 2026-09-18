@@ -3,7 +3,7 @@ package authz
 import (
 	"context"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 type principalKey struct{}

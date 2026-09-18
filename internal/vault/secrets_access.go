@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/vault/vaultdb"
+	"github.com/TikHub/Spinneret/internal/vault/vaultdb"
 )
 
 // accessTracker collects last-access times of secrets in memory so reads do

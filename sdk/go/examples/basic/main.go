@@ -24,7 +24,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/sdk/go/spinneret"
+	"github.com/TikHub/Spinneret/sdk/go/spinneret"
 )
 
 const (

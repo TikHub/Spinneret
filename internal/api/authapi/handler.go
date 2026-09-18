@@ -9,11 +9,11 @@ import (
 
 	"connectrpc.com/connect"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/auth"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/auth"
+	"github.com/TikHub/Spinneret/internal/authz"
 )
 
 // Handler implements spinneretv1connect.AuthServiceHandler.

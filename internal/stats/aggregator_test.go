@@ -13,9 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	"github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/store/clickhouse"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 // captured collects the rows written through injected table writers.

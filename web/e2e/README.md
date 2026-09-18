@@ -43,7 +43,7 @@ working on a page; it proxies the API to the stack.
 | `access.spec.ts`         | API token (plaintext once, revoke), operator restricted to one site, audit log                      |
 | `tenants.spec.ts`        | create and delete a namespace and a tenant                                                          |
 | `observability.spec.ts`  | overview, heatmap, request explorer, risk events, accounts                                          |
-| `screenshots.spec.ts`    | writes `docs/images/*.png` for the README                                                           |
+| `screenshots.spec.ts`    | writes `documents/images/*.png` for the README                                                      |
 
 ## Conventions
 

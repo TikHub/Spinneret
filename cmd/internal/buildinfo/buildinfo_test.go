@@ -10,7 +10,7 @@ import (
 func TestResolveVersion(t *testing.T) {
 	info := func(main string, settings ...string) func() (*debug.BuildInfo, bool) {
 		return func() (*debug.BuildInfo, bool) {
-			bi := &debug.BuildInfo{Main: debug.Module{Path: "github.com/Evil0ctal/Spinneret", Version: main}}
+			bi := &debug.BuildInfo{Main: debug.Module{Path: "github.com/TikHub/Spinneret", Version: main}}
 			for i := 0; i+1 < len(settings); i += 2 {
 				bi.Settings = append(bi.Settings, debug.BuildSetting{Key: settings[i], Value: settings[i+1]})
 			}

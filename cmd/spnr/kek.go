@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // rewrapPollInterval is how often kek rewrap prints progress.

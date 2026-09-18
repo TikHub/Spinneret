@@ -6,10 +6,10 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/internal/api/apiutil"
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/scheduler"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/internal/api/apiutil"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/scheduler"
 )
 
 // grantProto converts an issued lease into its API response.

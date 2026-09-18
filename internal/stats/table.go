@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 // shardCount is the number of mutex-protected maps per aggregate table (a

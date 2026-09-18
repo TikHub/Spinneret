@@ -3,7 +3,7 @@ package authz
 import (
 	"slices"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // Binding is a role binding of a user inside one tenant, optionally narrowed

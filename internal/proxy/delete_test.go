@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/events"
 )
 
 // proxyExists reports whether a proxy row exists.

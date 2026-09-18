@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/signal"
-	"github.com/Evil0ctal/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/signal"
+	"github.com/TikHub/Spinneret/internal/site"
 )
 
 // Retry policy of the per-event steps: every Redis or executor step is retried

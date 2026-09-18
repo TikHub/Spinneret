@@ -15,9 +15,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/singleflight"
 
-	"github.com/Evil0ctal/Spinneret/internal/auth/authdb"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/netx"
+	"github.com/TikHub/Spinneret/internal/auth/authdb"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/pkg/netx"
 )
 
 // Cache sizes. Entries are small; the bounds protect against memory growth

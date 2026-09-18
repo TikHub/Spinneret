@@ -260,6 +260,7 @@
       "no_proxy_available": "没有可用的代理",
       "circuit_open": "熔断器已打开",
       "site_paused": "站点已暂停",
+      "overloaded": "服务端已达到 acquire 并发上限，请稍后重试。",
       "rebuilding": "热状态正在重建，请稍后重试。",
       "lease_unknown": "未知租约",
       "lease_released": "租约已释放",

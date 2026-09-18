@@ -6,11 +6,11 @@ import (
 	"slices"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc/identitysvcdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/identitysvc/identitysvcdb"
 )
 
 // resolveBatchSize is the page size used to resolve filter matches to IDs.

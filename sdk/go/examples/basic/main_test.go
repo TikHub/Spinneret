@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
-	"github.com/Evil0ctal/Spinneret/sdk/go/spinneret"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/sdk/go/spinneret"
 )
 
 // fakeSpinneret serves the node API calls the example makes.

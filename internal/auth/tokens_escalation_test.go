@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/auth/authdb"
-	"github.com/Evil0ctal/Spinneret/internal/auth/authtest"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/auth/authdb"
+	"github.com/TikHub/Spinneret/internal/auth/authtest"
 )
 
 func TestPrefixWithinAny(t *testing.T) {

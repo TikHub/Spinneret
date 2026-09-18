@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogtest"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogtest"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 func TestHealthCodec(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/catalog"
 )
 
 // reportConsumerGroup is the consumer group of the report stream workers

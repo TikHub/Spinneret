@@ -15,9 +15,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/notify/notifydb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/notify/notifydb"
 )
 
 // identity_expired alerts have two sources that produce identical alerts

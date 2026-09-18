@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/observability"
 )
 
 func identityChange(id string, at time.Time, to, action string) StateChange {

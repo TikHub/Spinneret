@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 func newTestNodeTable(maxKeys int) *aggTable[nodeKey, nodeValue] {

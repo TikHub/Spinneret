@@ -10,8 +10,8 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/notify/notifydb"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/notify/notifydb"
 )
 
 // banBaseline caches the ban counts of the previous hour per site.

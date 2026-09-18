@@ -11,11 +11,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/hotstate/hotstatedb"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	spsite "github.com/Evil0ctal/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/hotstate/hotstatedb"
+	"github.com/TikHub/Spinneret/internal/policy"
+	spsite "github.com/TikHub/Spinneret/internal/site"
 )
 
 // IdentityHot is the live Redis state of an identity. It mirrors the proto

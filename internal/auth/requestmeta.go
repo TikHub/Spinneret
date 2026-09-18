@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/Evil0ctal/Spinneret/internal/pkg/netx"
+	"github.com/TikHub/Spinneret/internal/pkg/netx"
 )
 
 // Limits applied to client-supplied request metadata.

@@ -13,9 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // runCLI executes spnr with the given environment and returns exit code, stdout and stderr.

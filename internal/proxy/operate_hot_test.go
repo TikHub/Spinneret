@@ -9,9 +9,9 @@ import (
 	"github.com/redis/rueidis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/durationx"
-	"github.com/Evil0ctal/Spinneret/internal/proxy/proxydb"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/pkg/durationx"
+	"github.com/TikHub/Spinneret/internal/proxy/proxydb"
 )
 
 func TestOperateQuarantineUsesBanUntil(t *testing.T) {

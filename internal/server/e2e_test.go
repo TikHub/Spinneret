@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
 )
 
 // cookieTypeYAML is an immediately activated cookie identity type.

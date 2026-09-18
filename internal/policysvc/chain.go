@@ -8,9 +8,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc/policysvcdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/policysvc/policysvcdb"
 )
 
 // publishedLookup returns an extends lookup over the published policies of a

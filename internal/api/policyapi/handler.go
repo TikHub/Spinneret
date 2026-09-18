@@ -9,13 +9,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
-	"github.com/Evil0ctal/Spinneret/internal/api/apiutil"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/internal/api/apiutil"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/policysvc"
 )
 
 // Handler implements spinneretv1connect.PolicyAdminServiceHandler.

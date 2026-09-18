@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/auth/authtest"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/auth/authtest"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/events"
 )
 
 func TestCreateToken(t *testing.T) {

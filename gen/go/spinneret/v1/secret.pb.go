@@ -166,7 +166,7 @@ const file_spinneret_v1_secret_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt2]\n" +
 	"\rSecretService\x12L\n" +
-	"\tGetSecret\x12\x1e.spinneret.v1.GetSecretRequest\x1a\x1f.spinneret.v1.GetSecretResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\tGetSecret\x12\x1e.spinneret.v1.GetSecretRequest\x1a\x1f.spinneret.v1.GetSecretResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_secret_proto_rawDescOnce sync.Once

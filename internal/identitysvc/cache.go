@@ -13,10 +13,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/singleflight"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc/identitysvcdb"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/identitysvc/identitysvcdb"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // Payload cache defaults (spec §8).

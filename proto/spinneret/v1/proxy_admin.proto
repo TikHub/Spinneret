@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "spinneret/v1/common.proto";
 
-option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+option go_package = "github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1";
 
 // ProxyAdminService manages the proxy pool of a namespace.
 service ProxyAdminService {

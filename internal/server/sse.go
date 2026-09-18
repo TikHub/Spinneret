@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/events"
 )
 
 // sseEventPermission maps console event types to the permission needed to receive them.

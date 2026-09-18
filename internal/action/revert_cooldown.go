@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/action/actiondb"
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/action/actiondb"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
 )
 
 // cooldownCandidate is an automatic identity cooldown that may still be in effect.

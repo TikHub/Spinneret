@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/action/actiondb"
+	"github.com/TikHub/Spinneret/internal/action/actiondb"
 )
 
 // Hot-state retry settings of the expiry job.

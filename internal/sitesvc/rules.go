@@ -4,13 +4,13 @@ import (
 	"context"
 	"unicode/utf8"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/site"
-	"github.com/Evil0ctal/Spinneret/internal/sitesvc/sitesvcdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/sitesvc/sitesvcdb"
 )
 
 // RuleCursor is the position after which a rule listing continues.

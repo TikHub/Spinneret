@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/events"
 )
 
 // TestRecreatedItemNeverReusesVersions is the regression test for nodes that

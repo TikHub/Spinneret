@@ -640,7 +640,7 @@ const file_spinneret_v1_config_proto_rawDesc = "" +
 	"\rConfigService\x12L\n" +
 	"\tGetConfig\x12\x1e.spinneret.v1.GetConfigRequest\x1a\x1f.spinneret.v1.GetConfigResponse\x12[\n" +
 	"\x0eBatchGetConfig\x12#.spinneret.v1.BatchGetConfigRequest\x1a$.spinneret.v1.BatchGetConfigResponse\x12R\n" +
-	"\vWatchConfig\x12 .spinneret.v1.WatchConfigRequest\x1a!.spinneret.v1.WatchConfigResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\vWatchConfig\x12 .spinneret.v1.WatchConfigRequest\x1a!.spinneret.v1.WatchConfigResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_config_proto_rawDescOnce sync.Once

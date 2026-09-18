@@ -1,7 +1,7 @@
 package spinneret
 
 import (
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 )
 
 // Version is the SDK version sent in the User-Agent header.

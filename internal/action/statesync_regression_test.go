@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/hotstate"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/durationx"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/hotstate"
+	"github.com/TikHub/Spinneret/internal/pkg/durationx"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 // realHot adapts the hot-state syncer like the server wiring does.

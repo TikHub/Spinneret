@@ -2,7 +2,7 @@
 
 [中文文档](README.zh-CN.md)
 
-Go client for [Spinneret](https://github.com/Evil0ctal/Spinneret), the control plane that leases
+Go client for [Spinneret](https://github.com/TikHub/Spinneret), the control plane that leases
 identities (cookies, device parameters, accounts) and proxies to crawler nodes, turns request
 reports into cooldowns, bans and circuit breaking, and distributes configuration and secrets.
 
@@ -15,18 +15,18 @@ reports into cooldowns, bans and circuit breaking, and distributes configuration
 - `ConfigWatcher`: long polling, change callbacks, version tracking, local snapshots without secrets
 - `ClassifyError`: maps `net/http` failures to report error kinds
 
-The package lives in the main module: `github.com/Evil0ctal/Spinneret/sdk/go/spinneret`
+The package lives in the main module: `github.com/TikHub/Spinneret/sdk/go/spinneret`
 (Go 1.27+). Its only runtime dependencies are `connectrpc.com/connect` and
 `google.golang.org/protobuf`.
 
 ## Installation
 
 ```bash
-go get github.com/Evil0ctal/Spinneret@latest
+go get github.com/TikHub/Spinneret@latest
 ```
 
 ```go
-import "github.com/Evil0ctal/Spinneret/sdk/go/spinneret"
+import "github.com/TikHub/Spinneret/sdk/go/spinneret"
 ```
 
 ## Configuration
@@ -121,7 +121,11 @@ go run ./sdk/go/examples/basic -site shop -client web -target https://... -confi
 | Error reason / retry hint | response headers | response trailers |
 
 Both protocols expose the same `Error` values. Load balancers must pass HTTP/2 end to end for
-gRPC; the Docker Compose load balancer (Caddy) accepts h2c on port 8080.
+gRPC, and the Docker Compose load balancer does not: its `reverse_proxy` transport in
+`deploy/compose/config/Caddyfile` has no `versions h2c 2`, so Caddy forwards HTTP/1.1 to the
+plaintext upstream and port 8080 of the stack is Connect JSON only. For gRPC, add `versions h2c 2`
+to that transport block or reach an instance directly (the `spinneret` service publishes no host
+port of its own).
 
 ## Leases
 
@@ -309,6 +313,11 @@ the HTTP status, with an empty reason.
   happened before the request was sent (dial and DNS errors) or when the server itself answered
   `unavailable`. Ambiguous failures (per-call timeout, connection reset, a bare 502/503/504) are
   returned.
+- `overloaded` (`unavailable`) means the server was at its acquire concurrency limit and shed the
+  call before attempting it. No Redis command was issued, so it is retryable like any other
+  `unavailable`: the retry honours `Spinneret-Retry-After-Ms`, which the server jitters into
+  100–200 ms. It is not `no_identity_available` — the identity pool was never consulted — and needs
+  no SDK change.
 - The background reporter and the config watcher do not use this policy; they retry with their own
   backoff.
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // The worker retries a failed Execute only for an executor that declares

@@ -11,15 +11,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/proxy/proxydb"
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/proxy/proxydb"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // HotSyncer materializes proxies into the Redis hot state of every site of a

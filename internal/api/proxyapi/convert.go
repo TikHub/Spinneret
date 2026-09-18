@@ -1,9 +1,9 @@
 package proxyapi
 
 import (
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/internal/api/apiutil"
-	"github.com/Evil0ctal/Spinneret/internal/proxy"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/internal/api/apiutil"
+	"github.com/TikHub/Spinneret/internal/proxy"
 )
 
 // toProto converts a proxy view. The view never holds credentials.

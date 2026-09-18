@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/hotstate/hotstatedb"
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/hotstate/hotstatedb"
+	"github.com/TikHub/Spinneret/internal/jobs"
 )
 
 // Snapshot job parameters (spec §6.8: leader, 60 s).

@@ -44,7 +44,7 @@ export default defineConfig({
       testIgnore: /auth\.setup\.ts/,
       dependencies: ['setup'],
       // The device preset carries its own viewport; the screenshots in
-      // docs/images are taken at 1440x900, so it is restated here.
+      // documents/images are taken at 1440x900, so it is restated here.
       use: { ...devices['Desktop Chrome'], viewport: VIEWPORT, storageState },
     },
   ],

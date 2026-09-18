@@ -7,13 +7,13 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/proxy/proxydb"
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/proxy/proxydb"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 // importChunk bounds the rows written or looked up by one statement.

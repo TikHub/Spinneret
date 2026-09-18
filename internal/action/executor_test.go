@@ -11,13 +11,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/durationx"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/pkg/durationx"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 func (e *env) executor(record bool) (*Executor, *StateWriter, *observability.Metrics) {

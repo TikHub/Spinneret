@@ -18,7 +18,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Evil0ctal/Spinneret/cmd/internal/buildinfo"
+	"github.com/TikHub/Spinneret/cmd/internal/buildinfo"
 )
 
 func main() {

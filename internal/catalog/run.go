@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/events"
 )
 
 // Run keeps the catalog fresh until ctx is done: it loads every namespace when

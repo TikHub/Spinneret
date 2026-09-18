@@ -514,7 +514,7 @@ const file_spinneret_v1_common_proto_rawDesc = "" +
 	"\x06shadow\x18\x16 \x01(\bR\x06shadow\"2\n" +
 	"\bKeyValue\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05valueB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05valueB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_common_proto_rawDescOnce sync.Once

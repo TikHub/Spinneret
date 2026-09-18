@@ -7,9 +7,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 // indexes00003 maps every index created by migration 00003 to its table and

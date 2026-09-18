@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/configcenter/configdb"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/textdiff"
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/configcenter/configdb"
+	"github.com/TikHub/Spinneret/internal/pkg/textdiff"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 type versionCursor struct {

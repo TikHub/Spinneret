@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/cmd/internal/buildinfo"
+	"github.com/TikHub/Spinneret/cmd/internal/buildinfo"
 )
 
 func TestParseFlags(t *testing.T) {

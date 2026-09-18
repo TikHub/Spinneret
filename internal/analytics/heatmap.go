@@ -8,9 +8,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/analytics/analyticsdb"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/analytics/analyticsdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/catalog"
 )
 
 // Heatmap limits.

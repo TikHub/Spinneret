@@ -10,10 +10,10 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/notify/notifydb"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/notify/notifydb"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
 // dedupTimeout bounds the Redis round trip of alert de-duplication.

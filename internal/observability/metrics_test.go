@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,6 +25,7 @@ func TestNewMetricsVectorsAndLabels(t *testing.T) {
 		labels []string
 	}{
 		{name: "spinneret_acquire_total", vec: m.AcquireTotal, labels: []string{"site", "group", "result"}},
+		{name: "spinneret_acquire_admission_total", vec: m.AcquireAdmissionTotal, labels: []string{"result"}},
 		{name: "spinneret_report_ingest_total", vec: m.ReportIngestTotal, labels: []string{"result"}},
 		{name: "spinneret_report_total", vec: m.ReportTotal, labels: []string{"site", "group", "outcome"}},
 		{name: "spinneret_actions_total", vec: m.ActionsTotal, labels: []string{"site", "action", "scope", "mode"}},
@@ -77,6 +79,8 @@ func TestNewMetricsVectorsAndLabels(t *testing.T) {
 	}
 	m.ReportLag.Observe(0.3)
 	m.ReportProcessDuration.Observe(0.001)
+	m.AcquireScriptDuration.Observe(0.0004)
+	m.AcquireAdmissionWait.Observe(0.0004)
 	m.StreamOwnedShards.Set(4)
 	m.ConfigWatchers.Set(7)
 
@@ -100,6 +104,10 @@ func TestNewMetricsVectorsAndLabels(t *testing.T) {
 	requireBuckets(t, requireFamily(t, byName, "spinneret_report_lag_seconds", dto.MetricType_HISTOGRAM, nil),
 		[]float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10})
 	requireFamily(t, byName, "spinneret_report_process_duration_seconds", dto.MetricType_HISTOGRAM, nil)
+	requireBuckets(t, requireFamily(t, byName, "spinneret_acquire_script_seconds", dto.MetricType_HISTOGRAM, nil),
+		[]float64{0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25})
+	requireBuckets(t, requireFamily(t, byName, "spinneret_acquire_admission_wait_seconds", dto.MetricType_HISTOGRAM, nil),
+		[]float64{0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1})
 	requireFamily(t, byName, "spinneret_stream_owned_shards", dto.MetricType_GAUGE, nil)
 	requireFamily(t, byName, "spinneret_config_watchers", dto.MetricType_GAUGE, nil)
 	require.Contains(t, byName, "go_goroutines", "Go collector must be registered")
@@ -222,4 +230,110 @@ func TestBreakerStateValue(t *testing.T) {
 	require.InDelta(t, 1, BreakerStateValue("half_open"), 0)
 	require.InDelta(t, 2, BreakerStateValue("open"), 0)
 	require.InDelta(t, 0, BreakerStateValue("bogus"), 0)
+}
+
+func TestRegisterAcquireGate(t *testing.T) {
+	t.Parallel()
+	m := NewMetrics()
+	gauges := map[string]float64{
+		"spinneret_acquire_inflight":       3,
+		"spinneret_acquire_queued":         7,
+		"spinneret_acquire_inflight_limit": 32,
+		"spinneret_acquire_peers":          2,
+	}
+	before, err := m.Registry.Gather()
+	require.NoError(t, err)
+	for _, f := range before {
+		require.NotContains(t, gauges, f.GetName(), "gate gauges are registered lazily")
+	}
+
+	value := func(v int) func() int { return func() int { return v } }
+	m.RegisterAcquireGate(value(32), value(3), value(7), value(2))
+	// Registering twice is how two services sharing one Metrics behave; it must
+	// not panic and must not duplicate a series.
+	require.NotPanics(t, func() { m.RegisterAcquireGate(value(32), value(3), value(7), value(2)) })
+
+	families, err := m.Registry.Gather()
+	require.NoError(t, err)
+	seen := map[string]int{}
+	for _, f := range families {
+		if want, ok := gauges[f.GetName()]; ok {
+			seen[f.GetName()]++
+			require.Equal(t, dto.MetricType_GAUGE, f.GetType(), f.GetName())
+			require.Len(t, f.GetMetric(), 1, f.GetName())
+			require.InDelta(t, want, f.GetMetric()[0].GetGauge().GetValue(), 0, f.GetName())
+		}
+	}
+	for name := range gauges {
+		require.Equal(t, 1, seen[name], "%s must be registered exactly once", name)
+	}
+
+	// Nil functions are skipped and a nil *Metrics is a no-op.
+	m2 := NewMetrics()
+	m2.RegisterAcquireGate(nil, value(1), nil, nil)
+	names := map[string]bool{}
+	f2, err := m2.Registry.Gather()
+	require.NoError(t, err)
+	for _, f := range f2 {
+		names[f.GetName()] = true
+	}
+	require.True(t, names["spinneret_acquire_inflight"])
+	require.False(t, names["spinneret_acquire_inflight_limit"])
+
+	var nilMetrics *Metrics
+	require.NotPanics(t, func() { nilMetrics.RegisterAcquireGate(value(1), value(1), value(1), value(1)) })
+}
+
+func TestRegisterAcquirePeerRegistry(t *testing.T) {
+	t.Parallel()
+	m := NewMetrics()
+	const (
+		ageName      = "spinneret_acquire_peer_beat_age_seconds"
+		failuresName = "spinneret_acquire_peer_beat_failures_total"
+	)
+	before, err := m.Registry.Gather()
+	require.NoError(t, err)
+	for _, f := range before {
+		require.NotEqual(t, ageName, f.GetName(), "registry series are registered lazily")
+		require.NotEqual(t, failuresName, f.GetName(), "registry series are registered lazily")
+	}
+
+	age := func() time.Duration { return 1500 * time.Millisecond }
+	failures := func() int64 { return 4 }
+	m.RegisterAcquirePeerRegistry(age, failures)
+	require.NotPanics(t, func() { m.RegisterAcquirePeerRegistry(age, failures) },
+		"two services sharing one Metrics must not panic")
+
+	families, err := m.Registry.Gather()
+	require.NoError(t, err)
+	seen := map[string]int{}
+	for _, f := range families {
+		switch f.GetName() {
+		case ageName:
+			seen[ageName]++
+			require.Equal(t, dto.MetricType_GAUGE, f.GetType())
+			require.InDelta(t, 1.5, f.GetMetric()[0].GetGauge().GetValue(), 0)
+		case failuresName:
+			seen[failuresName]++
+			require.Equal(t, dto.MetricType_COUNTER, f.GetType())
+			require.InDelta(t, 4, f.GetMetric()[0].GetCounter().GetValue(), 0)
+		}
+	}
+	require.Equal(t, 1, seen[ageName])
+	require.Equal(t, 1, seen[failuresName])
+
+	// Nil functions are skipped and a nil *Metrics is a no-op.
+	m2 := NewMetrics()
+	m2.RegisterAcquirePeerRegistry(nil, failures)
+	names := map[string]bool{}
+	f2, err := m2.Registry.Gather()
+	require.NoError(t, err)
+	for _, f := range f2 {
+		names[f.GetName()] = true
+	}
+	require.False(t, names[ageName])
+	require.True(t, names[failuresName])
+
+	var nilMetrics *Metrics
+	require.NotPanics(t, func() { nilMetrics.RegisterAcquirePeerRegistry(age, failures) })
 }

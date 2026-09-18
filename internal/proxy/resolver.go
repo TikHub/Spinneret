@@ -13,10 +13,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/singleflight"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/proxy/proxydb"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/proxy/proxydb"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // Resolver cache parameters.

@@ -17,11 +17,11 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 var discardLogger = slog.New(slog.DiscardHandler)

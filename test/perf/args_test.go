@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
 // acquireCfg is the rotation policy the harness drives acquire.lua with. Its
 // defaults mirror the seeded load-test policy (weighted_random,
 // candidate_sample 32, lease_ttl 60s, max_concurrent_leases 1, no proxies),
-// which is the configuration docs/benchmarks.md measured.
+// which is the configuration documents/en/17-performance.md measured.
 type acquireCfg struct {
 	eg         int64 // 0 = the clean group
 	count      int

@@ -3,6 +3,7 @@ package appconfig
 import (
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -61,6 +62,7 @@ func TestLoadFromDefaults(t *testing.T) {
 		ReportDedupTTL:       time.Hour,
 		LateReportWindow:     10 * time.Minute,
 		StreamMaxLen:         1_000_000,
+		AcquireFleetInflight: 64,
 		PayloadCache:         true,
 		PayloadCacheSize:     200_000,
 		DEKCacheSize:         100_000,
@@ -95,6 +97,8 @@ func TestLoadFromOverrides(t *testing.T) {
 		"SPINNERET_ROLE", " Worker ",
 		"SPINNERET_INSTANCE_ID", "node-a",
 		"SPINNERET_DATABASE_MAX_CONNS", "64",
+		"SPINNERET_ACQUIRE_FLEET_INFLIGHT", "128",
+		"SPINNERET_ACQUIRE_MAX_INFLIGHT", "48",
 		"SPINNERET_REDIS_URL", "",
 		"SPINNERET_REDIS_ADDRS", "r1:6379, r2:6379,,",
 		"SPINNERET_REDIS_PREFIX", "spx",
@@ -148,6 +152,7 @@ func TestLoadFromOverrides(t *testing.T) {
 		ClickHouseURL: "clickhouse://u:chpass@ch:9000/default", ClickHouseTTLDays: 30,
 		KEKFile: "/etc/spinneret/kek", KEKCurrent: "k2",
 		ReportShards: 255, ReportDedupTTL: 2 * time.Hour, LateReportWindow: 0, StreamMaxLen: 5000,
+		AcquireFleetInflight: 128, AcquireMaxInflight: 48,
 		PayloadCache: false, PayloadCacheSize: 0,
 		DEKCacheSize: 10, DEKCacheTTL: time.Minute,
 		TokenCacheTTL: 5 * time.Second, SessionTTL: 24 * time.Hour, CookieSecure: "true",
@@ -374,4 +379,63 @@ func mapValues(m map[string]string) []string {
 		out = append(out, v)
 	}
 	return out
+}
+
+func TestLoadAcquireAdmission(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name      string
+		vars      map[string]string
+		wantFleet int
+		wantMax   int
+		wantErr   string
+	}{
+		{name: "defaults", vars: required(), wantFleet: 64},
+		{
+			name:      "configured",
+			vars:      with(required(), "SPINNERET_ACQUIRE_FLEET_INFLIGHT", "128", "SPINNERET_ACQUIRE_MAX_INFLIGHT", "32"),
+			wantFleet: 128, wantMax: 32,
+		},
+		{name: "off", vars: with(required(), "SPINNERET_ACQUIRE_FLEET_INFLIGHT", "0"), wantFleet: 0},
+		{
+			name:    "negative fleet budget",
+			vars:    with(required(), "SPINNERET_ACQUIRE_FLEET_INFLIGHT", "-1"),
+			wantErr: "SPINNERET_ACQUIRE_FLEET_INFLIGHT must be between 0 (admission control off) and 65536",
+		},
+		{
+			name:    "fleet budget too large",
+			vars:    with(required(), "SPINNERET_ACQUIRE_FLEET_INFLIGHT", "65537"),
+			wantErr: "SPINNERET_ACQUIRE_FLEET_INFLIGHT must be between 0",
+		},
+		{
+			name:    "negative pinned limit",
+			vars:    with(required(), "SPINNERET_ACQUIRE_MAX_INFLIGHT", "-1"),
+			wantErr: "SPINNERET_ACQUIRE_MAX_INFLIGHT must be between 0 (derive from the fleet budget) and 4096",
+		},
+		{
+			name:    "pinned limit too large",
+			vars:    with(required(), "SPINNERET_ACQUIRE_MAX_INFLIGHT", "4097"),
+			wantErr: "SPINNERET_ACQUIRE_MAX_INFLIGHT must be between 0",
+		},
+		{
+			name:    "unparsable",
+			vars:    with(required(), "SPINNERET_ACQUIRE_FLEET_INFLIGHT", "abc"),
+			wantErr: `SPINNERET_ACQUIRE_FLEET_INFLIGHT: invalid integer "abc"`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			c, err := LoadFrom(env(tt.vars))
+			if tt.wantErr != "" {
+				require.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantFleet, c.AcquireFleetInflight)
+			require.Equal(t, tt.wantMax, c.AcquireMaxInflight)
+			require.Equal(t, strconv.Itoa(tt.wantFleet), c.Redacted()["acquire_fleet_inflight"])
+			require.Equal(t, strconv.Itoa(tt.wantMax), c.Redacted()["acquire_max_inflight"])
+		})
+	}
 }

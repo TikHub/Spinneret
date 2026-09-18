@@ -16,7 +16,7 @@ import (
 	chdriver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	tcclickhouse "github.com/testcontainers/testcontainers-go/modules/clickhouse"
 
-	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
+	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
 )
 
 // ClickHouseURLEnv names the environment variable holding the base ClickHouse

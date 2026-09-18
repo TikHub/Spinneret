@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/identity"
 )
 
 // Identity lifecycle states (spec §4).

@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a capability Spinneret does not have.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Spinneret is deliberately site-agnostic: it manages the state around requests and
+        contains no signing algorithms, login flows or captcha handling. Proposals that add
+        per-site logic to the server will be declined, but a proposal that makes such logic
+        easier to keep in your own node is very welcome.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation, not the solution. What are you doing today, and what does it cost you?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you already tried?
+      description: Existing features you attempted, and why they did not fit.
+    validations:
+      required: false

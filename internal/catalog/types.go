@@ -9,9 +9,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/site"
 )
 
 // Namespace is the snapshot of one namespace. It must be treated as read-only.

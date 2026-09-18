@@ -3,6 +3,12 @@
 #
 #   LOADTEST_TOKEN=spn_... test/load/run.sh acquire-5000 acquire_report.js ACQUIRE_RATE=5000 DURATION=2m
 #
+# ADMISSION=on|off switches acquire admission control before the run, so an A/B pair is two
+# runs of the same image differing in one server variable:
+#
+#   ADMISSION=off test/load/run.sh acq-5000-off acquire_report.js ACQUIRE_RATE=5000 DURATION=2m
+#   ADMISSION=on  test/load/run.sh acq-5000-on  acquire_report.js ACQUIRE_RATE=5000 DURATION=2m
+#
 # Writes into ${OUT_DIR:-.loadtest}/<name>/:
 #   before.json / mid.json / after.json  metric snapshots (test/load/metrics.py)
 #   delta.json                           server-side deltas: throughput, histogram quantiles, CPU
@@ -10,7 +16,7 @@
 #   gauges.json                          gauges sampled while the scenario was running
 #
 # The scenario runs through the compose `loadtest` profile, so k6 shares the Docker VM
-# with the server; see docs/benchmarks.md for what that means for the numbers.
+# with the server; see documents/en/17-performance.md for what that means for the numbers.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -30,9 +36,50 @@ RUN_DIR="${OUT_DIR}/${NAME}"
 mkdir -p "${RUN_DIR}"
 
 K6_ENV=()
+ARM_GIVEN=0
 for kv in "$@"; do
 	K6_ENV+=("-e" "${kv}")
+	if [[ "${kv}" == ADMISSION=* ]]; then
+		ARM_GIVEN=1
+	fi
 done
+
+# ADMISSION is the A/B lever of acquire admission control: `on` gives the server a
+# fleet-wide acquire budget, `off` constructs no gate at all and reproduces the pre-gate
+# request path. Both arms recreate the spinneret service from the image that is already
+# built (--no-build), so the comparison carries no build or machine drift; the variable
+# reaches the server through the compose environment block.
+#
+# Leaving ADMISSION unset does not touch the stack and tells the scenario to tolerate
+# sheds, which is what every non-admission run wants.
+ADMISSION="${ADMISSION:-}"
+FLEET_INFLIGHT="${ACQUIRE_FLEET_INFLIGHT:-64}"
+case "${ADMISSION}" in
+"") ;;
+on) ;;
+off) FLEET_INFLIGHT=0 ;;
+*)
+	echo "ADMISSION must be 'on', 'off' or unset (got '${ADMISSION}')" >&2
+	exit 2
+	;;
+esac
+if [[ "${ARM_GIVEN}" -eq 0 ]]; then
+	K6_ENV+=("-e" "ADMISSION=${ADMISSION:-on}")
+fi
+if [[ -n "${ADMISSION}" ]]; then
+	echo "== admission ${ADMISSION}: SPINNERET_ACQUIRE_FLEET_INFLIGHT=${FLEET_INFLIGHT}"
+	# Exported, not passed to this one call: `compose run k6` resolves the whole file to
+	# satisfy k6's depends_on chain (k6 -> lb -> spinneret), and a server whose resolved
+	# environment differs from the running container is recreated — silently putting the
+	# arm back to the default mid-run. Every compose invocation of this script has to see
+	# the same value or the A/B is not an A/B.
+	export SPINNERET_ACQUIRE_FLEET_INFLIGHT="${FLEET_INFLIGHT}"
+	"${COMPOSE[@]}" up -d --no-build --wait spinneret
+	# Recreated replicas get new addresses; the load balancer resolves them through a 5 s
+	# DNS refresh and a 2 s readiness check, and the first acquire of a fresh instance pays
+	# for a cold script cache. ADMISSION_SETTLE covers both before the snapshot is taken.
+	sleep "${ADMISSION_SETTLE:-15}"
+fi
 
 # MID_AFTER seconds into the run a second snapshot samples the gauges (config
 # watchers, stream backlog, goroutines) and `docker stats` while the load is on.
@@ -42,7 +89,7 @@ done
 # the system under test for ~5 s (19,000 late iterations) and put a 12 ms p99 into
 # an otherwise 2 ms run. Set MID_STATS=0 to keep the gauge sample and drop the
 # `docker stats` part of it, which is what the throughput rows of
-# docs/benchmarks.md are measured with. MID_STATS=0 loses only the per-container
+# documents/en/17-performance.md are measured with. MID_STATS=0 loses only the per-container
 # CPU/memory gauges in gauges.json.
 MID_AFTER="${MID_AFTER:-30}"
 MID_STATS="${MID_STATS:-1}"
@@ -95,8 +142,13 @@ print(f"   window {delta['elapsed_s']}s  acquire {t['acquire']} ({t['acquire_per
 k6 = run / "k6.json"
 if k6.exists():
     m = json.loads(k6.read_text())["metrics"]
+    # acquire_shed is the admission-control counter: requests the server refused before they
+    # reached Redis. It is a saturation signal, not an error, and is reported separately from
+    # acquire_unavailable (open breaker, paused site) and acquire_failed.
     parts = [f"{n}={m[n]['rate']:.1f}/s" for n in
-             ("acquire_ok", "acquire_exhausted", "report_accepted", "reports_accepted",
+             ("acquire_ok", "acquire_exhausted", "acquire_no_proxy", "acquire_shed",
+              "acquire_breaker_open", "acquire_site_paused", "acquire_unavailable",
+              "report_accepted", "reports_accepted",
               "watch_polls", "watch_changes", "dropped_iterations", "iterations")
              if n in m and m[n].get("rate")]
     print("   k6: " + "  ".join(parts))
@@ -106,6 +158,15 @@ for name, inst in delta["instances"].items():
     print(f"   {name}: acquire p50={acq.get('p50_ms')}ms p99={acq.get('p99_ms')}ms n={acq.get('count')} | "
           f"lag p50={lag.get('p50_ms')}ms p99={lag.get('p99_ms')}ms n={lag.get('count')} | "
           f"cpu={inst.get('cpu_cores')} cores | http={inst.get('http_by_code')}")
+    # Only present while admission control is on; the limit is the fleet budget divided by
+    # the live instance count, so it is also the record of which A/B arm this run was.
+    adm = inst.get("admission_by_result") or {}
+    limit = inst.get("spinneret_acquire_inflight_limit")
+    if adm or limit is not None:
+        script = inst.get("spinneret_acquire_script_seconds") or {}
+        wait = inst.get("spinneret_acquire_admission_wait_seconds") or {}
+        print(f"   {name}: admission limit={limit} peers={inst.get('spinneret_acquire_peers')} "
+              f"{adm} | script p99={script.get('p99_ms')}ms | permit wait p99={wait.get('p99_ms')}ms")
 v = delta.get("valkey", {})
 print(f"   valkey: {v.get('commands_per_s')} cmd/s, cpu {v.get('cpu_cores')} cores, "
       f"used_memory {int(v.get('used_memory_after') or 0) / 2**20:.0f} MiB")

@@ -7,8 +7,8 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // Login throttle limits (spec §3.3).

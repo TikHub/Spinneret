@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/version"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/version"
 )
 
 // HTTP delivery limits.

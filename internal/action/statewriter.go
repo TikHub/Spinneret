@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/Evil0ctal/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/observability"
 )
 
 // StateWriter defaults (spec §6.6).

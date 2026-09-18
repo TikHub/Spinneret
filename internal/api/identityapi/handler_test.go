@@ -12,12 +12,12 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/internal/api/identityapi"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc/identitysvctest"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/internal/api/identityapi"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/identitysvc"
+	"github.com/TikHub/Spinneret/internal/identitysvc/identitysvctest"
 )
 
 func newHandler(t *testing.T) (*identityapi.Handler, *identitysvctest.Env) {

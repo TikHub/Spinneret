@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/Evil0ctal/Spinneret/internal/vault/vaultdb"
+	"github.com/TikHub/Spinneret/internal/vault/vaultdb"
 )
 
 // rewrapRow is one envelope-encrypted record: its primary key (ID, plus the

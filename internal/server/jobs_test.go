@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/jobs"
 )
 
 func TestPartitionMaintainerRunsEveryStep(t *testing.T) {

@@ -11,14 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogtest"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/signal"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogtest"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/signal"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 const (

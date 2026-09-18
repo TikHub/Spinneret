@@ -11,10 +11,10 @@ import (
 	"github.com/redis/rueidis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogtest"
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogtest"
+	"github.com/TikHub/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 func alertsByKind(t *testing.T, e *env, tenantID string) map[string][]AlertEvent {

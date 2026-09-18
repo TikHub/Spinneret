@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/sitesvc/sitesvcdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/sitesvc/sitesvcdb"
 )
 
 // SiteAccess restricts listings to the sites a caller may see. All grants

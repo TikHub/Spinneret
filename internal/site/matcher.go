@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // RuleKind is the kind of a URI rule.

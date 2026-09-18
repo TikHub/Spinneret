@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/breaker/breakerdb"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/breaker/breakerdb"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
 // Runtime config kinds served under the reserved "_runtime" config group.

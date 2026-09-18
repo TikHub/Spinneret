@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/Evil0ctal/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/authz"
 )
 
 // catalogSyncTimeout bounds how long an admin request waits for catalog

@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/cobra"
 
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 func newMigrateCmd(a *app) *cobra.Command {

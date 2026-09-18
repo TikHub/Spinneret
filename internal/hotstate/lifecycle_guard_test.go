@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
 // redisFirst simulates a Redis-first lifecycle change written by apply.lua

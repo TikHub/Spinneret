@@ -13,7 +13,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
 )
 
 // Lease is an acquired lease with helpers to use its credential and proxy,

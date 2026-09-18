@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/observability"
 )
 
 // flakyPool returns a pool to the test database whose new connections fail

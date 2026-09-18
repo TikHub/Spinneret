@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // PostgreSQL SQLSTATE codes classified by MapError.

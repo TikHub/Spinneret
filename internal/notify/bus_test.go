@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogtest"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogtest"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
 const webCookieType = `

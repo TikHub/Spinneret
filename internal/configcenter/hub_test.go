@@ -13,7 +13,7 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // fakeVersions is an in-memory versionLoader.

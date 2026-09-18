@@ -13,14 +13,14 @@ import (
 	"github.com/redis/rueidis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogtest"
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/signal"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogtest"
+	"github.com/TikHub/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/signal"
+	"github.com/TikHub/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 const (

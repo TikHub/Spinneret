@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc/identitysvcdb"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/identitysvc/identitysvcdb"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // NewPayloadCacheWithTTL exposes the secret-entry TTL to tests.

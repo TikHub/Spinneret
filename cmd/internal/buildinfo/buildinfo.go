@@ -5,7 +5,7 @@ package buildinfo
 import (
 	"runtime/debug"
 
-	"github.com/Evil0ctal/Spinneret/internal/version"
+	"github.com/TikHub/Spinneret/internal/version"
 )
 
 // DevVersion is the version of a build without any version information.

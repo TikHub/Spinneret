@@ -15,7 +15,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 const (

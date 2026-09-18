@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "spinneret/v1/auth.proto";
 import "spinneret/v1/common.proto";
 
-option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+option go_package = "github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1";
 
 // AccessAdminService manages API tokens, tenant members, role bindings and
 // the audit log of the active tenant (`X-Spinneret-Tenant` header). Token

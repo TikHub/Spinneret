@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
 )
 
 type reportRow struct {

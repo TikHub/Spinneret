@@ -29,10 +29,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/hotstate/hotstatedb"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/hotstate/hotstatedb"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // Tuning constants. They bound memory, Lua blocking time and round trips.

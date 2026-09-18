@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"slices"
 
-	"github.com/Evil0ctal/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/policy"
 )
 
 // publishedPolicy is the current published version of one policy.

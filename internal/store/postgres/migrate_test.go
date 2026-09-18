@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -10,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 // specColumns lists every table and column required by section 4 of the
@@ -327,4 +328,40 @@ func TestSchemaColumns(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestAcquireResultOverloadedConstraint pins migration 00006: without it the
+// first shed acquire would break statistics ingestion, because every flush
+// batch containing an 'overloaded' row would violate the result check.
+func TestAcquireResultOverloadedConstraint(t *testing.T) {
+	if testing.Short() {
+		t.Skip("integration test")
+	}
+	ctx := integrationContext(t)
+	pool := openBlank(t, 2)
+	require.NoError(t, postgres.Migrate(ctx, pool))
+
+	bucket := time.Now().UTC().Truncate(time.Minute)
+	// Each insert uses its own endpoint group, because (bucket, namespace, site,
+	// group, result) is the primary key.
+	var group int
+	insert := func(result string) error {
+		group++
+		_, err := pool.Exec(ctx, `INSERT INTO acquire_stats_minutely
+			(bucket, namespace_id, site_id, endpoint_group_id, result, count, duration_us_sum)
+			VALUES ($1, 'ns_1', 'sit_1', $2, $3, 1, 100)`, bucket, fmt.Sprintf("eg_%d", group), result)
+		return err
+	}
+	require.NoError(t, insert("overloaded"))
+	require.NoError(t, insert("exhausted"))
+
+	// Rolling back to 00005 restores the narrower check and drops the rows the
+	// widened one allowed.
+	require.NoError(t, postgres.MigrateDownTo(ctx, pool, 5))
+	var n int
+	require.NoError(t, pool.QueryRow(ctx,
+		`SELECT count(*) FROM acquire_stats_minutely WHERE result = 'overloaded'`).Scan(&n))
+	require.Zero(t, n)
+	require.ErrorContains(t, insert("overloaded"), "acquire_stats_minutely_result_check")
+	require.NoError(t, insert("exhausted"))
 }

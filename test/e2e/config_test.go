@@ -13,7 +13,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 )
 
 // scenarioConfigSecretRuntime (h): a config item referencing a vault secret is delivered resolved to the

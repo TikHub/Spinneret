@@ -12,7 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Evil0ctal/Spinneret/internal/vault/vaultdb"
+	"github.com/TikHub/Spinneret/internal/vault/vaultdb"
 )
 
 // KEKInfo describes one key-encryption key.

@@ -4153,7 +4153,7 @@ const file_spinneret_v1_identity_admin_proto_rawDesc = "" +
 	"\x13GetIdentityHotState\x12(.spinneret.v1.GetIdentityHotStateRequest\x1a).spinneret.v1.GetIdentityHotStateResponse\x12U\n" +
 	"\fListAccounts\x12!.spinneret.v1.ListAccountsRequest\x1a\".spinneret.v1.ListAccountsResponse\x12X\n" +
 	"\rUpsertAccount\x12\".spinneret.v1.UpsertAccountRequest\x1a#.spinneret.v1.UpsertAccountResponse\x12[\n" +
-	"\x0eOperateAccount\x12#.spinneret.v1.OperateAccountRequest\x1a$.spinneret.v1.OperateAccountResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x0eOperateAccount\x12#.spinneret.v1.OperateAccountRequest\x1a$.spinneret.v1.OperateAccountResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_identity_admin_proto_rawDescOnce sync.Once

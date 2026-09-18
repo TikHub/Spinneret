@@ -14,7 +14,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 )
 
 // breakerState returns the live breaker of an endpoint group.

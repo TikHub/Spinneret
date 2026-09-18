@@ -19,13 +19,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/Evil0ctal/Spinneret/internal/appconfig"
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/appconfig"
+	"github.com/TikHub/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/observability"
+	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
+	"github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // Shutdown and startup tuning.

@@ -1,9 +1,9 @@
 # Load tests (k6)
 
-Scenarios for the v0.1 performance targets of the design document (§18.4), run against the
+Scenarios for the v0.1 performance targets, run against the
 Connect JSON API of the `deploy/compose` stack. The measured results, the analysis and the
-tuning recommendations live in [`docs/benchmarks.md`](../../docs/benchmarks.md)
-([中文](../../docs/benchmarks.zh-CN.md)).
+tuning recommendations live in [`documents/en/17-performance.md`](../../documents/en/17-performance.md)
+([中文](../../documents/zh/17-performance.md)).
 
 | File | Scenario | Design target |
 | --- | --- | --- |
@@ -52,18 +52,86 @@ the load balancer), `SPINNERET_TOKEN`, `SITE` (`loadtest`), `CLIENT` (`web`), `G
 
 | Script | Variables |
 | --- | --- |
-| `acquire_report.js` | `ACQUIRE_RATE`, `DURATION`, `REPORT_MODE` (`release`, `keep`, `none`), `PRE_VUS`, `MAX_VUS` |
+| `acquire_report.js` | `ACQUIRE_RATE`, `DURATION`, `REPORT_MODE` (`release`, `keep`, `none`), `PRE_VUS`, `MAX_VUS`, `ADMISSION` (`on`, `off`), `SHED_MAX` |
 | `report_ingest.js` | `BATCH`, `REPORT_RATE`, `DURATION`, `LEASES`, `PRE_VUS`, `MAX_VUS` |
 | `watch_config.js` | `WATCHERS`, `POLLS_PER_VU`, `DURATION`, `WATCH_TIMEOUT_MS`, `RAMP_S`, `CONFIG_GROUP`, `CONFIG_KEY` |
-| `run.sh` | `LOADTEST_TOKEN` (required), `OUT_DIR`, `MID_AFTER` (seconds before the mid-run snapshot), `MID_STATS` (`0` to skip the `docker stats` part of it) |
+| `run.sh` | `LOADTEST_TOKEN` (required), `OUT_DIR`, `MID_AFTER` (seconds before the mid-run snapshot), `MID_STATS` (`0` to skip the `docker stats` part of it), `ADMISSION`, `ACQUIRE_FLEET_INFLIGHT`, `ADMISSION_SETTLE` |
 
 Each scenario prints a readable summary plus a machine-readable block between
 `---K6SUMMARY---` markers, which `run.sh` extracts into `k6.json`.
 
+## Acquire admission control
+
+The server bounds how many `acquire.lua` calls one instance may have in flight at Redis and
+sheds the rest with `unavailable` / `Spinneret-Reason: overloaded` before they reach Redis.
+Both halves of the measurement need to be visible, so `acquire_report.js` reads the reason
+header (`connectReason` in `lib.js`) and splits what used to be one `acquire_unavailable`
+bucket:
+
+| Counter | Connect code | `Spinneret-Reason` | Meaning |
+| --- | --- | --- | --- |
+| `acquire_ok` | — | — | Lease granted. |
+| `acquire_shed` | `unavailable` | `overloaded` | Admission control refused the request; **no Redis command was issued**. A saturation signal, not an error. |
+| `acquire_breaker_open` | `unavailable` | `circuit_open` | The endpoint group's breaker is open. |
+| `acquire_site_paused` | `unavailable` | `site_paused` | The site is paused. |
+| `acquire_unavailable` | `unavailable` | anything else | Unclassified `unavailable` — including one from the load balancer, which sends no reason header. |
+| `acquire_exhausted` | `resource_exhausted` | `no_identity_available` | The identity pool is genuinely empty. |
+| `acquire_no_proxy` | `resource_exhausted` | `no_proxy_available` | No usable proxy for the chosen identity. |
+| `acquire_failed` | anything else | — | A real failure; the `acquire_failed: ['count<1']` threshold still fails the run. |
+
+A shed is deliberately **not** counted as `acquire_failed`: it is the correct answer to
+offered load above the knee, and it carries `Spinneret-Retry-After-Ms`.
+
+Server side, `run.sh` now snapshots `spinneret_acquire_admission_total{result}` (`immediate`,
+`queued`, `shed_queue_full`, `shed_timeout`, `shed_canceled`),
+`spinneret_acquire_admission_wait_seconds`, `spinneret_acquire_script_seconds` (the Lua round
+trip alone) and the gate gauges `spinneret_acquire_inflight`, `spinneret_acquire_queued`,
+`spinneret_acquire_inflight_limit` and `spinneret_acquire_peers`. They appear per instance in
+`delta.json` / `gauges.json` and in the `admission` line of the run summary. `queued` rising
+while sheds are still zero is the earliest warning that the knee is near.
+
+### A/B on one build
+
+`ADMISSION` switches the gate before the run, so the before/after pair is two runs of the same
+image differing in one server variable — no build and no machine drift:
+
+```bash
+# Baseline arm: SPINNERET_ACQUIRE_FLEET_INFLIGHT=0 constructs no gate at all.
+ADMISSION=off test/load/run.sh acq-5000-off acquire_report.js ACQUIRE_RATE=5000 DURATION=2m
+# Gated arm: the fleet-wide budget, divided by the live instance count.
+ADMISSION=on  test/load/run.sh acq-5000-on  acquire_report.js ACQUIRE_RATE=5000 DURATION=2m
+```
+
+`run.sh` exports `SPINNERET_ACQUIRE_FLEET_INFLIGHT` (`ACQUIRE_FLEET_INFLIGHT`, default `64`,
+for `on`; `0` for `off`), recreates the `spinneret` service with `--no-build`, waits
+`ADMISSION_SETTLE` seconds (default `15`) for the load balancer to re-resolve the new replicas,
+and forwards the arm to k6 as `ADMISSION`. Leaving `ADMISSION` unset does not touch the stack
+and lets the scenario tolerate sheds, which is what every other run wants.
+
+The export matters and is not a style choice. `compose run k6` resolves the whole compose file
+to satisfy k6's `depends_on` chain (`k6` → `lb` → `spinneret`), and a server whose *resolved*
+environment differs from its running container gets recreated — so passing the arm to only the
+`up` call puts the stack back to the default halfway through the run, and the arm silently
+measures the default. Every compose invocation in `run.sh` has to see the same value.
+
+The arm changes one threshold. With `ADMISSION=off` the server cannot shed, so
+`acquire_shed: ['count<1']` fails the run if it does — that catches an arm that did not
+actually switch, and it is what caught exactly the recreate bug described above. With the gate on, sheds are counted and never fail the run unless `SHED_MAX`
+is set: the "no shedding at this rate" runs use `SHED_MAX=0`.
+
+```bash
+# No single-replica regression: 5,000/s must be served with the gate on and shed nothing.
+ADMISSION=on SHED_MAX=0 test/load/run.sh acq-5000-gated acquire_report.js \
+  ACQUIRE_RATE=5000 DURATION=2m REPORT_MODE=none
+```
+
+Both arms need `spinneret` recreated, so export `SPINNERET_REPLICAS` for the whole session as
+described above if you are measuring per-instance figures.
+
 ## Getting numbers that mean something
 
 Three things make the difference between a measurement and a story. All three are documented
-with the evidence in [benchmarks.md](../../docs/benchmarks.md).
+with the evidence in [Performance and tuning](../../documents/en/17-performance.md).
 
 * **`MID_STATS=0` for any run near the knee.** The mid-run snapshot otherwise calls
   `docker stats`, which walks every container of the machine; on Docker Desktop that stalled
@@ -94,4 +162,4 @@ with the evidence in [benchmarks.md](../../docs/benchmarks.md).
   `DURATION` to a few minutes at most.
 * Load tests leave traffic-proportional Redis state behind (dedup markers, ended lease hashes,
   stream entries). On a small machine, reclaim it between runs — see
-  [benchmarks.md → Housekeeping](../../docs/benchmarks.md#housekeeping).
+  [Performance and tuning → Housekeeping](../../documents/en/17-performance.md#housekeeping).

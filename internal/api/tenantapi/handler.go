@@ -8,11 +8,11 @@ import (
 
 	"connectrpc.com/connect"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
-	"github.com/Evil0ctal/Spinneret/internal/api/apiutil"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/tenancy"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/internal/api/apiutil"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/tenancy"
 )
 
 // Handler implements spinneretv1connect.TenantAdminServiceHandler. Permission

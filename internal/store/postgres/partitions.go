@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Evil0ctal/Spinneret/internal/appconfig"
+	"github.com/TikHub/Spinneret/internal/appconfig"
 )
 
 // Granularity is the period covered by one partition of a range-partitioned table.

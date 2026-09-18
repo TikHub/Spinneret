@@ -1125,7 +1125,7 @@ const file_spinneret_v1_auth_proto_rawDesc = "" +
 	"\x05Login\x12\x1a.spinneret.v1.LoginRequest\x1a\x1b.spinneret.v1.LoginResponse\x12C\n" +
 	"\x06Logout\x12\x1b.spinneret.v1.LogoutRequest\x1a\x1c.spinneret.v1.LogoutResponse\x12@\n" +
 	"\x05GetMe\x12\x1a.spinneret.v1.GetMeRequest\x1a\x1b.spinneret.v1.GetMeResponse\x12[\n" +
-	"\x0eChangePassword\x12#.spinneret.v1.ChangePasswordRequest\x1a$.spinneret.v1.ChangePasswordResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x0eChangePassword\x12#.spinneret.v1.ChangePasswordRequest\x1a$.spinneret.v1.ChangePasswordResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_auth_proto_rawDescOnce sync.Once

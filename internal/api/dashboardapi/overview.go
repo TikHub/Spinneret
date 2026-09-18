@@ -5,9 +5,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/internal/analytics"
-	"github.com/Evil0ctal/Spinneret/internal/api/apiutil"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/internal/analytics"
+	"github.com/TikHub/Spinneret/internal/api/apiutil"
 )
 
 // GetOverview implements DashboardServiceHandler.

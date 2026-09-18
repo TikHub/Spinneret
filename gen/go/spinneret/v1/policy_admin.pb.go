@@ -2841,7 +2841,7 @@ const file_spinneret_v1_policy_admin_proto_rawDesc = "" +
 	"\rDeleteBinding\x12\".spinneret.v1.DeleteBindingRequest\x1a#.spinneret.v1.DeleteBindingResponse\x12^\n" +
 	"\x0fResolvePolicies\x12$.spinneret.v1.ResolvePoliciesRequest\x1a%.spinneret.v1.ResolvePoliciesResponse\x12R\n" +
 	"\vDebugReport\x12 .spinneret.v1.DebugReportRequest\x1a!.spinneret.v1.DebugReportResponse\x12[\n" +
-	"\x0eValidatePolicy\x12#.spinneret.v1.ValidatePolicyRequest\x1a$.spinneret.v1.ValidatePolicyResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x0eValidatePolicy\x12#.spinneret.v1.ValidatePolicyRequest\x1a$.spinneret.v1.ValidatePolicyResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_policy_admin_proto_rawDescOnce sync.Once

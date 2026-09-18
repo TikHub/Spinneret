@@ -8,8 +8,8 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/hotstate/hotstatedb"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/hotstate/hotstatedb"
 )
 
 // pruneReadyQueues removes ready-queue members that are no longer eligible.

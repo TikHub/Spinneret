@@ -9,7 +9,7 @@ import { editorText, gotoPage, selectOption } from './fixtures/ui';
  * Screenshots for the README, taken at the suite viewport (1440x900) in the
  * light theme and English (a Chinese overview shows the second language).
  */
-const OUT_DIR = resolve(process.cwd(), '..', 'docs', 'images');
+const OUT_DIR = resolve(process.cwd(), '..', 'documents', 'images');
 
 function shot(name: string): string {
   const path = resolve(OUT_DIR, `${name}.png`);

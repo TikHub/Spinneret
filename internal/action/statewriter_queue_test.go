@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/observability"
 )
 
 func TestStateWriterQueueFullAndRun(t *testing.T) {

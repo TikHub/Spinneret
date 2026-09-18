@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+option go_package = "github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1";
 
 // LeaseService hands out short-lived leases on identities (and optionally
 // proxies) to crawler nodes. It is authenticated with an API token that
@@ -18,7 +18,8 @@ service LeaseService {
   // Fails with resource_exhausted/no_identity_available,
   // unavailable/circuit_open, unavailable/site_paused or
   // resource_exhausted/no_proxy_available when nothing can be issued within
-  // `wait_ms`.
+  // `wait_ms`, and with unavailable/overloaded when the server is at its
+  // acquire concurrency limit and shed the call before attempting it.
   rpc Acquire(AcquireRequest) returns (AcquireResponse);
   // AcquireBatch leases up to `count` distinct identities in one call. When
   // fewer identities are available the leases that could be issued are

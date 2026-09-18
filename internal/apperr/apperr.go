@@ -42,6 +42,7 @@ const (
 	ReasonNoProxyAvailable      Reason = "no_proxy_available"
 	ReasonCircuitOpen           Reason = "circuit_open"
 	ReasonSitePaused            Reason = "site_paused"
+	ReasonOverloaded            Reason = "overloaded"
 	ReasonRebuilding            Reason = "rebuilding"
 	ReasonLeaseUnknown          Reason = "lease_unknown"
 	ReasonLeaseReleased         Reason = "lease_released"

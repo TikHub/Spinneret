@@ -2108,7 +2108,7 @@ const file_spinneret_v1_site_admin_proto_rawDesc = "" +
 	"\x13DeleteEndpointGroup\x12(.spinneret.v1.DeleteEndpointGroupRequest\x1a).spinneret.v1.DeleteEndpointGroupResponse\x12U\n" +
 	"\fListURIRules\x12!.spinneret.v1.ListURIRulesRequest\x1a\".spinneret.v1.ListURIRulesResponse\x12^\n" +
 	"\x0fReplaceURIRules\x12$.spinneret.v1.ReplaceURIRulesRequest\x1a%.spinneret.v1.ReplaceURIRulesResponse\x12F\n" +
-	"\aTestURI\x12\x1c.spinneret.v1.TestURIRequest\x1a\x1d.spinneret.v1.TestURIResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\aTestURI\x12\x1c.spinneret.v1.TestURIRequest\x1a\x1d.spinneret.v1.TestURIResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_site_admin_proto_rawDescOnce sync.Once

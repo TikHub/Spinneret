@@ -10,11 +10,11 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogtest"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/durationx"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogtest"
+	"github.com/TikHub/Spinneret/internal/pkg/durationx"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 func TestRenew(t *testing.T) {
@@ -184,7 +184,7 @@ func TestReleaseIdempotentAndRescoring(t *testing.T) {
 // that really pushed the identity because of the exclusive lease makes the lease
 // end walk the other endpoint groups, and it walks only the groups that pushed.
 // Without the marker every lease end costs one ZSCORE per endpoint group of the
-// client (measured at 2.25 us of Redis CPU per group, see docs/benchmarks.md),
+// client (measured at 2.25 us of Redis CPU per group, see documents/en/17-performance.md),
 // which dominates the hot path on a site with many groups.
 func TestExclusivePushMarkerScopesTheRestore(t *testing.T) {
 	f := newFixture(t)

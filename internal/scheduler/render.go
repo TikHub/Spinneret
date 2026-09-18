@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/identity"
 )
 
 // renderParallelism bounds concurrent credential/proxy rendering of a batch.

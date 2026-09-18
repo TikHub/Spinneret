@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/pkg/durationx"
+	"github.com/TikHub/Spinneret/internal/pkg/durationx"
 )
 
 func TestDefaultsRoundTrip(t *testing.T) {

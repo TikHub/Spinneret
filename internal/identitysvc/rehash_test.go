@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc/identitysvctest"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/identitysvc"
+	"github.com/TikHub/Spinneret/internal/identitysvc/identitysvctest"
 )
 
 // webCookieUniqueBy returns the web_cookie spec deduplicated by uniqueBy.

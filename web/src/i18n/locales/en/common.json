@@ -260,6 +260,7 @@
       "no_proxy_available": "No proxy available",
       "circuit_open": "The circuit breaker is open",
       "site_paused": "The site is paused",
+      "overloaded": "The server is at its acquire concurrency limit. Retry shortly.",
       "rebuilding": "Hot state is being rebuilt. Try again shortly.",
       "lease_unknown": "Unknown lease",
       "lease_released": "The lease was already released",

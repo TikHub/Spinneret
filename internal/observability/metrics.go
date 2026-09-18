@@ -1,8 +1,10 @@
 package observability
 
 import (
+	"errors"
 	"net/http"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,6 +24,7 @@ const maxLabelBytes = 128
 // Histogram bucket layouts (seconds).
 var (
 	acquireDurationBuckets = []float64{0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25}
+	admissionWaitBuckets   = []float64{0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1}
 	reportLagBuckets       = []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10}
 	reportProcessBuckets   = []float64{0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1}
 	httpDurationBuckets    = []float64{0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10}
@@ -42,8 +45,11 @@ type Metrics struct {
 
 	AcquireTotal          *prometheus.CounterVec   // site, group, result
 	AcquireDuration       *prometheus.HistogramVec // site
-	ReportIngestTotal     *prometheus.CounterVec   // result
-	ReportTotal           *prometheus.CounterVec   // site, group, outcome
+	AcquireScriptDuration prometheus.Histogram
+	AcquireAdmissionTotal *prometheus.CounterVec // result
+	AcquireAdmissionWait  prometheus.Histogram
+	ReportIngestTotal     *prometheus.CounterVec // result
+	ReportTotal           *prometheus.CounterVec // site, group, outcome
 	ReportLag             prometheus.Histogram
 	ReportProcessDuration prometheus.Histogram
 	Identities            *prometheus.GaugeVec   // site, type, state
@@ -72,6 +78,23 @@ func NewMetrics() *Metrics {
 			"Lease acquire attempts by result.", "site", "group", "result"),
 		AcquireDuration: histogramVec("acquire_duration_seconds",
 			"Lease acquire latency.", acquireDurationBuckets, "site"),
+		// The same buckets as acquire_duration_seconds on purpose: the two are
+		// directly comparable in one panel, and the gap between them is the
+		// wait ladder plus rendering.
+		AcquireScriptDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: MetricsNamespace,
+			Name:      "acquire_script_seconds",
+			Help:      "acquire.lua round-trip time at Redis.",
+			Buckets:   acquireDurationBuckets,
+		}),
+		AcquireAdmissionTotal: counterVec("acquire_admission_total",
+			"Acquire admission decisions by result.", "result"),
+		AcquireAdmissionWait: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: MetricsNamespace,
+			Name:      "acquire_admission_wait_seconds",
+			Help:      "Time an acquire attempt waited for an admission permit.",
+			Buckets:   admissionWaitBuckets,
+		}),
 		ReportIngestTotal: counterVec("report_ingest_total",
 			"Reports received by ingest result (accepted, duplicated, rejected).", "result"),
 		ReportTotal: counterVec("report_total",
@@ -128,6 +151,9 @@ func NewMetrics() *Metrics {
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		m.AcquireTotal,
 		m.AcquireDuration,
+		m.AcquireScriptDuration,
+		m.AcquireAdmissionTotal,
+		m.AcquireAdmissionWait,
 		m.ReportIngestTotal,
 		m.ReportTotal,
 		m.ReportLag,
@@ -148,6 +174,65 @@ func NewMetrics() *Metrics {
 		m.DBWriteBatches,
 	)
 	return m
+}
+
+// RegisterAcquireGate registers scrape-time gauges of the acquire admission
+// gate. Callers may pass nil functions for gauges they cannot supply, and
+// calling it twice is a no-op (a duplicate registration is swallowed), so two
+// services sharing one Metrics in a test binary do not panic.
+func (m *Metrics) RegisterAcquireGate(limit, inFlight, queued, peers func() int) {
+	if m == nil {
+		return
+	}
+	reg := func(name, help string, fn func() int) {
+		if fn == nil {
+			return
+		}
+		m.registerCollector(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+			Namespace: MetricsNamespace, Name: name, Help: help,
+		}, func() float64 { return float64(fn()) }))
+	}
+	reg("acquire_inflight", "Acquire script calls currently in flight on this instance.", inFlight)
+	reg("acquire_queued", "Acquire attempts waiting for an admission permit on this instance.", queued)
+	reg("acquire_inflight_limit", "Acquire admission limit of this instance.", limit)
+	reg("acquire_peers", "Live API instances the acquire admission limit is divided among.", peers)
+}
+
+// RegisterAcquirePeerRegistry registers scrape-time series of the API instance
+// heartbeat that divides the fleet-wide acquire budget. Without them a
+// permanently failing heartbeat is indistinguishable from a genuine
+// single-instance deployment, while every instance quietly admits the whole
+// fleet budget. Nil functions are skipped and a duplicate registration is
+// swallowed, as in RegisterAcquireGate.
+func (m *Metrics) RegisterAcquirePeerRegistry(beatAge func() time.Duration, beatFailures func() int64) {
+	if m == nil {
+		return
+	}
+	if beatAge != nil {
+		m.registerCollector(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+			Namespace: MetricsNamespace,
+			Name:      "acquire_peer_beat_age_seconds",
+			Help:      "Time since the last successful API instance heartbeat, or since process start.",
+		}, func() float64 { return beatAge().Seconds() }))
+	}
+	if beatFailures != nil {
+		m.registerCollector(prometheus.NewCounterFunc(prometheus.CounterOpts{
+			Namespace: MetricsNamespace,
+			Name:      "acquire_peer_beat_failures_total",
+			Help:      "API instance heartbeats that failed; the live peer count is frozen while they do.",
+		}, func() float64 { return float64(beatFailures()) }))
+	}
+}
+
+// registerCollector registers c, swallowing a duplicate registration so that
+// two services sharing one Metrics in a test binary do not panic.
+func (m *Metrics) registerCollector(c prometheus.Collector) {
+	if err := m.Registry.Register(c); err != nil {
+		var dup prometheus.AlreadyRegisteredError
+		if !errors.As(err, &dup) {
+			panic(err)
+		}
+	}
 }
 
 // Handler serves the registry in the Prometheus exposition format. Collection

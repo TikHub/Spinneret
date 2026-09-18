@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "spinneret/v1/common.proto";
 import "spinneret/v1/lease.proto";
 
-option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+option go_package = "github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1";
 
 // IdentityAdminService manages identity types, identities, accounts and their
 // lifecycle from the console and from credential refresh services.

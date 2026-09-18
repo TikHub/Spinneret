@@ -7,11 +7,11 @@ import (
 	"slices"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/api/apiutil"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/breaker/breakerdb"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/api/apiutil"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/breaker/breakerdb"
+	"github.com/TikHub/Spinneret/internal/catalog"
 )
 
 // EventFilter selects breaker events of a namespace.

@@ -34,8 +34,10 @@ def _error(status: int, error: str, reason: str = "", retry_after: Optional[floa
 
 def _spinneret_error(err: spinneret.SpinneretError) -> JSONResponse:
     """Maps lease errors to HTTP answers of the crawler API."""
-    if isinstance(err, (spinneret.CircuitOpen, spinneret.SitePaused)):
-        # The endpoint group or the whole site is switched off: stop crawling it for now.
+    if isinstance(err, (spinneret.CircuitOpen, spinneret.SitePaused)) or err.reason == "overloaded":
+        # The endpoint group or the whole site is switched off, or the server shed the
+        # acquire because it is at its concurrency limit: either way, back off until the
+        # server's hint expires instead of hammering it.
         return _error(503, err.code, err.reason, err.retry_after)
     if isinstance(err, spinneret.ResourceExhausted):
         # No identity (or proxy) is available right now: retry after the server's hint.

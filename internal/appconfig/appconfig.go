@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/pkg/durationx"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/netx"
+	"github.com/TikHub/Spinneret/internal/pkg/durationx"
+	"github.com/TikHub/Spinneret/internal/pkg/netx"
 )
 
 // Role selects which subsystems an instance runs.
@@ -70,6 +70,13 @@ type Config struct {
 	ReportDedupTTL   time.Duration
 	LateReportWindow time.Duration
 	StreamMaxLen     int64
+
+	// AcquireFleetInflight is the fleet-wide number of concurrent acquire
+	// scripts admission control allows; 0 turns admission control off.
+	AcquireFleetInflight int
+	// AcquireMaxInflight pins this instance's acquire limit instead of
+	// dividing the fleet budget by the live instance count.
+	AcquireMaxInflight int
 
 	PayloadCache     bool
 	PayloadCacheSize int
@@ -143,6 +150,9 @@ func LoadFrom(lookup func(string) (string, bool)) (Config, error) {
 		ReportDedupTTL:   l.dur("SPINNERET_REPORT_DEDUP_TTL", time.Hour),
 		LateReportWindow: l.dur("SPINNERET_LATE_REPORT_WINDOW", 10*time.Minute),
 		StreamMaxLen:     int64(l.int("SPINNERET_STREAM_MAXLEN", 1_000_000)),
+
+		AcquireFleetInflight: l.int("SPINNERET_ACQUIRE_FLEET_INFLIGHT", 64),
+		AcquireMaxInflight:   l.int("SPINNERET_ACQUIRE_MAX_INFLIGHT", 0),
 
 		PayloadCache:     l.bool("SPINNERET_PAYLOAD_CACHE", true),
 		PayloadCacheSize: l.int("SPINNERET_PAYLOAD_CACHE_SIZE", 200_000),
@@ -231,6 +241,12 @@ func (c Config) Validate() error {
 	}
 	if c.StreamMaxLen < 1000 {
 		add("SPINNERET_STREAM_MAXLEN must be >= 1000")
+	}
+	if c.AcquireFleetInflight < 0 || c.AcquireFleetInflight > 65536 {
+		add("SPINNERET_ACQUIRE_FLEET_INFLIGHT must be between 0 (admission control off) and 65536")
+	}
+	if c.AcquireMaxInflight < 0 || c.AcquireMaxInflight > 4096 {
+		add("SPINNERET_ACQUIRE_MAX_INFLIGHT must be between 0 (derive from the fleet budget) and 4096")
 	}
 	if c.PayloadCacheSize < 0 || c.DEKCacheSize < 1 {
 		add("cache sizes must be positive")
@@ -331,6 +347,9 @@ func (c Config) Redacted() map[string]string {
 		"otlp_endpoint":    redactURL(c.OTLPEndpoint),
 		"late_window":      c.LateReportWindow.String(),
 		"report_dedup_ttl": c.ReportDedupTTL.String(),
+
+		"acquire_fleet_inflight": strconv.Itoa(c.AcquireFleetInflight),
+		"acquire_max_inflight":   strconv.Itoa(c.AcquireMaxInflight),
 	}
 }
 

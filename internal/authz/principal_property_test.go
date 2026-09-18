@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/pkg/glob"
+	"github.com/TikHub/Spinneret/internal/pkg/glob"
 )
 
 // The property tests below compare Can against an oracle written directly

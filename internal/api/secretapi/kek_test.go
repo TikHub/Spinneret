@@ -8,12 +8,12 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
-	"github.com/Evil0ctal/Spinneret/internal/api/secretapi"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
-	"github.com/Evil0ctal/Spinneret/internal/vault/vaulttest"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
+	"github.com/TikHub/Spinneret/internal/api/secretapi"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/vault/vaulttest"
 )
 
 func TestKEKHandlers(t *testing.T) {

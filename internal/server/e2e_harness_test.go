@@ -20,15 +20,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
-	"github.com/Evil0ctal/Spinneret/internal/appconfig"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/auth"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc"
-	"github.com/Evil0ctal/Spinneret/internal/server"
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/internal/appconfig"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/auth"
+	"github.com/TikHub/Spinneret/internal/policysvc"
+	"github.com/TikHub/Spinneret/internal/server"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 const (

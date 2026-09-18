@@ -21,7 +21,7 @@ import httpx
 
 import spinneret
 
-SITE = "shop"
+SITE = "example-site"
 CLIENT = "web"
 TARGET = "https://target.example.com/api/v1/search?keyword=spinneret"
 

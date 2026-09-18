@@ -1752,7 +1752,7 @@ const file_spinneret_v1_secret_admin_proto_rawDesc = "" +
 	"\x12ListSecretVersions\x12'.spinneret.v1.ListSecretVersionsRequest\x1a(.spinneret.v1.ListSecretVersionsResponse\x12m\n" +
 	"\x14ListSecretAccessLogs\x12).spinneret.v1.ListSecretAccessLogsRequest\x1a*.spinneret.v1.ListSecretAccessLogsResponse\x12U\n" +
 	"\fGetKEKStatus\x12!.spinneret.v1.GetKEKStatusRequest\x1a\".spinneret.v1.GetKEKStatusResponse\x12[\n" +
-	"\x0eStartKEKRewrap\x12#.spinneret.v1.StartKEKRewrapRequest\x1a$.spinneret.v1.StartKEKRewrapResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x0eStartKEKRewrap\x12#.spinneret.v1.StartKEKRewrapRequest\x1a$.spinneret.v1.StartKEKRewrapResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_secret_admin_proto_rawDescOnce sync.Once

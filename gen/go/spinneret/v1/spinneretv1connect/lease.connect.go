@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	v1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 	http "net/http"
 	strings "strings"
 )
@@ -50,7 +50,8 @@ type LeaseServiceClient interface {
 	// Fails with resource_exhausted/no_identity_available,
 	// unavailable/circuit_open, unavailable/site_paused or
 	// resource_exhausted/no_proxy_available when nothing can be issued within
-	// `wait_ms`.
+	// `wait_ms`, and with unavailable/overloaded when the server is at its
+	// acquire concurrency limit and shed the call before attempting it.
 	Acquire(context.Context, *connect.Request[v1.AcquireRequest]) (*connect.Response[v1.AcquireResponse], error)
 	// AcquireBatch leases up to `count` distinct identities in one call. When
 	// fewer identities are available the leases that could be issued are
@@ -136,7 +137,8 @@ type LeaseServiceHandler interface {
 	// Fails with resource_exhausted/no_identity_available,
 	// unavailable/circuit_open, unavailable/site_paused or
 	// resource_exhausted/no_proxy_available when nothing can be issued within
-	// `wait_ms`.
+	// `wait_ms`, and with unavailable/overloaded when the server is at its
+	// acquire concurrency limit and shed the call before attempting it.
 	Acquire(context.Context, *connect.Request[v1.AcquireRequest]) (*connect.Response[v1.AcquireResponse], error)
 	// AcquireBatch leases up to `count` distinct identities in one call. When
 	// fewer identities are available the leases that could be issued are

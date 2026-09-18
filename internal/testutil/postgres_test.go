@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 func requirePostgresBase(t *testing.T) string {

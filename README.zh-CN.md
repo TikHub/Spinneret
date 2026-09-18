@@ -11,7 +11,7 @@
 ```
 Acquire(site, client, uri)  →  身份 + 凭证 + 代理 + 租约
   …… 节点携带凭证向目标站发起请求 ……
-Report(lease_id, 状态码, 耗时, 标记)  →  服务端识别信号、冷却、封禁、熔断
+Report(lease_id, status, latency, markers)  →  服务端识别信号、冷却、封禁、熔断
 ```
 
 Spinneret **与站点无关**：不内置签名算法、登录流程和验证码识别。它管理请求周围的*状态*，请求本身仍由你的节点发出。
@@ -30,6 +30,7 @@ Spinneret **与站点无关**：不内置签名算法、登录流程和验证码
 - [文档索引](#文档索引)
 - [开发](#开发)
 - [项目状态](#项目状态)
+- [参与与支持](#参与与支持)
 
 ---
 
@@ -46,22 +47,22 @@ Spinneret **与站点无关**：不内置签名算法、登录流程和验证码
 
 ## 功能概览
 
-v0.1 的范围来自[设计文档](docs/design/0_first_doc.md)，下列模块均已实现。
+下列模块在 v0.1 中均已实现。
 
 | 模块 | 能力 |
 | --- | --- |
-| **身份调度**（§5、§6） | 带类型字段和交付模板的身份类型；轮换策略（`weighted_random`、`least_recently_used`、`round_robin`、`best_health`）、租约 TTL 与生命周期上限、复用间隔与锚点、配额、粘性会话、预热、探针权重 |
-| **代理分发**（§11） | 按类型/地区/供应商/标签管理代理池，分配模式 `none / pool / bind_identity / region_match`，会话模板，周期健康检查，按站点的代理冷却 |
-| **上报与信号识别**（§7） | 批量幂等上报；可配置识别规则（状态码、业务码、错误类型、标记、URI、方法、耗时、大小）；12 种结果分类；身份与代理之间的交叉归因 |
-| **冷却与封禁**（§8） | 在身份×端点、身份×站点、身份、账号、代理×站点、代理六个层级执行 cooldown / expire / quarantine / ban；带上限的指数退避；升级阶梯；影子模式；人工处置与批量回滚（`RevertActions`） |
-| **健康分与生命周期**（§9） | 带时间衰减的 EWMA 健康分、端点级低分冷却、自动隔离、身份状态机（`pending → active → quarantined / banned / expired / disabled / retired`） |
-| **熔断**（§10） | 端点组级滑动窗口统计，三态熔断（关闭/打开/半开）与探针租约，人工开关，可选撤销触发窗口内施加的冷却 |
-| **配置下发**（§12） | 版本化配置项，草稿、发布、回滚与差异对比；长轮询 `WatchConfig`；SDK 本地快照；`${secret:path}` 引用；只读 `_runtime` 分组暴露熔断与站点开关 |
-| **Vault**（§13） | AES-256-GCM 信封加密（KEK → DEK → 数据），文件或环境变量 KEK 提供方，在线轮换与重新包装，密钥版本与过期，读取全部审计 |
-| **认证与多租户**（§14） | 租户 → 命名空间 → 站点；控制台账号角色 `viewer / operator / admin / owner`，可按命名空间和站点绑定；节点令牌的细粒度作用域；Argon2id 口令、登录限流、会话、CSRF |
-| **Web 控制台**（§17） | 21 个路由覆盖全部模块，中英双语，明暗主题，SSE 实时更新 |
-| **告警通知**（§18.3） | Webhook（HMAC 签名）、飞书、钉钉、企业微信、Telegram；11 类告警，支持去重与按站点路由 |
-| **可观测性**（§18.3） | `/healthz`、`/readyz`、Prometheus `/metrics`、可选 OTLP 链路追踪、基于 ClickHouse 的请求浏览器 |
+| **[身份调度](documents/zh/06-identities.md)** | 带类型字段和交付模板的身份类型；轮换策略（`weighted_random`、`least_recently_used`、`round_robin`、`best_health`）、租约 TTL 与生命周期上限、复用间隔与锚点、配额、粘性会话、预热、探针权重 |
+| **[代理分发](documents/zh/07-proxies.md)** | 按类型/地区/供应商/标签管理代理池，分配模式 `none / pool / bind_identity / region_match`，会话模板，周期健康检查，按站点的代理冷却 |
+| **[上报与信号识别](documents/zh/08-policies.md)** | 批量幂等上报；可配置识别规则（状态码、业务码、错误类型、标记、URI、方法、耗时、大小）；12 种结果分类；身份与代理之间的交叉归因 |
+| **[冷却与封禁](documents/zh/08-policies.md)** | cooldown 可作用于身份×端点、身份×站点、身份、账号、代理×站点、代理六个层级；ban 作用于身份、账号、代理；quarantine 作用于身份与代理；expire 仅作用于身份；带上限的指数退避；升级阶梯；影子模式；人工处置与批量回滚（`RevertActions`） |
+| **[健康分与生命周期](documents/zh/06-identities.md)** | 带时间衰减的 EWMA 健康分、端点级低分冷却、自动隔离、身份状态机（`pending → active → quarantined / banned / expired / disabled / retired`） |
+| **[熔断](documents/zh/08-policies.md)** | 端点组级滑动窗口统计，三态熔断（关闭/打开/半开）与探针租约，人工开关，可选撤销触发窗口内施加的冷却 |
+| **[配置下发](documents/zh/09-config-center.md)** | 版本化配置项，草稿、发布、回滚与差异对比；长轮询 `WatchConfig`；SDK 本地快照；`${secret:path}` 引用；只读 `_runtime` 分组暴露熔断与站点开关 |
+| **[Vault](documents/zh/10-secrets.md)** | AES-256-GCM 信封加密（KEK → DEK → 数据），文件或环境变量 KEK 提供方，在线轮换与重新包装，密钥版本与过期，读取全部审计 |
+| **[认证与多租户](documents/zh/11-access-control.md)** | 租户 → 命名空间 → 站点；控制台账号角色 `viewer / operator / admin / owner`，可按命名空间和站点绑定；节点令牌的细粒度作用域；Argon2id 口令、登录限流、会话、CSRF |
+| **[Web 控制台](documents/zh/05-console-overview.md)** | 21 个路由覆盖全部模块，中英双语，明暗主题，SSE 实时更新 |
+| **[告警通知](documents/zh/12-observability.md)** | Webhook（HMAC 签名）、飞书、钉钉、企业微信、Telegram；11 类自动告警外加一个测试告警，支持去重与按站点路由 |
+| **[可观测性](documents/zh/12-observability.md)** | `/healthz`、`/readyz`、Prometheus `/metrics`、可选 OTLP 链路追踪、基于 ClickHouse 的请求浏览器 |
 
 ---
 
@@ -95,7 +96,8 @@ flowchart LR
     WRK --> PG
     WRK --> CH
     API <--> PG
-    API -.->|"Pub/Sub：catalog、config、runtime"| RD
+    API -.->|"请求浏览器"| CH
+    API -.->|"Pub/Sub：catalog、tokens、config、runtime"| RD
     WRK -->|告警| NOTIFY["Webhook · 飞书<br/>钉钉 · 企业微信 · Telegram"]
     BROWSER["运维浏览器"] --> LB
 ```
@@ -116,23 +118,42 @@ PostgreSQL 重建（`spnr rebuild`）。ClickHouse 可选，保存原始请求�
 
 | | |
 | --- | --- |
-| ![总览](docs/images/overview.png) | ![身份](docs/images/identities.png) |
+| ![总览](documents/images/overview.png) | ![身份](documents/images/identities.png) |
 | 总览：各站点健康度、QPS、结果分布、熔断 | 身份：状态、健康分、冷却、筛选 |
-| ![热力图](docs/images/heatmap.png) | ![策略](docs/images/policies.png) |
+| ![热力图](documents/images/heatmap.png) | ![策略](documents/images/policies.png) |
 | 热力图：身份 × 端点组的可用性 | 策略：YAML 编辑器、版本、差异、发布 |
-| ![熔断](docs/images/breakers.png) | ![请求](docs/images/requests.png) |
+| ![熔断](documents/images/breakers.png) | ![请求](documents/images/requests.png) |
 | 熔断：状态、窗口、手动开关、站点开关 | 请求浏览器：每条上报的结果与归因 |
 
-控制台是双语的——同一页面的中文版：[`docs/images/overview-zh.png`](docs/images/overview-zh.png)。
+控制台是双语的——上面的截图是英文界面，中文界面见 [`documents/images/overview-zh.png`](documents/images/overview-zh.png)。
 
 ---
 
 ## 快速开始
 
-环境要求：Docker 24+（含 Compose 插件）、约 4 GB 空闲内存、8080 端口可用。
+环境要求：Docker Engine（含 Compose 插件，Compose 需 2.24 或更高）、约 4 GB 空闲内存、一个空闲宿主机端口
+（默认 8080）。
+
+### 一条命令
 
 ```bash
-git clone https://github.com/Evil0ctal/Spinneret.git
+curl -fsSL https://raw.githubusercontent.com/TikHub/Spinneret/main/install/install.zh.sh -o install.zh.sh
+less install.zh.sh       # 先读一遍，毕竟你要运行它
+bash install.zh.sh
+```
+
+这个引导式脚本会识别机器、在没有 Docker 时询问是否安装、克隆仓库、**在本机**生成口令和保险箱密钥、
+按这台机器写好 Compose 覆盖文件、拉取或构建镜像、执行迁移、启动、等 `/readyz` 就绪，并创建第一个管理员 ——
+一共问七个问题，每个都有默认值。`--yes` 全取默认，`--check` 什么都不改只打印「会发生什么」，
+`--manage` 把它重新打开成管理菜单：状态、升级、账号、令牌、备份、恢复、健康检查、磁盘、卸载。
+
+英文版是 [`install/install.sh`](install/install.sh)，行为完全一致；
+[`install/README.md`](install/README.md) 里有每一个问题、每一个选项和它写下的每一个文件的说明。
+
+### 或者手动来
+
+```bash
+git clone https://github.com/TikHub/Spinneret.git
 cd Spinneret
 
 # 1. 生成 deploy/compose/.env（随机口令）和 deploy/compose/secrets/kek.key
@@ -168,7 +189,7 @@ curl  http://localhost:18000/crawl/item/42
 curl  http://localhost:18000/config
 ```
 
-然后让目标站"出问题"，在控制台（身份、熔断、请求）观察 Spinneret 的反应：
+然后让目标站「出问题」，在控制台（身份、熔断、请求）观察 Spinneret 的反应：
 
 ```bash
 curl -X PUT localhost:19090/_admin/rules -d '[{"prefix":"/site/search","mode":"rate_limit"}]'
@@ -177,7 +198,7 @@ curl -X DELETE localhost:19090/_admin/rules
 ```
 
 详见 [`examples/fastapi-crawler/README.zh-CN.md`](examples/fastapi-crawler/README.zh-CN.md)；
-`scripts/example-quickstart.sh --reset` 可以清理这些示例数据。
+[`scripts/example-quickstart.sh --reset`](scripts/example-quickstart.sh) 可以清理这些示例数据。
 
 ---
 
@@ -196,7 +217,7 @@ docker compose -f deploy/compose/docker-compose.yml exec spinneret \
 # spn_EXAMPLEtokenEXAMPLEtokenEXAMPLEtoken1234567
 ```
 
-**Acquire**：为即将发起的请求领取身份和代理。
+**Acquire**：为即将请求的 URI 领取身份和代理：
 
 ```bash
 curl -s http://localhost:8080/spinneret.v1.LeaseService/Acquire \
@@ -265,7 +286,8 @@ Spinneret-Retry-After-Ms: 59367
 {"code":"resource_exhausted","message":"no identity available for example/web/search"}
 ```
 
-完整参考（全部节点服务、错误原因表、重试规则）见 [`docs/api.zh-CN.md`](docs/api.zh-CN.md)。
+完整参考（全部节点服务、错误原因表、重试规则）见
+[节点 API 参考](documents/zh/13-node-api.md)。
 
 ---
 
@@ -273,8 +295,8 @@ Spinneret-Retry-After-Ms: 59367
 
 | SDK | 包 | 特性 |
 | --- | --- | --- |
-| **Python** — [`sdk/python`](sdk/python/README.zh-CN.md) | `pip install spinneret` | 基于 httpx 的同步 `Client` 与异步 `AsyncClient`，pydantic v2 模型，`with client.lease(...)` 自动把凭证和代理合并进 `httpx` 参数，后台批量上报器，带本地快照的配置监听器 |
-| **Go** — [`sdk/go`](sdk/go/README.zh-CN.md) | `github.com/Evil0ctal/Spinneret/sdk/go/spinneret` | Connect JSON 或 gRPC，类型化错误（`IsCircuitOpen`、`IsNoIdentity` 等），`Lease.Apply(req)` / `Lease.Transport(base)`，批量 `Reporter`，带快照的 `ConfigWatcher` |
+| **Python** — [`sdk/python`](sdk/python/README.zh-CN.md) | `pip install spinneret` | 基于 httpx 的同步 `Client` 与异步 `AsyncClient`，pydantic v2 模型，`with client.lease(...)` 自动把凭证和代理合并进 `httpx` 参数，后台批量上报器，带本地快照（可选 AES-256-GCM 加密）的配置监听器 |
+| **Go** — [`sdk/go`](sdk/go/README.zh-CN.md) | `github.com/TikHub/Spinneret/sdk/go/spinneret` | Connect JSON 或 gRPC，类型化错误（`IsCircuitOpen`、`IsNoIdentity` 等），`Lease.Apply(req)` / `Lease.Transport(base)`，批量 `Reporter`，带快照的 `ConfigWatcher` |
 
 ```python
 import httpx, spinneret
@@ -304,7 +326,8 @@ if err != nil {
 return lease.ReportResponse(resp, spinneret.ReportInput{Markers: detectMarkers(resp)})
 ```
 
-没有对应语言的 SDK？纯 HTTP + JSON 是一等公民，见 [`docs/api.zh-CN.md`](docs/api.zh-CN.md)。
+没有对应语言的 SDK？纯 HTTP + JSON 是一等公民，见
+[节点 API 参考](documents/zh/13-node-api.md)。
 
 ---
 
@@ -312,17 +335,41 @@ return lease.ReportResponse(resp, spinneret.ReportInput{Markers: detectMarkers(r
 
 | 文档 | 内容 |
 | --- | --- |
-| [`docs/deployment.zh-CN.md`](docs/deployment.zh-CN.md) · [EN](docs/deployment.md) | 环境要求、Compose 部署、全部 `SPINNERET_*` 变量、KEK 管理、TLS 与反向代理、扩容、升级、备份、安全加固、故障排查 |
-| [`docs/operations.zh-CN.md`](docs/operations.zh-CN.md) · [EN](docs/operations.md) | 日常运维手册：租户、用户与角色、令牌、站点与端点组、身份类型与导入、四类策略的 YAML、熔断、回滚、代理、配置中心与密钥、告警、监控、热状态重建、KEK 轮换、数据保留 |
-| [`docs/api.zh-CN.md`](docs/api.zh-CN.md) · [EN](docs/api.md) | 节点 API 参考（请求/响应 JSON）、错误原因表、重试建议、管理 API 概览 |
-| [`docs/benchmarks.zh-CN.md`](docs/benchmarks.zh-CN.md) · [EN](docs/benchmarks.md) | 针对 v0.1 性能目标的实测：方法、各场景结果、耗时归因、Redis 容量估算、调优建议 |
+| [全部文档](documents/README.zh-CN.md) · [EN](documents/README.md) | 按使用场景组织的文档索引 |
+| **上手** | |
+| [快速开始](documents/zh/01-quickstart.md) · [EN](documents/en/01-quickstart.md) | 从零到一个节点真正和控制平面对话，大约十分钟 |
+| [安装与部署](documents/zh/02-installation.md) · [EN](documents/en/02-installation.md) | 环境要求、一键安装脚本、手动 Compose、覆盖文件、反向代理与 TLS、一台机器跑多套、升级、卸载 |
+| [配置参考](documents/zh/03-configuration.md) · [EN](documents/en/03-configuration.md) | 每一个 `SPINNERET_*` 变量的默认值、含义和校验规则 |
+| [核心概念](documents/zh/04-concepts.md) · [EN](documents/en/04-concepts.md) | 心智模型：身份、租约、上报、结论、健康分、熔断 |
+| **使用** | |
+| [控制台总览](documents/zh/05-console-overview.md) · [EN](documents/en/05-console-overview.md) | 控制台每个页面是干什么的 |
+| [身份与账号](documents/zh/06-identities.md) · [EN](documents/en/06-identities.md) | 身份类型、导入、状态机、人工操作 |
+| [代理](documents/zh/07-proxies.md) · [EN](documents/en/07-proxies.md) | 代理池、分配模式、会话模板、健康检查 |
+| [策略](documents/zh/08-policies.md) · [EN](documents/en/08-policies.md) | 四类策略的 YAML、发布、影子模式、规则调试器 |
+| [配置中心](documents/zh/09-config-center.md) · [EN](documents/en/09-config-center.md) | 带版本的配置、草稿、回滚、长轮询 `WatchConfig` |
+| [密钥保险箱](documents/zh/10-secrets.md) · [EN](documents/en/10-secrets.md) | 信封加密、密钥引用、版本、审计 |
+| [访问控制](documents/zh/11-access-control.md) · [EN](documents/en/11-access-control.md) | 租户、命名空间、角色、绑定、节点令牌权限 |
+| [可观测性与告警](documents/zh/12-observability.md) · [EN](documents/en/12-observability.md) | 指标、值得告警的信号、通知渠道、链路追踪 |
+| **对接** | |
+| [节点 API 参考](documents/zh/13-node-api.md) · [EN](documents/en/13-node-api.md) | 每个节点 RPC 的请求/响应 JSON、错误原因、重试规则 |
+| [SDK](documents/zh/14-sdks.md) · [EN](documents/en/14-sdks.md) | Python 与 Go SDK 参考 |
+| [CLI 参考](documents/zh/15-cli.md) · [EN](documents/en/15-cli.md) | `spnr` 和 `spinneret-server`：全部命令、选项、退出码、信号 |
+| **运行** | |
+| [运维手册](documents/zh/16-operations.md) · [EN](documents/en/16-operations.md) | 备份与恢复、密钥轮换、升级、扩容、热状态重建、数据保留、故障处置 |
+| [性能与调优](documents/zh/17-performance.md) · [EN](documents/en/17-performance.md) | 实测吞吐与延迟、耗时归因、Redis 容量估算、按收益排序的调优项 |
+| [故障排查](documents/zh/18-troubleshooting.md) · [EN](documents/en/18-troubleshooting.md) | 按报错文本查 |
+| [安全加固](documents/zh/19-security.md) · [EN](documents/en/19-security.md) | 在别人能访问它之前该逐项过一遍的清单 |
+| [参与贡献](documents/zh/20-contributing.md) · [EN](documents/en/20-contributing.md) | 开发流程、测试、生成代码 |
+| [FAQ 与术语表](documents/zh/21-faq.md) · [EN](documents/en/21-faq.md) | 全部术语，中英对照 |
+| **仓库内文档** | |
+| [`install/README.md`](install/README.md) | 一键部署脚本，逐个问题说明 |
 | [`proto/README.md`](proto/README.md) | 协议约定、JSON 映射、请求头、服务列表 |
-| [`sdk/python/README.zh-CN.md`](sdk/python/README.zh-CN.md) | Python SDK 参考 |
-| [`sdk/go/README.zh-CN.md`](sdk/go/README.zh-CN.md) | Go SDK 参考 |
-| [`examples/fastapi-crawler/README.zh-CN.md`](examples/fastapi-crawler/README.zh-CN.md) | 示例节点逐接口说明 |
+| [`sdk/python/README.zh-CN.md`](sdk/python/README.zh-CN.md) · [EN](sdk/python/README.md) | Python SDK 包 |
+| [`sdk/go/README.zh-CN.md`](sdk/go/README.zh-CN.md) · [EN](sdk/go/README.md) | Go SDK 包 |
+| [`examples/fastapi-crawler/README.zh-CN.md`](examples/fastapi-crawler/README.zh-CN.md) · [EN](examples/fastapi-crawler/README.md) | 示例节点逐接口说明 |
 | [`web/README.md`](web/README.md) | 控制台开发 |
-| [`test/load/README.md`](test/load/README.md) | k6 压测场景与性能目标 |
-| [`docs/design/`](docs/design/) | 设计文档与据此编写的工程规格 |
+| [`test/load/README.md`](test/load/README.md) | k6 压测场景与指标快照工具 |
+| [`test/perf/README.md`](test/perf/README.md) | Go 热路径基准测试与逐脚本 Redis CPU 基线 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 版本说明 |
 
 ---
@@ -375,27 +422,47 @@ spnr config check                spnr healthcheck --url http://127.0.0.1:8080/re
 
 ## 项目状态
 
-Spinneret v0.1 已按设计文档完成全部功能：四个里程碑（核心链路、风控闭环、基础设施、控制台与发布）均已实现，
+Spinneret v0.1 功能已全部完成：四个里程碑（核心链路、风控闭环、基础设施、控制台与发布）均已实现，
 并附带 Go 端到端场景、故障演练、Playwright 控制台套件和 k6 压测场景。
 
-**§18.4 的全部性能目标已在单个服务实例 + 单个 Redis 实例上达成。** 在设计文档自己的测试条件
-（单站点、10 万身份、50 个端点组）下，Lua 热路径优化后的实测：
+**v0.1 的全部性能目标已在单个服务实例 + 单个 Redis 实例上达成，其中 Acquire 吞吐目标差距在 0.2 %
+以内且附带前提条件。** 测试条件为单站点、10 万身份、50 个端点组，Lua 热路径优化后的实测（[完整表格、测量方法与前提说明](documents/zh/17-performance.md)）：
 
 * 仅 Acquire：**单实例 4,993/s，服务端 p99 4.32 ms**（峰值 7,792/s），目标是 5,000/s 且 p99 < 5 ms。
 * 完整「领取 → 上报」循环（5 个 Lua 脚本）：`max_concurrent_leases: 4` 时**单实例 5,500/s**，
   压测 seed 配置的独占租约下 **4,500/s** —— 原为 3,000/s 和 2,000/s。
 * 上报接收单实例 **44,437 条/秒**零拒绝（目标 20,000/s），其中 **19,761 条/秒**在 p99 30.7 ms 内写入
-  热态（目标 p99 < 200 ms）。
+  热状态（目标 p99 < 200 ms）。
 * 一次「领取 → 上报」循环消耗 **168.3 µs 的 Redis CPU**，原为 271.2 µs：**每个 Redis 线程
   5,940 循环/秒**，原为 3,690。
 
-剩下的瓶颈不是 Redis CPU。负载均衡器后面挂两个副本时总吞吐只有 3,000 循环/秒 —— 比单副本自己还少 ——
-因为每个实例都对共享 Redis 施加各自不设上限的并发，而失败的 acquire 成本约是成功的 5 倍，于是争用被
-放大成拥塞崩溃，而不是优雅降级。下一步的杠杆依次是：Acquire 路径上的每实例准入控制、让被拒候选变便宜、
-然后才是 Redis Cluster。完整的优化前后对比表、逐脚本成本以及这些数字所依赖的 Valkey 配置见
-[`docs/benchmarks.zh-CN.md`](docs/benchmarks.zh-CN.md)。
+**两个副本共享同一个 Redis，所以增加副本带来的是服务端容量，不是 acquire 吞吐。** 从重建并预热过的池子
+实测：双副本服务 **4,000 循环/秒**，单副本在施加 4,500/s 时服务 **4,499/s**。抬高 acquire 上限靠的是
+Redis 容量；副本抬高的是长轮询容量、上报处理能力和可用性。
+
+v0.1 用**Acquire 准入控制**限制每个实例在 Redis 上的并发（`SPINNERET_ACQUIRE_FLEET_INFLIGHT`，默认
+全集群 64，由每个实例除以自己看到的存活实例数；设为 `0` 即关闭）。超额的 acquire 在服务端、发出任何
+Redis 命令之前就被丢弃，返回 `unavailable`/`overloaded` 和一个带抖动的重试提示。实测结论：它对单副本
+不要任何代价（施加 4,500 服务 4,499，p99 1.97 ms，卸载 0.4/s）；在容量点上双副本开门与不开门表现一致
+（都是约 4,000 循环/秒，代价是尾部 acquire p99 2.99 ms 对 1.66 ms）；超过容量后它把过载变成负载卸载
+而不是超时（施加 4,500 时：服务 2,418 循环/秒、卸载 1,881/s、acquire p99 为有限的 89 ms）。
+
+本文档早先的版本写的是双副本峰值只有 3,000 循环/秒、3,500 就崩溃。**那个结果复现不出来** —— 它至少部分
+是测量假象，而这个闸门也不是它的解药。完整表格、**刻意没有测**的部分及原因、逐脚本成本、这些数字所依赖的
+Valkey 配置，以及在你自己硬件上测量闸门效果的 A/B 方法，都在[性能与调优](documents/zh/17-performance.md)。
+接下来的杠杆是：让被拒候选变便宜，然后才是 Redis Cluster。
 
 v0.2 候选（明确不在 v0.1 范围内）：分布式全局限速、外部校验器与刷新器 Webhook、代理供应商适配器、
 NATS JetStream、OIDC 与 TOTP、mTLS、配置灰度发布、指纹配置分发、浏览器池。
 
-**许可证：** 暂无。仓库尚未附带许可证文件，在添加之前作者保留一切权利，再分发前请先询问。
+---
+
+## 参与与支持
+
+| | |
+| --- | --- |
+| 发现 bug 或想要新功能？ | 提 issue —— [CONTRIBUTING.md](CONTRIBUTING.md) 说明了怎样写出有用的 issue，[documents/zh/20-contributing.md](documents/zh/20-contributing.md) 是完整开发指南 |
+| 发现安全问题？ | **不要**提公开 issue，[SECURITY.md](SECURITY.md) 说明了私密报告渠道 |
+| 不确定某个东西怎么用？ | 先看[FAQ 与术语表](documents/zh/21-faq.md)，再看[故障排查](documents/zh/18-troubleshooting.md) |
+
+**许可证：** [Apache License 2.0](LICENSE)。由 [TikHub](https://github.com/TikHub) 维护并开源。

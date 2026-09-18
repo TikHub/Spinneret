@@ -12,7 +12,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	storeredis "github.com/Evil0ctal/Spinneret/internal/store/redis"
+	storeredis "github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // repoRoot is the module root, derived from this file's compile-time path so

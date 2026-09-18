@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Evil0ctal/Spinneret/internal/analytics/analyticsdb"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/analytics/analyticsdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // MaxNodes caps the number of nodes returned by NodeStats (busiest first).

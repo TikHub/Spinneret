@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/pkg/durationx"
+	"github.com/TikHub/Spinneret/internal/pkg/durationx"
 )
 
 // Action policy modes and ban expiry states.

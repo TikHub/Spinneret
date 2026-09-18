@@ -944,7 +944,7 @@ const file_spinneret_v1_tenant_admin_proto_rawDesc = "" +
 	"\x0eListNamespaces\x12#.spinneret.v1.ListNamespacesRequest\x1a$.spinneret.v1.ListNamespacesResponse\x12^\n" +
 	"\x0fCreateNamespace\x12$.spinneret.v1.CreateNamespaceRequest\x1a%.spinneret.v1.CreateNamespaceResponse\x12^\n" +
 	"\x0fUpdateNamespace\x12$.spinneret.v1.UpdateNamespaceRequest\x1a%.spinneret.v1.UpdateNamespaceResponse\x12^\n" +
-	"\x0fDeleteNamespace\x12$.spinneret.v1.DeleteNamespaceRequest\x1a%.spinneret.v1.DeleteNamespaceResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x0fDeleteNamespace\x12$.spinneret.v1.DeleteNamespaceRequest\x1a%.spinneret.v1.DeleteNamespaceResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_tenant_admin_proto_rawDescOnce sync.Once

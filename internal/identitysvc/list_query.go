@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc/identitysvcdb"
+	"github.com/TikHub/Spinneret/internal/identitysvc/identitysvcdb"
 )
 
 // MaxCountedRows caps the totals of identity lists.

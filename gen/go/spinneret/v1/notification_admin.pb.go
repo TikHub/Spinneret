@@ -1262,7 +1262,7 @@ const file_spinneret_v1_notification_admin_proto_rawDesc = "" +
 	"\rUpdateChannel\x12\".spinneret.v1.UpdateChannelRequest\x1a#.spinneret.v1.UpdateChannelResponse\x12X\n" +
 	"\rDeleteChannel\x12\".spinneret.v1.DeleteChannelRequest\x1a#.spinneret.v1.DeleteChannelResponse\x12R\n" +
 	"\vTestChannel\x12 .spinneret.v1.TestChannelRequest\x1a!.spinneret.v1.TestChannelResponse\x12^\n" +
-	"\x0fListAlertEvents\x12$.spinneret.v1.ListAlertEventsRequest\x1a%.spinneret.v1.ListAlertEventsResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x0fListAlertEvents\x12$.spinneret.v1.ListAlertEventsRequest\x1a%.spinneret.v1.ListAlertEventsResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_notification_admin_proto_rawDescOnce sync.Once

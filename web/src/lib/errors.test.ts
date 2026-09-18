@@ -85,7 +85,7 @@ describe('describeError', () => {
   });
 
   it('knows every reason of spec section 10', () => {
-    expect(KNOWN_REASONS).toHaveLength(29);
+    expect(KNOWN_REASONS).toHaveLength(30);
     expect(isKnownReason('circuit_open')).toBe(true);
     expect(isKnownReason('nope')).toBe(false);
     expect(isKnownReason(undefined)).toBe(false);

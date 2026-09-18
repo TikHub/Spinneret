@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 func parseImportString(t *testing.T, format, data string, limits ImportLimits) ([]ImportRow, []RowError, error) {

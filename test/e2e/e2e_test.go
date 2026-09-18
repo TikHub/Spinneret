@@ -11,7 +11,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 )
 
 // TestStack runs the scenarios in order against one fixture. Scenarios share the mock target, whose

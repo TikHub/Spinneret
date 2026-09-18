@@ -1,4 +1,4 @@
-module github.com/Evil0ctal/Spinneret
+module github.com/TikHub/Spinneret
 
 go 1.27.1
 

@@ -27,7 +27,7 @@ HTTP 代理，并通过响应头 `X-Mock-Marker` / `X-Mock-Business-Code` 声明
 | `GET /healthz` | 存活检查 |
 
 抓取成功返回 `200` 与 `{"ok", "status", "identity_id", "proxy_id", "endpoint_group", "markers",
-"business_code", "data"}`。租约失败会映射为 HTTP 响应：`circuit_open` / `site_paused` 返回 `503`，
+"business_code", "data"}`。租约失败会映射为 HTTP 响应：`circuit_open` / `site_paused` / `overloaded` 返回 `503`，
 `no_identity_available` / `no_proxy_available` 返回 `429`（两者都带有来自服务端提示的 `Retry-After`），其他
 Spinneret 错误以及未收到响应的请求返回 `502`（后者会带着 `error_kind` 上报）。
 
@@ -105,6 +105,8 @@ SPINNERET_URL=http://localhost:8080 SPINNERET_TOKEN=spn_... MOCK_TARGET_URL=http
   `deploy/compose/.env` 中设置 `SPINNERET_PROXY_CHECK_URL=http://mocktarget:9090/healthz` 并重启 `spinneret` 服务。
 - `503 site_paused`：站点开关被关闭（`BreakerAdminService/SetSitePaused` 或控制台）。
 - `503 circuit_open`：端点组熔断器已打开，目标站点恢复后会自动关闭。
+- `503 overloaded`：服务端已到租借并发上限，在请求到达 Redis 之前就把它甩掉了。什么都没有被消耗；
+  按 `Retry-After` 重试即可。
 
 ## 生产环境建议
 

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/site"
 )
 
 // builder turns the rows of one namespace into an immutable snapshot. Broken

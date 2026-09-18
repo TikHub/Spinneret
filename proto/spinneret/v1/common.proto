@@ -4,7 +4,7 @@ package spinneret.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+option go_package = "github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1";
 
 // TimeRange is a half-open interval [start, end). Unset bounds are open.
 message TimeRange {

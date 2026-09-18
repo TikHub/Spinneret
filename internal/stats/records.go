@@ -10,6 +10,9 @@ const (
 	ResultSitePaused  = "site_paused"
 	ResultNoProxy     = "no_proxy"
 	ResultError       = "error"
+	// ResultOverloaded is an acquire shed by admission control before it
+	// reached Redis; it is distinct from ResultExhausted (empty pool).
+	ResultOverloaded = "overloaded"
 )
 
 // Lease end kinds accepted by RecordLeaseEnd.
@@ -36,7 +39,8 @@ type AcquireRecord struct {
 	TenantID, NamespaceID, SiteID, Site, EndpointGroupID, EndpointGroup, Client, IdentityTypeID string
 	// Subjects and correlation identifiers of the issued lease (empty on failure).
 	IdentityID, ProxyID, LeaseID, Node, TokenID string
-	// Result is one of ok, exhausted, circuit_open, site_paused, no_proxy, error.
+	// Result is one of ok, exhausted, circuit_open, site_paused, no_proxy,
+	// error, overloaded.
 	Result string
 	// Duration is the server-side acquire latency.
 	Duration time.Duration
@@ -89,7 +93,7 @@ type LeaseEndRecord struct {
 // result check constraint.
 func validAcquireResult(r string) bool {
 	switch r {
-	case ResultOK, ResultExhausted, ResultCircuitOpen, ResultSitePaused, ResultNoProxy, ResultError:
+	case ResultOK, ResultExhausted, ResultCircuitOpen, ResultSitePaused, ResultNoProxy, ResultError, ResultOverloaded:
 		return true
 	default:
 		return false

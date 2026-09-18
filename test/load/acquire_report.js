@@ -5,9 +5,14 @@
 // Docker network and the Caddy load balancer.
 //
 //   ACQUIRE_RATE=5000 DURATION=2m k6 run acquire_report.js
+//
+// Failed acquires are counted by Connect code *and* Spinneret-Reason, so an admission
+// control shed (unavailable/overloaded) is distinguishable from an open breaker, a paused
+// site and an exhausted pool. `test/load/run.sh ADMISSION=on|off` switches the server gate
+// and this scenario's expectations together; see test/load/README.md.
 import { check } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
-import { call, connectError, SITE, CLIENT, GROUPS, groupURI, uuid4, nowISO } from './lib.js';
+import { call, connectError, connectReason, SITE, CLIENT, GROUPS, groupURI, uuid4, nowISO } from './lib.js';
 
 export { handleSummary } from './lib.js';
 
@@ -26,9 +31,29 @@ const REPORT_MODE = __ENV.REPORT_MODE || 'release';
 // without allocating VUs the machine cannot afford.
 const PRE_VUS = parseInt(__ENV.PRE_VUS || String(Math.max(50, Math.ceil(RATE / 20))), 10);
 const MAX_VUS = parseInt(__ENV.MAX_VUS || String(Math.max(200, Math.ceil(RATE / 4))), 10);
+// ADMISSION records which arm of the acquire admission control A/B this run is:
+//   on  (default) the server has a gate (SPINNERET_ACQUIRE_FLEET_INFLIGHT > 0), so a shed
+//                 (unavailable/overloaded) is a healthy answer to overload and is counted,
+//                 not failed.
+//   off           the server has no gate, so a shed is impossible; one means the arm was
+//                 misconfigured and the acquire_shed threshold below fails the run.
+// test/load/run.sh sets both this and the server variable, so both arms are one build.
+const ADMISSION = (__ENV.ADMISSION || 'on').toLowerCase();
+// SHED_MAX is the number of sheds the run still passes with, for the runs whose pass
+// criterion is "no shedding at this rate" with the gate on (SHED_MAX=0). Unset means
+// sheds are counted but never fail the run.
+const SHED_MAX = Number.isFinite(parseInt(__ENV.SHED_MAX, 10)) ? parseInt(__ENV.SHED_MAX, 10) : -1;
 
+// Acquire outcomes are counted by Connect code *and* Spinneret-Reason: unavailable covers
+// an admission-control shed, an open breaker and a paused site, and resource_exhausted
+// covers an empty identity pool and a missing proxy. Bucketing them together hides exactly
+// the behaviour the admission control runs are measuring.
 const acquireOK = new Counter('acquire_ok');
 const acquireExhausted = new Counter('acquire_exhausted');
+const acquireNoProxy = new Counter('acquire_no_proxy');
+const acquireShed = new Counter('acquire_shed');
+const acquireBreakerOpen = new Counter('acquire_breaker_open');
+const acquireSitePaused = new Counter('acquire_site_paused');
 const acquireUnavailable = new Counter('acquire_unavailable');
 const acquireFailed = new Counter('acquire_failed');
 const reportAccepted = new Counter('report_accepted');
@@ -36,9 +61,24 @@ const reportFailed = new Counter('report_failed');
 const acquireLatency = new Trend('acquire_latency', true);
 const reportLatency = new Trend('report_latency', true);
 
+// A shed is not counted as acquire_failed, so the acquire_failed threshold keeps its exact
+// current meaning: a shed is a healthy response to overload, an error is not.
+const thresholds = {
+  // End-to-end latency includes the Docker network and the load balancer.
+  acquire_latency: ['p(99)<50'],
+  acquire_failed: ['count<1'],
+  report_failed: ['count<1'],
+};
+if (ADMISSION === 'off') {
+  thresholds.acquire_shed = ['count<1'];
+} else if (SHED_MAX >= 0) {
+  thresholds.acquire_shed = [`count<${SHED_MAX + 1}`];
+}
+
 export const options = {
   discardResponseBodies: false,
   noConnectionReuse: false,
+  tags: { admission: ADMISSION },
   scenarios: {
     acquire_report: {
       executor: 'constant-arrival-rate',
@@ -50,12 +90,7 @@ export const options = {
       gracefulStop: '30s',
     },
   },
-  thresholds: {
-    // End-to-end latency includes the Docker network and the load balancer.
-    acquire_latency: ['p(99)<50'],
-    acquire_failed: ['count<1'],
-    report_failed: ['count<1'],
-  },
+  thresholds,
   summaryTrendStats: ['avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'],
 };
 
@@ -68,13 +103,26 @@ export default function () {
     acquireOK.add(1);
   } else {
     const code = connectError(res);
+    const reason = connectReason(res);
     if (code === 'resource_exhausted') {
-      acquireExhausted.add(1);
+      if (reason === 'no_proxy_available') {
+        acquireNoProxy.add(1);
+      } else {
+        acquireExhausted.add(1);
+      }
     } else if (code === 'unavailable') {
-      acquireUnavailable.add(1);
+      if (reason === 'overloaded') {
+        acquireShed.add(1);
+      } else if (reason === 'circuit_open') {
+        acquireBreakerOpen.add(1);
+      } else if (reason === 'site_paused') {
+        acquireSitePaused.add(1);
+      } else {
+        acquireUnavailable.add(1);
+      }
     } else {
       acquireFailed.add(1);
-      console.error(`acquire failed: ${res.status} ${code} ${String(res.body).slice(0, 200)}`);
+      console.error(`acquire failed: ${res.status} ${code} ${reason} ${String(res.body).slice(0, 200)}`);
     }
     return;
   }

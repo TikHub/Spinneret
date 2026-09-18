@@ -8,17 +8,17 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/Evil0ctal/Spinneret/internal/analytics/analyticsdb"
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/analytics/analyticsdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/policy"
 )
 
 // maxOverviewWindow bounds the window accepted by Overview.
 const maxOverviewWindow = 24 * time.Hour
 
 // Acquire results that count as failures in the acquire failure ratio.
-var acquireFailureResults = []string{"exhausted", "circuit_open", "site_paused", "no_proxy"}
+var acquireFailureResults = []string{"exhausted", "circuit_open", "site_paused", "no_proxy", "overloaded"}
 
 // SiteOverview summarizes the state and throughput of one site. Totals use
 // the same type with empty site fields.

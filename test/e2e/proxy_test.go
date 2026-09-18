@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 )
 
 func (f *fixture) proxy(ctx context.Context, t *testing.T, id string) *spinneretv1.Proxy {

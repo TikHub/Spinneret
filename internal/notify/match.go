@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/notify/notifydb"
+	"github.com/TikHub/Spinneret/internal/notify/notifydb"
 )
 
 // Channel cache limits.

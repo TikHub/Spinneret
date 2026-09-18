@@ -6,9 +6,61 @@ All notable changes to Spinneret are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Per-instance admission control on the Acquire path**, which turns the two-replica collapse into a
+  plateau. `acquire.lua` concurrency at Redis is now bounded: `SPINNERET_ACQUIRE_FLEET_INFLIGHT`
+  (default `64`, range 0–65536) is the budget for the *whole fleet*, and each API instance admits that
+  number divided by the live API instances it sees in a Redis heartbeat set, clamped to `[4, 4096]`.
+  `SPINNERET_ACQUIRE_MAX_INFLIGHT` (default `0`, max 4096) pins one instance's limit instead and stops
+  its heartbeat — pin it on every API instance or on none. `SPINNERET_ACQUIRE_FLEET_INFLIGHT=0` turns
+  admission control off and reproduces the pre-gate behaviour exactly, which is the A/B lever for
+  measuring it on one build. Release, renew, reap and ingest are deliberately left ungated: that
+  asymmetry is the mechanism, because it bounds the queue a `release.lua` waits behind.
+- An attempt waits up to 50 ms — never longer than its own remaining `wait_ms` — for a permit, and the
+  time it spent waiting is credited against its retry rung, so a given `wait_ms` still buys the same
+  number of attempts it did before. What cannot be admitted is shed with the new reason
+  **`overloaded`** (`unavailable`, HTTP 503) and a retry hint jittered into 100–200 ms. A shed issues
+  **zero Redis commands**, which is why retrying it is always safe and why it cannot deepen the queue.
+  `AcquireBatch` takes `count` permits, so a 50-lease batch is charged for the Lua work it really does.
+- New statistics result `overloaded`, distinct from `exhausted`: `exhausted` now means the identity
+  pool is empty (add identities, widen the rotation policy) and `overloaded` means the instance is at
+  its acquire concurrency limit (add capacity, or offer less load). Migration
+  `00006_acquire_result_overloaded.sql` widens the `acquire_stats_minutely` result constraint;
+  ClickHouse needs no change. The console's acquire failure ratio counts the new result.
+- New metrics: `spinneret_acquire_script_seconds` (the `acquire.lua` round trip alone, sharing buckets
+  with `spinneret_acquire_duration_seconds`), `spinneret_acquire_admission_total{result}`
+  (`immediate`, `queued`, `shed_no_wait`, `shed_queue_full`, `shed_timeout`, `shed_canceled`),
+  `spinneret_acquire_admission_wait_seconds`, and the gauges `spinneret_acquire_inflight`,
+  `_queued`, `_inflight_limit`, `_peers`, `_peer_beat_age_seconds` and `_peer_beat_failures_total`.
+  The gauges exist only while admission control is on; `_peers` is also absent when the limit is
+  pinned. `spinneret_acquire_total{result="exhausted"}` is **no longer the collapse detector** — alert
+  on `overloaded` for overload and `exhausted` for pool exhaustion, and exclude `overloaded` from
+  acquire-failure alerts, since shedding is a healthy response to overload.
+
+- **The project is open source**, maintained by [TikHub](https://github.com/TikHub) under the
+  [Apache License 2.0](LICENSE). `LICENSE`, `SECURITY.md` (private vulnerability reporting),
+  `CONTRIBUTING.md`, GitHub issue and pull-request templates, and a `release.yml` workflow that builds
+  a multi-architecture image for `linux/amd64` and `linux/arm64` and pushes it to
+  `ghcr.io/tikhub/spinneret` on a `v*` tag are all new.
+- **A guided one-command installer**, `install/install.sh` with an identical Chinese twin
+  `install/install.zh.sh`. Docker only: it detects the host, offers to install Docker, clones the
+  repository, generates every password and the key-encryption key on the machine, writes the Compose
+  overrides for this host, pulls the published image or falls back to building from source, runs the
+  migrations, waits for `/readyz`, creates the first administrator, and writes a `spnrctl` control
+  script. Re-running it opens a management menu: status, upgrade, accounts, tokens, hot-state rebuild,
+  configuration, health, logs, restart, backup, restore, disk and uninstall. `install/README.md`
+  documents every question, flag and file it writes.
+- **A complete bilingual manual in `documents/`**: 21 pages in English and Simplified Chinese, from a
+  quick start to a performance and tuning guide, with an index in `documents/README.md`. Every page was
+  verified against the source. `docs/` is now local working notes and is no longer tracked.
+- `make help` lists the developer tasks, and `make web-test` runs the console gates that CI runs.
+
 ### Changed
 
-- **Redis hot path rewritten; every §18.4 performance target is now met on one server instance and one
+- **The Go module path is now `github.com/TikHub/Spinneret`** (was `github.com/Evil0ctal/Spinneret`),
+  matching the repository the project is published from. Import paths in the SDKs change with it.
+- **Redis hot path rewritten; every v0.1 performance target is now met on one server instance and one
   Redis instance.** One acquire→report cycle costs **168.3 µs of Redis CPU instead of 271.2 µs**, i.e.
   **5,940 cycles/s per Redis thread instead of 3,690**. Per script, measured with `SLOWLOG` at
   1,000 cycles/s on the 100k × 50 dataset: `acquire.lua` 104.2 → 68.3 µs (−34 %), `observe.lua`
@@ -16,10 +68,10 @@ All notable changes to Spinneret are documented here. The format follows
   `lease_retain.lua` 12.0 → 10.3 (−14 %). The scheduler-path changes are in `internal/scheduler/lua/**`
   and `internal/store/redis/lua/common.lua`; the worker-path changes in `internal/worker/lua/observe.lua`,
   `internal/action/lua/apply.lua`, `internal/signal/lua/*.lua` and `internal/breaker/lua/breaker_eval.lua`.
-  `docs/design/1_implementation_spec.md` §5–§6 records the conventions and the one encoding change (`xg`
-  now names the endpoint groups that pushed, instead of `"1"` meaning all of them).
+  One encoding change came with it: `xg` now names the endpoint groups that pushed an identity's
+  ready-queue score forward, instead of `"1"` meaning all of them.
 - End-to-end effect, one instance, 100k identities × 50 endpoint groups
-  (`docs/benchmarks.md`, before → after):
+  (`documents/en/17-performance.md`, before → after):
   Acquire alone **4,436/s at p99 > 250 ms → 4,993/s at p99 4.32 ms** (peak 4,614 → 7,792/s);
   full acquire→report cycle **2,000/s → 4,500/s** with exclusive leases and **3,000/s → 5,500/s** with
   `max_concurrent_leases: 4`; report ingest **29,584/s → 44,437/s** accepted; reports applied to the hot
@@ -45,12 +97,13 @@ All notable changes to Spinneret are documented here. The format follows
 - **The remaining bottleneck is not Redis CPU.** Two replicas behind the load balancer reach 3,000
   cycles/s in aggregate, *less* than one replica alone, because each instance drives its own unbounded
   concurrency at the shared Redis and a failing acquire costs about five times a succeeding one (220 Redis
-  commands versus 49). Next levers, in order: per-instance admission control on the Acquire path, making a
-  rejected candidate cheap, then Redis Cluster.
+  commands versus 49). The first lever, per-instance admission control on the Acquire path, has landed
+  (see Added above) and bounds that loop; the remaining levers, in order, are making a rejected
+  candidate cheap and then Redis Cluster.
 - **A freshly seeded or rebuilt site must be warmed before it is benchmarked.** Seeding writes the same
   ready-queue score for every identity in every endpoint group, so all groups contend on the same head;
   a cold site collapsed at 2,500 cycles/s where the warmed one carried 4,500/s. About a million acquires
-  of ordinary traffic removes it. See `docs/benchmarks.md`.
+  of ordinary traffic removes it. See `documents/en/17-performance.md`.
 - **Never unlink `sp:{<site>}:ls:*` by hand** (nor trim a stream holding unprocessed `release: true`
   reports): the lease hash is what decrements the identity's active-lease counter, so deleting live ones
   makes those identities permanently unavailable. `spnr rebuild --site` does not reset runtime counters by
@@ -134,7 +187,7 @@ token.
   (`test/e2e`), a replica failover drill, a Playwright console suite (`web/e2e`) and k6 load scenarios
   (`test/load`).
 - Documentation: bilingual README, deployment guide, operations runbook, API reference and benchmark
-  report (`docs/benchmarks.md`), plus SDK and example documentation.
+  report (`documents/en/17-performance.md`), plus SDK and example documentation.
 - Optional profiling listener: `SPINNERET_PPROF_ADDR` serves `net/http/pprof` on its own address. It is
   off by default and is never mounted on the API or metrics listener.
 - Report stream retention: each shard owner trims its Redis stream to the consumer group position
@@ -146,12 +199,12 @@ token.
 
 ### Notes
 
-- **Licensing:** no license file is published with this release; all rights are reserved by the authors.
+- **Licensing:** Apache License 2.0, Copyright 2026 TikHub — see `LICENSE` in the repository root.
 - **Encryption keys:** the KEK is the only thing that makes encrypted data recoverable. Back up
   `deploy/compose/secrets/kek.key` separately from database dumps before running anything in production.
 - **Fixed at deploy time:** `SPINNERET_REPORT_SHARDS` cannot be changed without stranding in-flight leases;
   pick it before going live (see the deployment guide).
-- **Measured performance** (`docs/benchmarks.md`, 100k identities × 50 endpoint groups on a laptop-sized
+- **Measured performance** (`documents/en/17-performance.md`, 100k identities × 50 endpoint groups on a laptop-sized
   Docker VM): Acquire p99 0.5–1.7 ms, report → state update p99 6.8 ms, report ingest 29,584/s per
   instance, 10,001 concurrent config watchers per instance, config change awareness p99 176 ms. Acquire
   throughput is bounded by the single-threaded Redis at ~3,000 acquire→report cycles/s in total, below the
@@ -165,5 +218,5 @@ token.
   refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
   fingerprint distribution and browser pools.
 
-[0.1.0]: https://github.com/Evil0ctal/Spinneret/releases/tag/v0.1.0
-[Unreleased]: https://github.com/Evil0ctal/Spinneret/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.0
+[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.0...HEAD

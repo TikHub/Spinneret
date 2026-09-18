@@ -9,7 +9,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/events"
 )
 
 // Runtime config kinds whose content (the reserved "_runtime" config group,

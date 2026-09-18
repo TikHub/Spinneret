@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/store/clickhouse"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 func TestIntegrationClickHouseEvents(t *testing.T) {

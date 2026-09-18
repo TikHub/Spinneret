@@ -3,7 +3,7 @@ package site_test
 import (
 	"fmt"
 
-	"github.com/Evil0ctal/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/site"
 )
 
 func Example() {

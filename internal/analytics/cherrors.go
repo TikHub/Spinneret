@@ -8,7 +8,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/ClickHouse/clickhouse-go/v2"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // ClickHouse server error codes that mean "this query asked for too much",

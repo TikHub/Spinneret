@@ -16,23 +16,23 @@ import (
 	"connectrpc.com/otelconnect"
 	"connectrpc.com/validate"
 
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
-	"github.com/Evil0ctal/Spinneret/internal/api/accessapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/authapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/breakerapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/configapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/dashboardapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/identityapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/leaseapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/notifyapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/policyapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/proxyapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/reportapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/secretapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/siteapi"
-	"github.com/Evil0ctal/Spinneret/internal/api/tenantapi"
-	"github.com/Evil0ctal/Spinneret/internal/auth"
-	"github.com/Evil0ctal/Spinneret/web"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/internal/api/accessapi"
+	"github.com/TikHub/Spinneret/internal/api/authapi"
+	"github.com/TikHub/Spinneret/internal/api/breakerapi"
+	"github.com/TikHub/Spinneret/internal/api/configapi"
+	"github.com/TikHub/Spinneret/internal/api/dashboardapi"
+	"github.com/TikHub/Spinneret/internal/api/identityapi"
+	"github.com/TikHub/Spinneret/internal/api/leaseapi"
+	"github.com/TikHub/Spinneret/internal/api/notifyapi"
+	"github.com/TikHub/Spinneret/internal/api/policyapi"
+	"github.com/TikHub/Spinneret/internal/api/proxyapi"
+	"github.com/TikHub/Spinneret/internal/api/reportapi"
+	"github.com/TikHub/Spinneret/internal/api/secretapi"
+	"github.com/TikHub/Spinneret/internal/api/siteapi"
+	"github.com/TikHub/Spinneret/internal/api/tenantapi"
+	"github.com/TikHub/Spinneret/internal/auth"
+	"github.com/TikHub/Spinneret/web"
 )
 
 // HTTP server limits (spec §12 and the wiring task).
@@ -84,7 +84,7 @@ func (s *Server) setupHTTP() error {
 // set. It is off by default and never mounted on the API or metrics listener:
 // the endpoints are unauthenticated and expose heap contents and goroutine
 // stacks, so the address must stay inside the deployment (see
-// docs/benchmarks.md for how the load tests use it).
+// documents/en/17-performance.md for how the load tests use it).
 func (s *Server) setupPprof() error {
 	if s.cfg.PprofAddr == "" {
 		return nil

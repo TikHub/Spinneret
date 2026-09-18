@@ -6,8 +6,8 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/analytics/analyticsdb"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/analytics/analyticsdb"
+	"github.com/TikHub/Spinneret/internal/catalog"
 )
 
 // heatmapHot is the Redis state behind a heatmap page. The group-indexed

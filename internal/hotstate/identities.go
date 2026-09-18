@@ -8,8 +8,8 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/hotstate/hotstatedb"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/hotstate/hotstatedb"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
 // identityRow is the PostgreSQL view of an identity used for materialization.

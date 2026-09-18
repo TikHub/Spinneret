@@ -13,7 +13,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // Session hash fields (spec §5: P:sess:<sha256(id) hex>). cred is the

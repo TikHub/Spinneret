@@ -2,7 +2,7 @@
 
 [中文文档](README.zh-CN.md)
 
-Python client for [Spinneret](https://github.com/Evil0ctal/Spinneret), the control plane that leases
+Python client for [Spinneret](https://github.com/TikHub/Spinneret), the control plane that leases
 identities (cookies, device parameters, accounts) and proxies to crawler nodes, turns request
 reports into cooldowns, bans and circuit breaking, and distributes configuration and secrets.
 
@@ -220,6 +220,11 @@ HTTP status following the Connect protocol.
 - `Acquire` and `AcquireBatch` are not idempotent: they are retried only when the request provably
   never reached the server (connection refused, connect or pool timeout) or when the server
   answered `unavailable`. Ambiguous failures (read timeout, connection reset) are raised.
+- `overloaded` (`unavailable`) means the server was at its acquire concurrency limit and shed the
+  call before attempting it. No Redis command was issued, so it is retryable like any other
+  `unavailable`: the retry honours `Spinneret-Retry-After-Ms`, which the server jitters into
+  100–200 ms. It is not `no_identity_available` — the identity pool was never consulted — and needs
+  no SDK change.
 - `spinneret.NO_RETRY` disables retries.
 
 ## Error kinds

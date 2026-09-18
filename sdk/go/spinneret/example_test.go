@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/sdk/go/spinneret"
+	"github.com/TikHub/Spinneret/sdk/go/spinneret"
 )
 
 // A node acquires a lease, sends the request with the leased credential and

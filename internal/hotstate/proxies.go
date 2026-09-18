@@ -9,8 +9,8 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/hotstate/hotstatedb"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/hotstate/hotstatedb"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
 // proxyRow is the PostgreSQL view of a proxy used for materialization.

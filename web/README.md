@@ -3,7 +3,7 @@
 The Spinneret web console: a React single-page application built with Vite and embedded into the Go
 server binary (`web/embed.go`, `//go:embed all:dist`). It talks to the server only through the Connect
 APIs (JSON) and one server-sent events stream. The authoritative specification is
-[`docs/design/4_web_console.md`](../docs/design/4_web_console.md).
+[`documents/en/05-console-overview.md`](../documents/en/05-console-overview.md).
 
 ## Requirements
 
@@ -155,7 +155,7 @@ make e2e-web ARGS='--headed'       # watch it
 It installs the matching Chromium build and takes the credentials from
 `deploy/compose/.env`. `e2e/README.md` lists the journeys and the conventions
 (accessible locators only, unique resources per spec, zero console errors).
-`e2e/screenshots.spec.ts` refreshes the console screenshots in `docs/images/`.
+`e2e/screenshots.spec.ts` refreshes the console screenshots in `documents/images/`.
 
 While working on a page, point the suite at the dev server instead:
 

@@ -3,7 +3,7 @@ package auth
 import (
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/auth/authdb"
+	"github.com/TikHub/Spinneret/internal/auth/authdb"
 )
 
 // UserView is a console user without credentials.

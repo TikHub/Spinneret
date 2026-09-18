@@ -21,15 +21,15 @@ COPY --from=web /src/web/dist ./web/dist
 ARG VERSION=dev
 RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
     --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
-    go build -ldflags "-s -w -X github.com/Evil0ctal/Spinneret/internal/version.Version=${VERSION}" \
+    go build -ldflags "-s -w -X github.com/TikHub/Spinneret/internal/version.Version=${VERSION}" \
       -o /out/spinneret-server ./cmd/spinneret-server && \
-    go build -ldflags "-s -w -X github.com/Evil0ctal/Spinneret/internal/version.Version=${VERSION}" \
+    go build -ldflags "-s -w -X github.com/TikHub/Spinneret/internal/version.Version=${VERSION}" \
       -o /out/spnr ./cmd/spnr
 
 FROM gcr.io/distroless/static-debian12:nonroot
 LABEL org.opencontainers.image.title="spinneret" \
       org.opencontainers.image.description="Control plane for crawler and API nodes" \
-      org.opencontainers.image.source="https://github.com/Evil0ctal/Spinneret"
+      org.opencontainers.image.source="https://github.com/TikHub/Spinneret"
 COPY --from=build /out/spinneret-server /out/spnr /usr/local/bin/
 USER nonroot:nonroot
 EXPOSE 8080

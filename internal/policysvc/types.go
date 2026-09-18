@@ -3,7 +3,7 @@ package policysvc
 import (
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/policy"
 )
 
 // Policy is the administrative view of a policy.

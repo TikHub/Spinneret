@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // Time range limits and defaults.

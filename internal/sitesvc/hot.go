@@ -7,7 +7,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 // breakerStateField is the state field of the breaker hash (spec §5.5).

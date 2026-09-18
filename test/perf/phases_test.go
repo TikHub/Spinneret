@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	storeredis "github.com/Evil0ctal/Spinneret/internal/store/redis"
+	storeredis "github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // BenchmarkAcquirePhases attributes the interpreter time of acquire.lua by

@@ -21,7 +21,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 // PostgresURLEnv names the environment variable holding the base PostgreSQL

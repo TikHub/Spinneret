@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // DefaultKEKID is the KEK id used by NewCipher and by NewProvider when no ids

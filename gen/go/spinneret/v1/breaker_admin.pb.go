@@ -1422,7 +1422,7 @@ const file_spinneret_v1_breaker_admin_proto_rawDesc = "" +
 	"\vOpenBreaker\x12 .spinneret.v1.OpenBreakerRequest\x1a!.spinneret.v1.OpenBreakerResponse\x12U\n" +
 	"\fCloseBreaker\x12!.spinneret.v1.CloseBreakerRequest\x1a\".spinneret.v1.CloseBreakerResponse\x12d\n" +
 	"\x11ListBreakerEvents\x12&.spinneret.v1.ListBreakerEventsRequest\x1a'.spinneret.v1.ListBreakerEventsResponse\x12X\n" +
-	"\rSetSitePaused\x12\".spinneret.v1.SetSitePausedRequest\x1a#.spinneret.v1.SetSitePausedResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\rSetSitePaused\x12\".spinneret.v1.SetSitePausedRequest\x1a#.spinneret.v1.SetSitePausedResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_breaker_admin_proto_rawDescOnce sync.Once

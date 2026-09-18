@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/signal"
+	"github.com/TikHub/Spinneret/internal/signal"
 )
 
 // addEntries appends n report events of a lease to a shard stream and returns

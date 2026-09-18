@@ -26,9 +26,17 @@ x-spinneret-env: &spinneret-env
   SPINNERET_REPORT_SHARDS: ${SPINNERET_REPORT_SHARDS:-16}
   # Report dedup markers (80 B each) also pin the ended lease hash (~290 B) for the same
   # window, so this is the dominant traffic-proportional term of Valkey memory. The product
-  # default is 1h; see docs/benchmarks.md ("Redis sizing") for sizing it to the retry
+  # default is 1h; see documents/en/17-performance.md ("Redis sizing") for sizing it to the retry
   # behaviour of your nodes rather than to an hour.
   SPINNERET_REPORT_DEDUP_TTL: ${SPINNERET_REPORT_DEDUP_TTL:-1h}
+  # Concurrent acquire scripts the whole fleet may have in flight at Redis. Each API replica admits
+  # this budget divided by the number of live API replicas it sees, so the default stack (2 replicas)
+  # runs at 32 each. 0 turns admission control off — which is the documented incident lever, so it
+  # has to be passed through here to have any effect. See documents/en/03-configuration.md.
+  SPINNERET_ACQUIRE_FLEET_INFLIGHT: ${SPINNERET_ACQUIRE_FLEET_INFLIGHT:-64}
+  # 0 derives the per-replica limit from the fleet budget above; a positive value pins it and stops
+  # the replica heartbeat. Pin it on every API replica or on none (documents/en/03-configuration.md).
+  SPINNERET_ACQUIRE_MAX_INFLIGHT: ${SPINNERET_ACQUIRE_MAX_INFLIGHT:-0}
   # Empty means "use the server's built-in connectivity-check URL"; set it in .env to point the
   # proxy health checker at a reachable endpoint (e.g. http://mocktarget:9090/healthz).
   SPINNERET_PROXY_CHECK_URL: ${SPINNERET_PROXY_CHECK_URL:-}
@@ -73,7 +81,7 @@ services:
     # measured at 6,000 acquire->report cycles/s on one instance, acquire p99 went 18.9 ms -> 4.1 ms
     # and report lag p99 4.66 s -> 41 ms, for +1.0 core of Valkey CPU (0.91 -> 1.92).
     # Set VALKEY_IO_THREADS=1 to get the single-threaded behaviour back.
-    # See docs/benchmarks.md, "Valkey io-threads".
+    # See documents/en/17-performance.md, "Valkey io-threads".
     command:
       - valkey-server
       - --appendonly

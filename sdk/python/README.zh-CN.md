@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-[Spinneret](https://github.com/Evil0ctal/Spinneret) 的 Python 客户端。Spinneret 是爬虫与 API 节点的控制面：
+[Spinneret](https://github.com/TikHub/Spinneret) 的 Python 客户端。Spinneret 是爬虫与 API 节点的控制面：
 向节点租出身份（Cookie、设备参数、账号）与代理，根据请求上报执行冷却、封禁与熔断，并下发配置与密钥。
 
 - 基于 `httpx` 的同步客户端 `Client` 与 asyncio 客户端 `AsyncClient`
@@ -194,6 +194,10 @@ with client.config_watcher(
   `site_paused` 从不重试；服务端建议等待超过 `max_retry_after`（5 s）时直接抛出。
 - `Acquire` 与 `AcquireBatch` 不是幂等操作：只有确定请求未到达服务端（连接被拒、连接或连接池超时）或服务端明确返回
   `unavailable` 时才重试；读超时、连接重置等不确定的失败直接抛出。
+- `overloaded`（`unavailable`）表示服务端已到自己的租借并发上限，在真正尝试之前就把这次调用甩掉了。
+  它没有发出任何 Redis 命令，因此与其他 `unavailable` 一样可以重试：重试会遵守
+  `Spinneret-Retry-After-Ms`，服务端会把它抖动到 100–200 毫秒。它不是 `no_identity_available`——
+  身份池根本没有被查询——并且不需要 SDK 做任何改动。
 - `spinneret.NO_RETRY` 关闭重试。
 
 ## 错误类型分类

@@ -52,7 +52,7 @@ func acquireRun(b *testing.B, e *env, ds *dataset, name string, cfg acquireCfg, 
 }
 
 // BenchmarkAcquire measures acquire.lua over the candidate sample sizes and
-// pool conditions of the design (spec §6.1, docs/design/0_first_doc.md §18.4).
+// pool conditions the acquire path is specified against (spec §6.1).
 func BenchmarkAcquire(b *testing.B) {
 	e, ds := benchEnv(b)
 	ops := *flagOps

@@ -3,22 +3,22 @@ package server
 import (
 	"context"
 
-	"github.com/Evil0ctal/Spinneret/internal/action"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/configcenter"
-	"github.com/Evil0ctal/Spinneret/internal/hotstate"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc"
-	"github.com/Evil0ctal/Spinneret/internal/proxy"
-	"github.com/Evil0ctal/Spinneret/internal/scheduler"
-	"github.com/Evil0ctal/Spinneret/internal/stats"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
-	"github.com/Evil0ctal/Spinneret/internal/worker"
+	"github.com/TikHub/Spinneret/internal/action"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/configcenter"
+	"github.com/TikHub/Spinneret/internal/hotstate"
+	"github.com/TikHub/Spinneret/internal/identitysvc"
+	"github.com/TikHub/Spinneret/internal/proxy"
+	"github.com/TikHub/Spinneret/internal/scheduler"
+	"github.com/TikHub/Spinneret/internal/stats"
+	"github.com/TikHub/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/worker"
 )
 
 // This file adapts concrete providers to the consumer-declared interfaces of
 // other packages whose method signatures use consumer-local mirror types
-// (docs/design/6_wiring_interfaces.md). Struct conversions are used where the
+// (the wiring contract). Struct conversions are used where the
 // mirror types are identical, so any future divergence fails to compile
 // instead of silently dropping fields; the remaining types are copied field by
 // field and covered by unit tests.

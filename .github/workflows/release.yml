@@ -1,0 +1,97 @@
+name: release
+
+on:
+  push:
+    # v followed by a digit, so only version tags reach this workflow. A plain
+    # `v*` would also match a tag like `vnext`, and the `latest` entry below -
+    # which keys off the absence of a dash, not off the semver match - would
+    # then push it as ghcr.io/tikhub/spinneret:latest, the tag install.sh pulls
+    # by default.
+    tags: ["v[0-9]*"]
+
+permissions:
+  contents: read
+
+# One release at a time per tag, and never cancelled: a half-pushed multi-arch
+# manifest is worse than a slow queue.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/tikhub/spinneret
+          # Four tags. `v0.1.0` first because that is the spelling the installer
+          # and the GitHub release share: install.sh reads tag_name from the
+          # releases API and pulls it verbatim. `0.1.0` and `0.1` are there for
+          # anyone pinning the way a registry usually expects, and `latest` only
+          # when the tag has no pre-release suffix.
+          tags: |
+            type=raw,value=${{ github.ref_name }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+          # Computed explicitly above rather than inferred.
+          flavor: latest=false
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # Stamped into internal/version.Version by the Dockerfile's
+          # `-X .../internal/version.Version=${VERSION}`, so `spnr version` and
+          # the console report the tag. The Makefile derives the same string
+          # from `git describe --tags`, which at a tag is the tag itself.
+          build-args: |
+            VERSION=${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [image]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      # The installer scripts are attached so an operator can fetch the exact
+      # pair that goes with this image without cloning, and so a release can be
+      # installed after main has moved on.
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            install/install.sh
+            install/install.zh.sh
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          # One definition of "pre-release" for the whole workflow. The image
+          # step withholds `latest` from a tag with a dash in it; without this
+          # line the release itself would still be published as the repository's
+          # latest, and install.sh - which reads tag_name from
+          # /releases/latest and offers it as the upgrade target - would
+          # recommend an RC the workflow had already decided is not `latest`.
+          prerelease: ${{ contains(github.ref_name, '-') }}

@@ -1922,7 +1922,7 @@ const file_spinneret_v1_proxy_admin_proto_rawDesc = "" +
 	"\rDeleteProxies\x12\".spinneret.v1.DeleteProxiesRequest\x1a#.spinneret.v1.DeleteProxiesResponse\x12O\n" +
 	"\n" +
 	"CheckProxy\x12\x1f.spinneret.v1.CheckProxyRequest\x1a .spinneret.v1.CheckProxyResponse\x12a\n" +
-	"\x10GetProviderStats\x12%.spinneret.v1.GetProviderStatsRequest\x1a&.spinneret.v1.GetProviderStatsResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x10GetProviderStats\x12%.spinneret.v1.GetProviderStatsRequest\x1a&.spinneret.v1.GetProviderStatsResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_proxy_admin_proto_rawDescOnce sync.Once

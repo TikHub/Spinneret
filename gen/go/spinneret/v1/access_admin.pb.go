@@ -2011,7 +2011,7 @@ const file_spinneret_v1_access_admin_proto_rawDesc = "" +
 	"\x10ListRoleBindings\x12%.spinneret.v1.ListRoleBindingsRequest\x1a&.spinneret.v1.ListRoleBindingsResponse\x12d\n" +
 	"\x11CreateRoleBinding\x12&.spinneret.v1.CreateRoleBindingRequest\x1a'.spinneret.v1.CreateRoleBindingResponse\x12d\n" +
 	"\x11DeleteRoleBinding\x12&.spinneret.v1.DeleteRoleBindingRequest\x1a'.spinneret.v1.DeleteRoleBindingResponse\x12X\n" +
-	"\rListAuditLogs\x12\".spinneret.v1.ListAuditLogsRequest\x1a#.spinneret.v1.ListAuditLogsResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\rListAuditLogs\x12\".spinneret.v1.ListAuditLogsRequest\x1a#.spinneret.v1.ListAuditLogsResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_access_admin_proto_rawDescOnce sync.Once

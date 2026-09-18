@@ -413,7 +413,7 @@ const file_spinneret_v1_report_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage2T\n" +
 	"\rReportService\x12C\n" +
-	"\x06Report\x12\x1b.spinneret.v1.ReportRequest\x1a\x1c.spinneret.v1.ReportResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x06Report\x12\x1b.spinneret.v1.ReportRequest\x1a\x1c.spinneret.v1.ReportResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_report_proto_rawDescOnce sync.Once

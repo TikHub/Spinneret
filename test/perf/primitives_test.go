@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	storeredis "github.com/Evil0ctal/Spinneret/internal/store/redis"
+	storeredis "github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // loopIters is how many times a calibration script repeats its body inside one

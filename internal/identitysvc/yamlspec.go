@@ -8,7 +8,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/Evil0ctal/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/identity"
 )
 
 // MaxSpecYAMLBytes is the maximum size of an identity type YAML spec.

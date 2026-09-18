@@ -5,9 +5,9 @@ import (
 	"slices"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc/policysvcdb"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/policysvc/policysvcdb"
 )
 
 // bindingRow is the common shape of the binding query rows.

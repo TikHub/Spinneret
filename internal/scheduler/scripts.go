@@ -3,7 +3,7 @@ package scheduler
 import (
 	_ "embed"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // Lua sources. acquire.lua is split by concern; the parts are concatenated

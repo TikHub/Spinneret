@@ -12,11 +12,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/appconfig"
-	"github.com/Evil0ctal/Spinneret/internal/server"
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/appconfig"
+	"github.com/TikHub/Spinneret/internal/server"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/vault"
 )
 
 // runServer starts srv and stops it (waiting for Run to return) at cleanup.

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 
-	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
+	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
 )
 
 func clickhouseDatabaseExists(ctx context.Context, t *testing.T, conn chdriver.Conn, name string) bool {

@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	spinneretv1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 )
 
 // pickWeb returns the web identity at index i (scenarios use distinct identities).
@@ -80,8 +80,14 @@ func scenarioRateLimited(ctx context.Context, t *testing.T, f *fixture) {
 		}
 		return false, describe("%d cooldown events", len(evs))
 	})
-	// The identity stays active; only its search endpoint is cooling down.
-	require.Equal(t, "active", f.identity(ctx, t, target.ID).GetIdentity().GetState())
+	// Only the search endpoint is cooling down: the identity itself must not be
+	// demoted. Asserting the literal "active" would be a race — whether this
+	// identity has had a success yet depends on the traffic of the scenarios
+	// running alongside this one — so the assertion is the invariant that matters,
+	// which is that the identity is still usable.
+	state := f.identity(ctx, t, target.ID).GetIdentity().GetState()
+	require.Containsf(t, []string{"pending", "active"}, state,
+		"an identity × endpoint cooldown must not change the identity's own state, got %q", state)
 
 	// Another identity is served normally through the same rule set and has no cooldown.
 	lease = f.acquireFor(ctx, t, "web", "/site/search?q=fine", other.ID, 30*time.Second)

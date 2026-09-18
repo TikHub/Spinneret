@@ -201,7 +201,7 @@ type SiteOverview struct {
 	// Share of reports classified `client_error`.
 	ClientErrorRatio float64 `protobuf:"fixed64,13,opt,name=client_error_ratio,json=clientErrorRatio,proto3" json:"client_error_ratio,omitempty"`
 	// Share of acquire calls that failed (exhausted, circuit_open, site_paused,
-	// no_proxy).
+	// no_proxy, overloaded).
 	AcquireFailureRatio float64 `protobuf:"fixed64,14,opt,name=acquire_failure_ratio,json=acquireFailureRatio,proto3" json:"acquire_failure_ratio,omitempty"`
 	// Endpoint groups whose breaker is open.
 	OpenBreakers int32 `protobuf:"varint,15,opt,name=open_breakers,json=openBreakers,proto3" json:"open_breakers,omitempty"`
@@ -2656,7 +2656,7 @@ const file_spinneret_v1_dashboard_proto_rawDesc = "" +
 	"GetHeatmap\x12\x1f.spinneret.v1.GetHeatmapRequest\x1a .spinneret.v1.GetHeatmapResponse\x12[\n" +
 	"\x0eListRiskEvents\x12#.spinneret.v1.ListRiskEventsRequest\x1a$.spinneret.v1.ListRiskEventsResponse\x12g\n" +
 	"\x12QueryRequestEvents\x12'.spinneret.v1.QueryRequestEventsRequest\x1a(.spinneret.v1.QueryRequestEventsResponse\x12U\n" +
-	"\fGetNodeStats\x12!.spinneret.v1.GetNodeStatsRequest\x1a\".spinneret.v1.GetNodeStatsResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\fGetNodeStats\x12!.spinneret.v1.GetNodeStatsRequest\x1a\".spinneret.v1.GetNodeStatsResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_dashboard_proto_rawDescOnce sync.Once

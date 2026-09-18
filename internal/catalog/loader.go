@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogdb"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogdb"
 )
 
 // rollbackTimeout bounds the rollback that ends a load transaction.

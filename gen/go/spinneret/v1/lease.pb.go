@@ -946,7 +946,7 @@ const file_spinneret_v1_lease_proto_rawDesc = "" +
 	"\aAcquire\x12\x1c.spinneret.v1.AcquireRequest\x1a\x1d.spinneret.v1.AcquireResponse\x12U\n" +
 	"\fAcquireBatch\x12!.spinneret.v1.AcquireBatchRequest\x1a\".spinneret.v1.AcquireBatchResponse\x12@\n" +
 	"\x05Renew\x12\x1a.spinneret.v1.RenewRequest\x1a\x1b.spinneret.v1.RenewResponse\x12F\n" +
-	"\aRelease\x12\x1c.spinneret.v1.ReleaseRequest\x1a\x1d.spinneret.v1.ReleaseResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\aRelease\x12\x1c.spinneret.v1.ReleaseRequest\x1a\x1d.spinneret.v1.ReleaseResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_lease_proto_rawDescOnce sync.Once

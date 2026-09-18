@@ -1635,7 +1635,7 @@ const file_spinneret_v1_config_admin_proto_rawDesc = "" +
 	"\x0eRollbackConfig\x12#.spinneret.v1.RollbackConfigRequest\x1a$.spinneret.v1.RollbackConfigResponse\x12a\n" +
 	"\x10DeleteConfigItem\x12%.spinneret.v1.DeleteConfigItemRequest\x1a&.spinneret.v1.DeleteConfigItemResponse\x12g\n" +
 	"\x12ListConfigVersions\x12'.spinneret.v1.ListConfigVersionsRequest\x1a(.spinneret.v1.ListConfigVersionsResponse\x12g\n" +
-	"\x12DiffConfigVersions\x12'.spinneret.v1.DiffConfigVersionsRequest\x1a(.spinneret.v1.DiffConfigVersionsResponseB@Z>github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x12DiffConfigVersions\x12'.spinneret.v1.DiffConfigVersionsRequest\x1a(.spinneret.v1.DiffConfigVersionsResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_config_admin_proto_rawDescOnce sync.Once

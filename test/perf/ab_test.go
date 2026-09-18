@@ -11,7 +11,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	storeredis "github.com/Evil0ctal/Spinneret/internal/store/redis"
+	storeredis "github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // Interleaved before/after measurement.
@@ -26,7 +26,7 @@ import (
 // The "before" sources are frozen copies under testdata/baseline, assembled the
 // way the loader assembled them before helper selection existed: the whole
 // common.lua in front of every body. They are data, never compiled into the
-// server, and exist so the before/after numbers in docs/benchmarks.md stay
+// server, and exist so the before/after numbers in documents/en/17-performance.md stay
 // reproducible after the production sources have moved on.
 
 // baselineFile reads one frozen source, skipping the benchmark when the

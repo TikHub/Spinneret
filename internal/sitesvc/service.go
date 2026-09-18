@@ -17,15 +17,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/site"
-	"github.com/Evil0ctal/Spinneret/internal/sitesvc/sitesvcdb"
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/sitesvc/sitesvcdb"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // Limits enforced by the service.
@@ -94,7 +94,7 @@ type Service struct {
 
 // NewService creates the service.
 //
-// Deviation from docs/design/3_service_contracts.md: besides
+// Deviation from the service contract: besides
 // (pool, cat, hot, audit, logger) the service takes the Redis client and key
 // builder, used read-only for EndpointGroup.AvailableIdentities (ZCOUNT of the
 // ready queue) and EndpointGroup.BreakerState (HGET of the breaker hash). rdb

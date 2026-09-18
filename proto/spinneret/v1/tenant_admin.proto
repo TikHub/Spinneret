@@ -5,7 +5,7 @@ package spinneret.v1;
 import "buf/validate/validate.proto";
 import "spinneret/v1/auth.proto";
 
-option go_package = "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1;spinneretv1";
+option go_package = "github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1";
 
 // TenantAdminService manages tenants (platform admins) and the namespaces of
 // the active tenant (`X-Spinneret-Tenant` header). Tenant RPCs other than

@@ -12,11 +12,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/idgen"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
-	"github.com/Evil0ctal/Spinneret/internal/vault/vaulttest"
+	"github.com/TikHub/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/pkg/idgen"
+	"github.com/TikHub/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/vault/vaulttest"
 )
 
 // kekSet builds ciphers sharing key material by KEK id.

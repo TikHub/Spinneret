@@ -60,7 +60,7 @@ func makeLeases(b *testing.B, e *env, ds *dataset, n, start int, expiresMs int64
 
 // BenchmarkLeaseEnd measures release.lua and reap.lua, the two scripts built on
 // lease_end.lua. The "xg" variants exercise the exclusive-lease restore that
-// walks every endpoint group of the client (docs/benchmarks.md, "The lease-end
+// walks every endpoint group of the client (documents/en/17-performance.md, "The lease-end
 // fix"); without the marker the walk is skipped entirely.
 func BenchmarkLeaseEnd(b *testing.B) {
 	e, ds := benchEnv(b)
@@ -136,7 +136,7 @@ func BenchmarkLeaseEnd(b *testing.B) {
 }
 
 // BenchmarkObserve measures observe.lua, the worker-side state update, which
-// docs/benchmarks.md puts at 25 % of the Valkey CPU of an acquire->report cycle.
+// documents/en/17-performance.md puts at 25 % of the Valkey CPU of an acquire->report cycle.
 func BenchmarkObserve(b *testing.B) {
 	e, ds := benchEnv(b)
 	s := scripts(b)
@@ -193,7 +193,7 @@ func BenchmarkSignal(b *testing.B) {
 	ops := *flagOps
 
 	// A report event of the size the stream really carries (~440 B per entry,
-	// docs/benchmarks.md "Redis sizing").
+	// documents/en/17-performance.md "Redis sizing").
 	payload := `{"lease":"lse_perf0_1_00","report":"rpt_x","outcome":"success","ts":` + i64(ds.epoch) +
 		`,"status":200,"bytes":21544,"latency_ms":318,"url":"https://example.invalid/api/g0/items?page=3&cursor=` +
 		strings.Repeat("a", 200) + `"}`

@@ -33,11 +33,17 @@ HISTOGRAMS = (
     "spinneret_report_lag_seconds",
     "spinneret_report_process_duration_seconds",
     "spinneret_http_request_duration_seconds",
+    # Acquire admission control: the Lua round trip alone and the time an acquire waited
+    # for a permit. The gap between spinneret_acquire_duration_seconds and
+    # spinneret_acquire_script_seconds is the wait ladder plus rendering.
+    "spinneret_acquire_script_seconds",
+    "spinneret_acquire_admission_wait_seconds",
 )
 
 # Counters and gauges reported verbatim (sum over all label sets).
 COUNTERS = (
     "spinneret_acquire_total",
+    "spinneret_acquire_admission_total",
     "spinneret_report_ingest_total",
     "spinneret_report_total",
     "spinneret_http_requests_total",
@@ -50,6 +56,11 @@ GAUGES = (
     "spinneret_stream_pending",
     "spinneret_stream_owned_shards",
     "spinneret_identities_available",
+    # Per-instance state of the acquire admission gate.
+    "spinneret_acquire_inflight",
+    "spinneret_acquire_queued",
+    "spinneret_acquire_inflight_limit",
+    "spinneret_acquire_peers",
     "go_goroutines",
     "go_memstats_heap_inuse_bytes",
     "process_resident_memory_bytes",
@@ -280,6 +291,7 @@ def diff(before: dict, after: dict) -> dict:
             if d:
                 inst[h] = d
         inst["acquire_by_result"] = by_label(b_inst, a_inst, "spinneret_acquire_total", "result")
+        inst["admission_by_result"] = by_label(b_inst, a_inst, "spinneret_acquire_admission_total", "result")
         inst["report_ingest_by_result"] = by_label(b_inst, a_inst, "spinneret_report_ingest_total", "result")
         inst["report_by_outcome"] = by_label(b_inst, a_inst, "spinneret_report_total", "outcome")
         inst["http_by_code"] = by_label(b_inst, a_inst, "spinneret_http_requests_total", "code")
@@ -287,7 +299,8 @@ def diff(before: dict, after: dict) -> dict:
         inst["cpu_seconds"] = round(cpu, 2)
         inst["cpu_cores"] = round(cpu / elapsed, 2) if elapsed > 0 else None
         for g in ("spinneret_config_watchers", "go_goroutines", "spinneret_stream_owned_shards",
-                  "process_resident_memory_bytes", "go_memstats_heap_inuse_bytes"):
+                  "process_resident_memory_bytes", "go_memstats_heap_inuse_bytes",
+                  "spinneret_acquire_inflight_limit", "spinneret_acquire_peers"):
             if g in a_inst:
                 inst[g] = round(total(a_inst[g]), 0)
         pending = total(a_inst.get("spinneret_stream_pending", []))
@@ -332,6 +345,8 @@ def gauges(snap: dict) -> dict:
     """Gauge values of one snapshot (used for the mid-run sample)."""
     out: dict = {"at": snap.get("at"), "instances": {}}
     wanted = ("spinneret_config_watchers", "spinneret_stream_pending", "spinneret_stream_owned_shards",
+              "spinneret_acquire_inflight", "spinneret_acquire_queued",
+              "spinneret_acquire_inflight_limit", "spinneret_acquire_peers",
               "go_goroutines", "go_memstats_heap_inuse_bytes", "process_resident_memory_bytes")
     watchers = 0.0
     for name, inst in snap["instances"].items():

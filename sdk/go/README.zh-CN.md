@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-[Spinneret](https://github.com/Evil0ctal/Spinneret) 的 Go 客户端。Spinneret 是爬虫节点的控制面：
+[Spinneret](https://github.com/TikHub/Spinneret) 的 Go 客户端。Spinneret 是爬虫节点的控制面：
 向节点租出身份（Cookie、设备参数、账号）与代理，根据请求上报执行冷却、封禁与熔断，并下发配置与密钥。
 
 - 基于生成的 Connect 客户端的 `Client`，默认使用 Connect JSON，也可切换为 gRPC
@@ -13,17 +13,17 @@
 - `ConfigWatcher`：长轮询、变更回调、版本跟踪，本地快照永不落盘密钥
 - `ClassifyError`：把 `net/http` 请求错误映射为上报用的错误类型
 
-SDK 位于主模块中：`github.com/Evil0ctal/Spinneret/sdk/go/spinneret`（Go 1.27+），运行时只依赖
+SDK 位于主模块中：`github.com/TikHub/Spinneret/sdk/go/spinneret`（Go 1.27+），运行时只依赖
 `connectrpc.com/connect` 与 `google.golang.org/protobuf`。
 
 ## 安装
 
 ```bash
-go get github.com/Evil0ctal/Spinneret@latest
+go get github.com/TikHub/Spinneret@latest
 ```
 
 ```go
-import "github.com/Evil0ctal/Spinneret/sdk/go/spinneret"
+import "github.com/TikHub/Spinneret/sdk/go/spinneret"
 ```
 
 ## 配置
@@ -115,8 +115,10 @@ go run ./sdk/go/examples/basic -site shop -client web -target https://... -confi
 | 编码 | 蛇形字段名的 JSON，忽略响应中的未知字段 | 二进制 Protobuf |
 | 错误原因与建议等待时间 | 响应头 | 响应尾部（trailer） |
 
-两种协议返回相同的 `Error`。使用 gRPC 时负载均衡器必须端到端支持 HTTP/2；Docker Compose 中的负载均衡器（Caddy）
-在 8080 端口接受 h2c。
+两种协议返回相同的 `Error`。使用 gRPC 时负载均衡器必须端到端支持 HTTP/2，而 Docker Compose 中的负载均衡器
+做不到：`deploy/compose/config/Caddyfile` 里 `reverse_proxy` 的 transport 没有写 `versions h2c 2`，
+Caddy 会用 HTTP/1.1 转发给明文上游，因此栈的 8080 端口只能走 Connect JSON。要使用 gRPC，请在该 transport
+块中加上 `versions h2c 2`，或直连某个实例（`spinneret` 服务本身没有映射宿主机端口）。
 
 ## 租约
 
@@ -281,6 +283,10 @@ changed, err := watcher.WaitForChange(ctx, "crawler", "search.json")
   时直接返回错误；证书错误从不重试。
 - `Acquire` 与 `AcquireBatch` 不是幂等的：只有确定请求尚未发出（拨号与 DNS 错误）或服务端明确应答 `unavailable`
   时才重试。含糊的失败（单次调用超时、连接被重置、裸 502/503/504）直接返回。
+- `overloaded`（`unavailable`）表示服务端已到自己的租借并发上限，在真正尝试之前就把这次调用甩掉了。
+  它没有发出任何 Redis 命令，因此与其他 `unavailable` 一样可以重试：重试会遵守
+  `Spinneret-Retry-After-Ms`，服务端会把它抖动到 100–200 毫秒。它不是 `no_identity_available`——
+  身份池根本没有被查询——并且不需要 SDK 做任何改动。
 - 后台上报器与配置监听器不使用该策略，而是按各自的退避重试。
 
 ## 错误类型

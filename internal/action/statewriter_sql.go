@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Evil0ctal/Spinneret/internal/action/actiondb"
+	"github.com/TikHub/Spinneret/internal/action/actiondb"
 )
 
 // Batch subject updates. Each statement updates at most one row per subject

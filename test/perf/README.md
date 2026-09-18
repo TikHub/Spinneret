@@ -3,7 +3,7 @@
 A reproducible harness that measures **where the Valkey CPU of one
 acquire → report cycle goes**, script by script and primitive by primitive, so
 an optimization can be proved rather than argued. It is the companion of
-[`docs/benchmarks.md`](../../docs/benchmarks.md), which measures the same system
+[`documents/en/17-performance.md`](../../documents/en/17-performance.md), which measures the same system
 end to end through the compose stack; this harness isolates the Redis side.
 
 Everything is behind the `perf` build tag, so `go build ./...`,
@@ -39,7 +39,7 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench . -benchtime 1x \
 go test -tags perf -timeout 30m ./test/perf/ -run XXX -bench BenchmarkAcquire \
   -benchtime 1x -perf.ops 3000 -perf.slowlog=false
 
-# The §18.4 dataset (100k identities x 50 endpoint groups, ~2.5 s to seed).
+# The performance-target dataset (100k identities x 50 endpoint groups, ~2.5 s to seed).
 go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
   -benchtime 1x -perf.big -perf.ops 3000 -perf.slowlog=false
 

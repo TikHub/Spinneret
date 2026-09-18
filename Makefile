@@ -4,7 +4,7 @@ GOBIN ?= $(shell go env GOPATH)/bin
 export PATH := $(GOBIN):$(PATH)
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS := -s -w -X github.com/Evil0ctal/Spinneret/internal/version.Version=$(VERSION)
+LDFLAGS := -s -w -X github.com/TikHub/Spinneret/internal/version.Version=$(VERSION)
 
 INFRA_COMPOSE := deploy/compose/docker-compose.infra.yml
 STACK_COMPOSE := deploy/compose/docker-compose.yml
@@ -14,8 +14,40 @@ export SPINNERET_TEST_DATABASE_URL ?= postgres://spinneret:spinneret@localhost:4
 export SPINNERET_TEST_REDIS_URL ?= redis://localhost:46379/0
 export SPINNERET_TEST_CLICKHOUSE_URL ?= clickhouse://spinneret:spinneret@localhost:49000/default
 
-.PHONY: all generate proto sqlc build test test-short test-race cover lint vet fmt infra-up infra-down \
-        web web-install docker up down e2e e2e-failover example example-test load python-test clean
+.PHONY: help all generate proto sqlc build test test-short test-race cover lint vet fmt infra-up infra-down \
+        web web-install web-test docker up down e2e e2e-web e2e-failover example example-test load python-test clean
+
+# Printed by `make` with no target: the tasks a contributor needs, grouped, with one line each.
+.DEFAULT_GOAL := help
+
+help:
+	@printf 'Spinneret developer tasks\n\n'
+	@printf '  Build and generate\n'
+	@printf '    generate       regenerate protobuf (buf) and query (sqlc) code\n'
+	@printf '    build          build bin/spinneret-server and bin/spnr\n'
+	@printf '    docker         build the server container image\n\n'
+	@printf '  Test\n'
+	@printf '    infra-up       start PostgreSQL, Valkey and ClickHouse for the test suite\n'
+	@printf '    infra-down     stop them and delete their volumes\n'
+	@printf '    test           Go tests\n'
+	@printf '    test-race      Go tests with the race detector\n'
+	@printf '    test-short     Go tests that need no infrastructure\n'
+	@printf '    cover          Go coverage of ./internal/...\n'
+	@printf '    web-test       console typecheck, lint, format check and unit tests\n'
+	@printf '    python-test    Python SDK tests\n'
+	@printf '    e2e            end-to-end suite inside the compose network\n'
+	@printf '    e2e-web        Playwright console journeys against the running stack\n'
+	@printf '    e2e-failover   replica failover drill under load\n'
+	@printf '    load           k6 load suite against the running stack\n\n'
+	@printf '  Quality\n'
+	@printf '    lint           golangci-lint\n'
+	@printf '    vet            go vet\n'
+	@printf '    fmt            gofmt the tracked Go files\n\n'
+	@printf '  Run\n'
+	@printf '    up             build and start the full compose stack\n'
+	@printf '    down           stop it\n'
+	@printf '    example        seed and run the example crawler node\n'
+	@printf '    clean          remove build output\n'
 
 all: generate build
 
@@ -64,6 +96,13 @@ web-install:
 
 web:
 	cd web && pnpm build
+
+# The console gates CI runs: everything but the production build.
+web-test:
+	cd web && pnpm typecheck
+	cd web && pnpm lint
+	cd web && pnpm format:check
+	cd web && pnpm test
 
 docker:
 	docker build -f deploy/docker/Dockerfile -t spinneret:$(VERSION) -t spinneret:local .

@@ -9,10 +9,10 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc/policysvctest"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/policysvc"
+	"github.com/TikHub/Spinneret/internal/policysvc/policysvctest"
 )
 
 // bindingOwners maps "<site>/<client>/<group>" targets of one kind to policy names.

@@ -14,7 +14,7 @@ import (
 	"github.com/redis/rueidis"
 	tcredis "github.com/testcontainers/testcontainers-go/modules/redis"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // RedisURLEnv names the environment variable holding the Redis/Valkey URL used

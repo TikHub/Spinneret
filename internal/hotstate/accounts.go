@@ -7,7 +7,7 @@ import (
 
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/hotstate/hotstatedb"
+	"github.com/TikHub/Spinneret/internal/hotstate/hotstatedb"
 )
 
 // Operations of sync_accounts.lua.

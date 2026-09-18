@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/sync/singleflight"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/configcenter/configdb"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/configcenter/configdb"
 )
 
 // spanOverheadBytes approximates the memory of one cached reference span.

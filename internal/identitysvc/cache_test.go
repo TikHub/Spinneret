@@ -11,12 +11,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc/identitysvctest"
-	"github.com/Evil0ctal/Spinneret/internal/vault/vaulttest"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/identitysvc"
+	"github.com/TikHub/Spinneret/internal/identitysvc/identitysvctest"
+	"github.com/TikHub/Spinneret/internal/vault/vaulttest"
 )
 
 // countingSecrets is a SecretResolver that counts calls and can block.

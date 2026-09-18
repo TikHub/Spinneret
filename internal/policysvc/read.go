@@ -8,12 +8,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/textdiff"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc/policysvcdb"
-	pgstore "github.com/Evil0ctal/Spinneret/internal/store/postgres"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/pkg/textdiff"
+	"github.com/TikHub/Spinneret/internal/policysvc/policysvcdb"
+	pgstore "github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
 // diffContextLines is the number of context lines of unified diffs.

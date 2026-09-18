@@ -1,7 +1,7 @@
 // Command spinneret-server runs a Spinneret control-plane instance.
 //
 // Configuration comes from SPINNERET_* environment variables (see
-// docs/design/1_implementation_spec.md §12); flags override a few of them.
+// documents/en/03-configuration.md); flags override a few of them.
 package main
 
 import (
@@ -15,9 +15,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Evil0ctal/Spinneret/cmd/internal/buildinfo"
-	"github.com/Evil0ctal/Spinneret/internal/appconfig"
-	"github.com/Evil0ctal/Spinneret/internal/server"
+	"github.com/TikHub/Spinneret/cmd/internal/buildinfo"
+	"github.com/TikHub/Spinneret/internal/appconfig"
+	"github.com/TikHub/Spinneret/internal/server"
 )
 
 func main() {

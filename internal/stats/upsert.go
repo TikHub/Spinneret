@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/stats/statsdb"
+	"github.com/TikHub/Spinneret/internal/stats/statsdb"
 )
 
 // queries returns the sqlc queries bound to the pool.

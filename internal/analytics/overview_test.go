@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/apperr"
 )
 
 func seedOverview(e *env) {
@@ -234,4 +234,25 @@ func TestOverviewConcurrent(t *testing.T) {
 		require.NoError(t, <-errs)
 		require.Equal(t, want, <-results)
 	}
+}
+
+// TestOverviewCountsOverloadedAsFailure pins that requests shed by acquire
+// admission control appear in the console's acquire failure ratio: they are a
+// failure the operator has to see, and omitting them would make an overloaded
+// instance look healthy.
+func TestOverviewCountsOverloadedAsFailure(t *testing.T) {
+	e := newEnv(t, false)
+	cur := minuteFloor(e.now)
+	e.acquireStat(cur.Add(-1*time.Minute), siteA, egSearch, "ok", 70)
+	e.acquireStat(cur.Add(-2*time.Minute), siteA, egSearch, "overloaded", 20)
+	e.acquireStat(cur.Add(-2*time.Minute), siteA, egFeed, "exhausted", 10)
+
+	ov, err := e.svc.Overview(e.ctx, allScope(), 5*time.Minute)
+	require.NoError(t, err)
+	require.Len(t, ov.Sites, 2)
+	shop := ov.Sites[1]
+	require.Equal(t, "shop", shop.Site)
+	require.InDelta(t, 100.0/300, shop.AcquireQPS, 1e-9)
+	require.InDelta(t, 30.0/100, shop.AcquireFailureRatio, 1e-9)
+	require.InDelta(t, 30.0/100, ov.Totals.AcquireFailureRatio, 1e-9)
 }

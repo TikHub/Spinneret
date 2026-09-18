@@ -17,7 +17,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
+	"github.com/TikHub/Spinneret/gen/go/spinneret/v1/spinneretv1connect"
 )
 
 var protocolCases = []struct {

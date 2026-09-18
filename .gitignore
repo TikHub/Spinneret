@@ -12,6 +12,10 @@ coverage.*
 kek.key
 deploy/compose/secrets/
 
+# Local design notes and working documents (not part of the published project).
+# The published documentation lives in documents/.
+/docs/
+
 # IDE
 .idea/
 .vscode/

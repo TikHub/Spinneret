@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Evil0ctal/Spinneret/internal/store/postgres/db"
+	"github.com/TikHub/Spinneret/internal/store/postgres/db"
 )
 
 // rollbackTimeout bounds the rollback issued after a failed transaction. The

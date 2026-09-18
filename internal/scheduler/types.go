@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/identity"
 )
 
 // Limits of the lease API (spec §6.1, proto LeaseService).
@@ -21,6 +21,21 @@ const (
 	DefaultLateReportWindow = 10 * time.Minute
 	// maxReportShards is the largest shard count a two-hex-digit lease shard can encode.
 	maxReportShards = 256
+	// DefaultAcquireFleetInflight is the fleet-wide number of concurrent
+	// acquire.lua calls admission control allows when
+	// SPINNERET_ACQUIRE_FLEET_INFLIGHT is not set.
+	DefaultAcquireFleetInflight = 64
+	// minAcquireInflight is the per-instance floor: an instance is never
+	// squeezed below this, however many peers it sees.
+	minAcquireInflight = 4
+	// maxAcquireInflight is the per-instance ceiling.
+	maxAcquireInflight = 4096
+	// acquireAdmissionWait caps how long an acquire waits for a permit. The
+	// effective wait is min(this, the caller's remaining wait_ms budget).
+	acquireAdmissionWait = 50 * time.Millisecond
+	// overloadRetryBaseMs is the base of the shed retry hint; the hint is
+	// jittered uniformly into [base, 2*base).
+	overloadRetryBaseMs = 100
 )
 
 // Config configures the scheduler.
@@ -31,6 +46,19 @@ type Config struct {
 	// LateReportWindow is SPINNERET_LATE_REPORT_WINDOW: how long an ended
 	// lease hash is kept for late reports.
 	LateReportWindow time.Duration
+
+	// AcquireFleetInflight is SPINNERET_ACQUIRE_FLEET_INFLIGHT: the number of
+	// concurrent acquire.lua calls the whole fleet may have in flight at
+	// Redis. Each instance admits AcquireFleetInflight / live API instances,
+	// clamped to [minAcquireInflight, maxAcquireInflight]. 0 disables
+	// admission control entirely and reproduces the pre-gate behaviour.
+	AcquireFleetInflight int
+	// AcquireMaxInflight is SPINNERET_ACQUIRE_MAX_INFLIGHT: when positive it
+	// pins this instance's limit and the fleet budget is not divided. It
+	// exists for sharded Redis deployments (where capacity scales with
+	// primaries), for operators who measured their own ceiling, and for load
+	// tests.
+	AcquireMaxInflight int
 
 	// OnBreakerHalfOpen, when set, is called after an acquire lazily moved
 	// the breaker of an endpoint group from open to half_open (spec §6.1
@@ -89,6 +117,10 @@ const (
 	ResultSitePaused  = "site_paused"
 	ResultNoProxy     = "no_proxy"
 	ResultError       = "error"
+	// ResultOverloaded records an acquire shed by admission control before it
+	// reached Redis. It is distinct from ResultExhausted, which means the
+	// identity pool is genuinely empty.
+	ResultOverloaded = "overloaded"
 )
 
 // Lease end kinds recorded in statistics.

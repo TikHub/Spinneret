@@ -9,8 +9,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/jobs"
 )
 
 // Alert evaluator settings.

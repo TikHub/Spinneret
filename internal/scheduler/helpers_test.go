@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"strconv"
 	"sync"
 	"testing"
@@ -14,16 +15,16 @@ import (
 	"github.com/redis/rueidis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/authz"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/catalog/catalogtest"
-	"github.com/Evil0ctal/Spinneret/internal/identity"
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	"github.com/Evil0ctal/Spinneret/internal/site"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
-	"github.com/Evil0ctal/Spinneret/internal/testutil"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/catalog/catalogtest"
+	"github.com/TikHub/Spinneret/internal/identity"
+	"github.com/TikHub/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/policy"
+	"github.com/TikHub/Spinneret/internal/site"
+	"github.com/TikHub/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/testutil"
 )
 
 const (
@@ -74,7 +75,47 @@ type fixture struct {
 	bindings []ProxyBinding
 }
 
+// admissionEnv switches the fixture's acquire admission control off. The whole
+// scheduler suite passes both ways on one build, which is the compatibility
+// proof of the off switch:
+//
+//	go test ./internal/scheduler/                                     # gate on
+//	SPINNERET_TEST_ACQUIRE_ADMISSION=off go test ./internal/scheduler/ # gate off
+const admissionEnv = "SPINNERET_TEST_ACQUIRE_ADMISSION"
+
+// testAcquireInflight pins the fixture's acquire limit well above any
+// concurrency the suite offers (the widest is 100 simultaneous acquires). Every
+// acquire therefore passes through the gate, but the gate never sheds, so the
+// pre-gate expectations of the existing tests must hold unchanged. Tests that
+// need a saturated gate pin a tight limit of their own with newFixtureWith.
+const testAcquireInflight = 1024
+
+// fixtureFleetInflight returns the fleet-wide acquire budget the fixture
+// configures: the production default unless the suite is running the off arm.
+func fixtureFleetInflight() int {
+	if os.Getenv(admissionEnv) == "off" {
+		return 0
+	}
+	return DefaultAcquireFleetInflight
+}
+
+// fixtureMaxInflight returns the per-instance limit the fixture pins, or 0 when
+// the suite is running the off arm.
+func fixtureMaxInflight() int {
+	if fixtureFleetInflight() == 0 {
+		return 0
+	}
+	return testAcquireInflight
+}
+
 func newFixture(t testing.TB) *fixture {
+	t.Helper()
+	return newFixtureWith(t, nil)
+}
+
+// newFixtureWith builds a fixture whose scheduler configuration was adjusted by
+// tune, which runs after the defaults are filled in.
+func newFixtureWith(t testing.TB, tune func(*Config)) *fixture {
 	t.Helper()
 	rdb, keys := testutil.Redis(t)
 	ns := catalogtest.NewNamespace("ten_1", "ns_1", "prod")
@@ -92,8 +133,10 @@ func newFixture(t testing.TB) *fixture {
 		rec: &memRecorder{}, metrics: observability.NewMetrics(), now: testEpoch,
 	}
 	cfg := Config{
-		ReportShards:     testShards,
-		LateReportWindow: 10 * time.Minute,
+		ReportShards:         testShards,
+		LateReportWindow:     10 * time.Minute,
+		AcquireFleetInflight: fixtureFleetInflight(),
+		AcquireMaxInflight:   fixtureMaxInflight(),
 		OnBreakerHalfOpen: func(siteKey, groupKey int64) {
 			f.mu.Lock()
 			f.halfOpen = append(f.halfOpen, groupKey)
@@ -104,6 +147,9 @@ func newFixture(t testing.TB) *fixture {
 			f.bindings = append(f.bindings, b)
 			f.mu.Unlock()
 		},
+	}
+	if tune != nil {
+		tune(&cfg)
 	}
 	f.svc = New(cfg, rdb, keys, f.cat, f.creds, f.proxies, f.rec, f.metrics, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	f.svc.clock = f.clock

@@ -11,9 +11,9 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 
-	"github.com/Evil0ctal/Spinneret/internal/apperr"
-	"github.com/Evil0ctal/Spinneret/internal/policy"
-	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
+	"github.com/TikHub/Spinneret/internal/apperr"
+	"github.com/TikHub/Spinneret/internal/policy"
+	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
 )
 
 // RequestEventQuery filters and pages raw report events. Empty filters match

@@ -10,32 +10,33 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/rueidis"
 
-	"github.com/Evil0ctal/Spinneret/internal/action"
-	"github.com/Evil0ctal/Spinneret/internal/analytics"
-	"github.com/Evil0ctal/Spinneret/internal/appconfig"
-	"github.com/Evil0ctal/Spinneret/internal/audit"
-	"github.com/Evil0ctal/Spinneret/internal/auth"
-	"github.com/Evil0ctal/Spinneret/internal/breaker"
-	"github.com/Evil0ctal/Spinneret/internal/catalog"
-	"github.com/Evil0ctal/Spinneret/internal/configcenter"
-	"github.com/Evil0ctal/Spinneret/internal/events"
-	"github.com/Evil0ctal/Spinneret/internal/hotstate"
-	"github.com/Evil0ctal/Spinneret/internal/identitysvc"
-	"github.com/Evil0ctal/Spinneret/internal/jobs"
-	"github.com/Evil0ctal/Spinneret/internal/notify"
-	"github.com/Evil0ctal/Spinneret/internal/observability"
-	"github.com/Evil0ctal/Spinneret/internal/pkg/netx"
-	"github.com/Evil0ctal/Spinneret/internal/policysvc"
-	"github.com/Evil0ctal/Spinneret/internal/proxy"
-	"github.com/Evil0ctal/Spinneret/internal/scheduler"
-	"github.com/Evil0ctal/Spinneret/internal/signal"
-	"github.com/Evil0ctal/Spinneret/internal/sitesvc"
-	"github.com/Evil0ctal/Spinneret/internal/stats"
-	chstore "github.com/Evil0ctal/Spinneret/internal/store/clickhouse"
-	"github.com/Evil0ctal/Spinneret/internal/store/redis"
-	"github.com/Evil0ctal/Spinneret/internal/tenancy"
-	"github.com/Evil0ctal/Spinneret/internal/vault"
-	"github.com/Evil0ctal/Spinneret/internal/worker"
+	"github.com/TikHub/Spinneret/internal/action"
+	"github.com/TikHub/Spinneret/internal/analytics"
+	"github.com/TikHub/Spinneret/internal/appconfig"
+	"github.com/TikHub/Spinneret/internal/audit"
+	"github.com/TikHub/Spinneret/internal/auth"
+	"github.com/TikHub/Spinneret/internal/breaker"
+	"github.com/TikHub/Spinneret/internal/catalog"
+	"github.com/TikHub/Spinneret/internal/configcenter"
+	"github.com/TikHub/Spinneret/internal/events"
+	"github.com/TikHub/Spinneret/internal/hotstate"
+	"github.com/TikHub/Spinneret/internal/identitysvc"
+	"github.com/TikHub/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/notify"
+	"github.com/TikHub/Spinneret/internal/observability"
+	"github.com/TikHub/Spinneret/internal/peers"
+	"github.com/TikHub/Spinneret/internal/pkg/netx"
+	"github.com/TikHub/Spinneret/internal/policysvc"
+	"github.com/TikHub/Spinneret/internal/proxy"
+	"github.com/TikHub/Spinneret/internal/scheduler"
+	"github.com/TikHub/Spinneret/internal/signal"
+	"github.com/TikHub/Spinneret/internal/sitesvc"
+	"github.com/TikHub/Spinneret/internal/stats"
+	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
+	"github.com/TikHub/Spinneret/internal/store/redis"
+	"github.com/TikHub/Spinneret/internal/tenancy"
+	"github.com/TikHub/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/worker"
 )
 
 // ClickHouse writer settings (spec §6.3: raw report and lease events).
@@ -87,18 +88,21 @@ type components struct {
 	breaker     *breaker.Service
 	bindings    *proxyBindingWriter
 	scheduler   *scheduler.Service
-	ingestor    *signal.Ingestor
-	worker      *worker.Worker // nil unless the role runs workers
-	config      *configcenter.Service
-	notify      *notify.Service
-	analytics   *analytics.Service
-	partitions  *partitionMaintainer
+	// peers is nil unless the acquire admission limit is derived from a
+	// fleet-wide budget, which is the only reason to heartbeat.
+	peers      *peers.Registry
+	ingestor   *signal.Ingestor
+	worker     *worker.Worker // nil unless the role runs workers
+	config     *configcenter.Service
+	notify     *notify.Service
+	analytics  *analytics.Service
+	partitions *partitionMaintainer
 
 	unsubscribeResolver func()
 }
 
 // buildComponents wires the domain services following
-// docs/design/3_service_contracts.md and 6_wiring_interfaces.md.
+// the service and wiring contracts.
 func buildComponents(cfg appconfig.Config, in *infra, metrics *observability.Metrics, logger *slog.Logger) (*components, error) {
 	c := &components{}
 	pool, rdb, keys := in.pool, in.rdb, in.keys
@@ -158,6 +162,16 @@ func buildComponents(cfg appconfig.Config, in *infra, metrics *observability.Met
 	c.bindings = newProxyBindingWriter(pool, metrics, logger)
 	c.scheduler = scheduler.New(c.schedulerConfig(cfg), rdb, keys, c.catalog, c.payloads, schedulerProxyResolver{r: c.resolver},
 		schedulerStats{agg: c.stats}, metrics, logger)
+
+	if cfg.AcquireFleetInflight > 0 && cfg.AcquireMaxInflight == 0 {
+		c.peers = peers.New(peers.Config{
+			InstanceID: cfg.InstanceID,
+			OnLive:     c.scheduler.SetAcquirePeers,
+		}, rdb, keys, logger)
+		// The heartbeat health is what tells a stuck division apart from a real
+		// single-instance deployment, so it is exported wherever the registry runs.
+		metrics.RegisterAcquirePeerRegistry(c.peers.BeatAge, c.peers.BeatFailures)
+	}
 
 	c.ingestor = signal.NewIngestor(signal.Config{
 		ReportShards:     cfg.ReportShards,
@@ -240,10 +254,12 @@ func checkPoolSize(maxConns int32, leaderJobs int) error {
 // notification loop that consumes it runs on every role as well (startLoops).
 func (c *components) schedulerConfig(cfg appconfig.Config) scheduler.Config {
 	return scheduler.Config{
-		ReportShards:      cfg.ReportShards,
-		LateReportWindow:  cfg.LateReportWindow,
-		OnBreakerHalfOpen: c.breaker.NotifyRisk,
-		OnProxyBound:      c.bindings.Record,
+		ReportShards:         cfg.ReportShards,
+		LateReportWindow:     cfg.LateReportWindow,
+		AcquireFleetInflight: cfg.AcquireFleetInflight,
+		AcquireMaxInflight:   cfg.AcquireMaxInflight,
+		OnBreakerHalfOpen:    c.breaker.NotifyRisk,
+		OnProxyBound:         c.bindings.Record,
 	}
 }
 
@@ -266,6 +282,11 @@ func (c *components) startLoops(role appconfig.Role, services, sinks, clickhouse
 		services.Go("auth", c.authn.Run)
 		services.Go("configcenter", c.config.Run)
 		services.Go("kek_rewrap", c.rewrapper.Run)
+		// Acquire runs on API roles only, so only they divide the fleet-wide
+		// acquire budget and only they register as acquirers.
+		if c.peers != nil {
+			services.Go("acquire_peers", c.peers.Run)
+		}
 	}
 	if role.RunsWorkers() {
 		services.Go("notify", c.notify.Run)

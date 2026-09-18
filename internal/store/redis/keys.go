@@ -267,6 +267,12 @@ func (k Keys) Workers() string {
 	return k.begin(7).str("workers").String()
 }
 
+// Acquirers returns "P:acquirers", the ZSET of API instance id → heartbeat ms
+// used to divide the fleet-wide acquire admission budget.
+func (k Keys) Acquirers() string {
+	return k.begin(10).str("acquirers").String()
+}
+
 // RuntimeVersions returns "P:rtv:<nsId>", the runtime config version hash of a namespace.
 func (k Keys) RuntimeVersions(namespaceID string) string {
 	return k.begin(len(namespaceID) + 4).str("rtv:").str(namespaceID).String()

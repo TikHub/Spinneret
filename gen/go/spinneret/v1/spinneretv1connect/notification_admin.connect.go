@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/Evil0ctal/Spinneret/gen/go/spinneret/v1"
+	v1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 	http "net/http"
 	strings "strings"
 )

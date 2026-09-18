@@ -34,6 +34,7 @@ It manages the *state* around your requests; your node still makes them.
 - [Documentation](#documentation)
 - [Development](#development)
 - [Project status](#project-status)
+- [Contributing and support](#contributing-and-support)
 
 ---
 
@@ -50,22 +51,22 @@ It manages the *state* around your requests; your node still makes them.
 
 ## Features
 
-The v0.1 scope follows the [design document](docs/design/0_first_doc.md); every module below is implemented.
+Every module below is implemented in v0.1.
 
 | Module | What it gives you |
 | --- | --- |
-| **Identity scheduling** (§5, §6) | Identity types with typed payload fields and delivery templates; rotation policies (`weighted_random`, `least_recently_used`, `round_robin`, `best_health`), lease TTL and lifetime, reuse interval and anchor, quotas, sticky sessions, warm-up, probe weighting |
-| **Proxy distribution** (§11) | Proxy pool with kinds/regions/providers/tags, assignment modes `none / pool / bind_identity / region_match`, session templates, periodic health checks, per-site proxy cooldowns |
-| **Reporting & signal detection** (§7) | Batched, idempotent reports; configurable signal rules over status, business code, error kind, markers, URI, method, latency and size; 12 outcomes; cross attribution between identity and proxy |
-| **Cooldowns & bans** (§8) | Cooldown / expire / quarantine / ban at identity-endpoint, identity-site, identity, account, proxy-site and proxy scope; exponential backoff with caps; escalation ladders; shadow mode; manual operations and bulk rollback (`RevertActions`) |
-| **Health & lifecycle** (§9) | EWMA health score with time decay, per-endpoint low-score cooldowns, automatic quarantine, identity state machine (`pending → active → quarantined / banned / expired / disabled / retired`) |
-| **Circuit breaking** (§10) | Per endpoint group sliding-window statistics, three-state breaker (closed / open / half-open) with probe leases, manual open/close, optional revert of cooldowns applied in the tripping window |
-| **Config center** (§12) | Versioned config items with drafts, publish, rollback and diffs; long-poll `WatchConfig`; local snapshots in the SDKs; `${secret:path}` references; read-only `_runtime` group exposing breakers and site switches |
-| **Vault** (§13) | AES-256-GCM envelope encryption (KEK → DEK → data), file or env KEK providers, online KEK rotation and rewrap, secret versions and expiry, every read audited |
-| **Auth & tenancy** (§14) | Tenants → namespaces → sites; console users with roles `viewer / operator / admin / owner`, per-namespace and per-site bindings; node API tokens with fine-grained scopes; Argon2id passwords, login throttle, sessions, CSRF |
-| **Web console** (§17) | 21 routes covering every module, English and Chinese, light and dark, live updates over SSE |
-| **Notifications** (§18.3) | Webhook (HMAC-signed), Feishu, DingTalk, WeCom, Telegram; 11 alert kinds with de-duplication and per-site routing |
-| **Observability** (§18.3) | `/healthz`, `/readyz`, Prometheus `/metrics`, optional OTLP tracing, ClickHouse-backed request explorer |
+| **[Identity scheduling](documents/en/06-identities.md)** | Identity types with typed payload fields and delivery templates; rotation policies (`weighted_random`, `least_recently_used`, `round_robin`, `best_health`), lease TTL and lifetime, reuse interval and anchor, quotas, sticky sessions, warm-up, probe weighting |
+| **[Proxy distribution](documents/en/07-proxies.md)** | Proxy pool with kinds/regions/providers/tags, assignment modes `none / pool / bind_identity / region_match`, session templates, periodic health checks, per-site proxy cooldowns |
+| **[Reporting & signal detection](documents/en/08-policies.md)** | Batched, idempotent reports; configurable signal rules over status, business code, error kind, markers, URI, method, latency and size; 12 outcomes; cross attribution between identity and proxy |
+| **[Cooldowns & bans](documents/en/08-policies.md)** | Cooldown at identity-endpoint, identity-site, identity, account, proxy-site and proxy scope; ban at identity, account and proxy; quarantine at identity and proxy; expire at identity; exponential backoff with caps; escalation ladders; shadow mode; manual operations and bulk rollback (`RevertActions`) |
+| **[Health & lifecycle](documents/en/06-identities.md)** | EWMA health score with time decay, per-endpoint low-score cooldowns, automatic quarantine, identity state machine (`pending → active → quarantined / banned / expired / disabled / retired`) |
+| **[Circuit breaking](documents/en/08-policies.md)** | Per endpoint group sliding-window statistics, three-state breaker (closed / open / half-open) with probe leases, manual open/close, optional revert of cooldowns applied in the tripping window |
+| **[Config center](documents/en/09-config-center.md)** | Versioned config items with drafts, publish, rollback and diffs; long-poll `WatchConfig`; local snapshots in the SDKs; `${secret:path}` references; read-only `_runtime` group exposing breakers and site switches |
+| **[Vault](documents/en/10-secrets.md)** | AES-256-GCM envelope encryption (KEK → DEK → data), file or env KEK providers, online KEK rotation and rewrap, secret versions and expiry, every read audited |
+| **[Auth & tenancy](documents/en/11-access-control.md)** | Tenants → namespaces → sites; console users with roles `viewer / operator / admin / owner`, per-namespace and per-site bindings; node API tokens with fine-grained scopes; Argon2id passwords, login throttle, sessions, CSRF |
+| **[Web console](documents/en/05-console-overview.md)** | 21 routes covering every module, English and Chinese, light and dark, live updates over SSE |
+| **[Notifications](documents/en/12-observability.md)** | Webhook (HMAC-signed), Feishu, DingTalk, WeCom, Telegram; 11 automatic alert kinds plus a test alert, with de-duplication and per-site routing |
+| **[Observability](documents/en/12-observability.md)** | `/healthz`, `/readyz`, Prometheus `/metrics`, optional OTLP tracing, ClickHouse-backed request explorer |
 
 ---
 
@@ -99,7 +100,8 @@ flowchart LR
     WRK --> PG
     WRK --> CH
     API <--> PG
-    API -.->|"pub/sub: catalog, config, runtime"| RD
+    API -.->|"request explorer"| CH
+    API -.->|"pub/sub: catalog, tokens, config, runtime"| RD
     WRK -->|alerts| NOTIFY["Webhook · Feishu<br/>DingTalk · WeCom · Telegram"]
     BROWSER["Operator browser"] --> LB
 ```
@@ -123,23 +125,44 @@ split the roles when you want to scale request serving and report processing ind
 
 | | |
 | --- | --- |
-| ![Overview](docs/images/overview.png) | ![Identities](docs/images/identities.png) |
+| ![Overview](documents/images/overview.png) | ![Identities](documents/images/identities.png) |
 | Overview: per-site health, QPS, outcome mix, breakers | Identities: state, health score, cooldowns, filters |
-| ![Heatmap](docs/images/heatmap.png) | ![Policies](docs/images/policies.png) |
+| ![Heatmap](documents/images/heatmap.png) | ![Policies](documents/images/policies.png) |
 | Heatmap: identity × endpoint group availability | Policies: YAML editor, versions, diff, publish |
-| ![Breakers](docs/images/breakers.png) | ![Requests](docs/images/requests.png) |
+| ![Breakers](documents/images/breakers.png) | ![Requests](documents/images/requests.png) |
 | Breakers: state, windows, manual open/close, site switches | Request explorer: every report with outcome and blame |
 
-The console is bilingual — the same overview in Chinese: [`docs/images/overview-zh.png`](docs/images/overview-zh.png).
+The console is bilingual — the same overview in Chinese: [`documents/images/overview-zh.png`](documents/images/overview-zh.png).
 
 ---
 
 ## Quickstart
 
-Requirements: Docker 24+ with the Compose plugin, ~4 GB free RAM, ports 8080 (console/API) free.
+Requirements: Docker Engine with the Compose plugin, Compose 2.24 or newer, ~4 GB free RAM, one free host
+port (8080 by default).
+
+### One command
 
 ```bash
-git clone https://github.com/Evil0ctal/Spinneret.git
+curl -fsSL https://raw.githubusercontent.com/TikHub/Spinneret/main/install/install.sh -o install.sh
+less install.sh          # read it first; you are about to run it
+bash install.sh
+```
+
+The guided installer detects the host, offers to install Docker if it is missing, clones the repository,
+generates the passwords and the vault key **on the machine**, writes the Compose overrides for this host,
+pulls or builds, migrates, starts, waits for `/readyz` and creates the first administrator — asking seven
+questions, each with a default. `--yes` takes every default, `--check` changes nothing and prints what would
+happen, and `--manage` re-opens it as a management menu: status, upgrade, accounts, tokens, backup, restore,
+health, disk, uninstall.
+
+A Chinese version with identical behaviour is [`install/install.zh.sh`](install/install.zh.sh);
+[`install/README.md`](install/README.md) documents every question, flag and file it writes.
+
+### Or by hand
+
+```bash
+git clone https://github.com/TikHub/Spinneret.git
 cd Spinneret
 
 # 1. Generate deploy/compose/.env (random passwords) and deploy/compose/secrets/kek.key
@@ -273,7 +296,8 @@ Spinneret-Retry-After-Ms: 59367
 {"code":"resource_exhausted","message":"no identity available for example/web/search"}
 ```
 
-The full reference — every node service, error reason and retry rule — is in [`docs/api.md`](docs/api.md).
+The full reference — every node service, error reason and retry rule — is in
+[Node API reference](documents/en/13-node-api.md).
 
 ---
 
@@ -281,8 +305,8 @@ The full reference — every node service, error reason and retry rule — is in
 
 | SDK | Package | Highlights |
 | --- | --- | --- |
-| **Python** — [`sdk/python`](sdk/python/README.md) | `pip install spinneret` | Sync `Client` and asyncio `AsyncClient` on httpx, pydantic v2 models, `with client.lease(...)` merging credentials and proxy into `httpx` arguments, background batching reporter, config watcher with encrypted local snapshots |
-| **Go** — [`sdk/go`](sdk/go/README.md) | `github.com/Evil0ctal/Spinneret/sdk/go/spinneret` | Connect JSON or gRPC, typed errors (`IsCircuitOpen`, `IsNoIdentity`, …), `Lease.Apply(req)` / `Lease.Transport(base)`, batching `Reporter`, `ConfigWatcher` with snapshots |
+| **Python** — [`sdk/python`](sdk/python/README.md) | `pip install spinneret` | Sync `Client` and asyncio `AsyncClient` on httpx, pydantic v2 models, `with client.lease(...)` merging credentials and proxy into `httpx` arguments, background batching reporter, config watcher with local snapshots, optionally AES-256-GCM encrypted |
+| **Go** — [`sdk/go`](sdk/go/README.md) | `github.com/TikHub/Spinneret/sdk/go/spinneret` | Connect JSON or gRPC, typed errors (`IsCircuitOpen`, `IsNoIdentity`, …), `Lease.Apply(req)` / `Lease.Transport(base)`, batching `Reporter`, `ConfigWatcher` with snapshots |
 
 ```python
 import httpx, spinneret
@@ -312,7 +336,8 @@ if err != nil {
 return lease.ReportResponse(resp, spinneret.ReportInput{Markers: detectMarkers(resp)})
 ```
 
-No SDK for your language? Plain HTTP + JSON is a first-class client — see [`docs/api.md`](docs/api.md).
+No SDK for your language? Plain HTTP + JSON is a first-class client — see
+[Node API reference](documents/en/13-node-api.md).
 
 ---
 
@@ -320,17 +345,41 @@ No SDK for your language? Plain HTTP + JSON is a first-class client — see [`do
 
 | Document | Contents |
 | --- | --- |
-| [`docs/deployment.md`](docs/deployment.md) · [中文](docs/deployment.zh-CN.md) | Requirements, Compose deployment, every `SPINNERET_*` variable, KEK management, TLS and reverse proxies, scaling, upgrades, backups, hardening, troubleshooting |
-| [`docs/operations.md`](docs/operations.md) · [中文](docs/operations.zh-CN.md) | Day-2 runbook: tenants, users and roles, tokens, sites and endpoint groups, identity types and imports, policy YAML for all four kinds, breakers, rollback, proxies, config and secrets, notifications, monitoring, hot-state rebuild, KEK rotation, retention |
-| [`docs/api.md`](docs/api.md) · [中文](docs/api.zh-CN.md) | Node API reference with request/response JSON, error reason table, retry guidance, admin API overview |
-| [`docs/benchmarks.md`](docs/benchmarks.md) · [中文](docs/benchmarks.zh-CN.md) | Measured performance against the v0.1 targets: method, results per scenario, where the time goes, Redis sizing, tuning recommendations |
+| [All documentation](documents/README.md) · [中文](documents/README.zh-CN.md) | The documentation index, organized by what you are trying to do |
+| **Getting started** | |
+| [Quick start](documents/en/01-quickstart.md) · [中文](documents/zh/01-quickstart.md) | From nothing to a node talking to the control plane, in about ten minutes |
+| [Installation and deployment](documents/en/02-installation.md) · [中文](documents/zh/02-installation.md) | Requirements, the one-command installer, manual Compose, override files, reverse proxies and TLS, several stacks on one host, upgrades, uninstalling |
+| [Configuration](documents/en/03-configuration.md) · [中文](documents/zh/03-configuration.md) | Every `SPINNERET_*` variable with its default, meaning and validation rule |
+| [Concepts](documents/en/04-concepts.md) · [中文](documents/zh/04-concepts.md) | The mental model: identities, leases, reports, outcomes, health, breakers |
+| **Using it** | |
+| [Console overview](documents/en/05-console-overview.md) · [中文](documents/zh/05-console-overview.md) | What each of the console's pages is for |
+| [Identities and accounts](documents/en/06-identities.md) · [中文](documents/zh/06-identities.md) | Identity types, imports, the state machine, manual operations |
+| [Proxies](documents/en/07-proxies.md) · [中文](documents/zh/07-proxies.md) | Pools, assignment modes, session templates, health checks |
+| [Policies](documents/en/08-policies.md) · [中文](documents/zh/08-policies.md) | The YAML of all four kinds, publishing, shadow mode, the rule debugger |
+| [Config center](documents/en/09-config-center.md) · [中文](documents/zh/09-config-center.md) | Versioned config, drafts, rollback, long-poll `WatchConfig` |
+| [Secret vault](documents/en/10-secrets.md) · [中文](documents/zh/10-secrets.md) | Envelope encryption, secret references, versions, audit |
+| [Access control](documents/en/11-access-control.md) · [中文](documents/zh/11-access-control.md) | Tenants, namespaces, roles, bindings, node token scopes |
+| [Observability and alerting](documents/en/12-observability.md) · [中文](documents/zh/12-observability.md) | Metrics, the signals worth alerting on, notification channels, tracing |
+| **Integrating** | |
+| [Node API reference](documents/en/13-node-api.md) · [中文](documents/zh/13-node-api.md) | Every node RPC with request/response JSON, error reasons, retry rules |
+| [SDKs](documents/en/14-sdks.md) · [中文](documents/zh/14-sdks.md) | Python and Go SDK reference |
+| [CLI reference](documents/en/15-cli.md) · [中文](documents/zh/15-cli.md) | `spnr` and `spinneret-server`: every command, flag, exit code, signal |
+| **Running it** | |
+| [Operations](documents/en/16-operations.md) · [中文](documents/zh/16-operations.md) | Backups and restore, key rotation, upgrades, scaling, hot-state rebuild, retention, incident playbooks |
+| [Performance and tuning](documents/en/17-performance.md) · [中文](documents/zh/17-performance.md) | Measured throughput and latency, where the time goes, Redis sizing, the levers in the order they pay |
+| [Troubleshooting](documents/en/18-troubleshooting.md) · [中文](documents/zh/18-troubleshooting.md) | By error text |
+| [Security hardening](documents/en/19-security.md) · [中文](documents/zh/19-security.md) | The checklist to work through before anyone else can reach it |
+| [Contributing](documents/en/20-contributing.md) · [中文](documents/zh/20-contributing.md) | Development workflow, tests, generated code |
+| [FAQ and glossary](documents/en/21-faq.md) · [中文](documents/zh/21-faq.md) | Every term, in both languages |
+| **In the repository** | |
+| [`install/README.md`](install/README.md) | The one-command installer, question by question |
 | [`proto/README.md`](proto/README.md) | Wire conventions, JSON mapping, headers, service list |
-| [`sdk/python/README.md`](sdk/python/README.md) · [中文](sdk/python/README.zh-CN.md) | Python SDK reference |
-| [`sdk/go/README.md`](sdk/go/README.md) · [中文](sdk/go/README.zh-CN.md) | Go SDK reference |
+| [`sdk/python/README.md`](sdk/python/README.md) · [中文](sdk/python/README.zh-CN.md) | Python SDK package |
+| [`sdk/go/README.md`](sdk/go/README.md) · [中文](sdk/go/README.zh-CN.md) | Go SDK package |
 | [`examples/fastapi-crawler/README.md`](examples/fastapi-crawler/README.md) · [中文](examples/fastapi-crawler/README.zh-CN.md) | Example node, endpoint by endpoint |
 | [`web/README.md`](web/README.md) | Console development |
-| [`test/load/README.md`](test/load/README.md) | k6 load scenarios, the metric snapshot tooling and their targets |
-| [`docs/design/`](docs/design/) | Design document (Chinese) and the engineering specifications it was built from |
+| [`test/load/README.md`](test/load/README.md) | k6 load scenarios and the metric snapshot tooling |
+| [`test/perf/README.md`](test/perf/README.md) | Go hot-path benchmarks and the per-script Redis CPU baselines |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
 
 ---
@@ -384,13 +433,14 @@ spnr config check                spnr healthcheck --url http://127.0.0.1:8080/re
 
 ## Project status
 
-Spinneret v0.1 is feature-complete against its design document: the four milestones (core path, risk-control
-loop, infrastructure, console and release) are implemented, and the stack ships with Go end-to-end scenarios,
-a failover drill, a Playwright console suite and k6 load scenarios.
+Spinneret v0.1 is feature-complete: the four milestones (core path, risk-control loop, infrastructure,
+console and release) are implemented, and the stack ships with Go end-to-end scenarios, a failover drill,
+a Playwright console suite and k6 load scenarios.
 
-**Every §18.4 performance target is met on one server instance and one Redis instance.** Measured on the
-design's own test condition (one site, 100,000 identities, 50 endpoint groups) after the Lua hot-path
-optimizations:
+**Every v0.1 performance target is met on one server instance and one Redis instance, the Acquire
+throughput target within 0.2 % and with conditions.** Measured on one site with 100,000 identities
+across 50 endpoint groups, after the Lua hot-path optimizations
+([full tables, method and caveats](documents/en/17-performance.md)):
 
 * Acquire alone: **4,993/s per instance at server-side p99 4.32 ms** (peak 7,792/s), against a target of
   5,000/s at p99 < 5 ms.
@@ -402,17 +452,39 @@ optimizations:
 * One acquire→report cycle costs **168.3 µs of Redis CPU**, down from 271.2 µs: **5,940 cycles/s per Redis
   thread** instead of 3,690.
 
-The remaining bottleneck is not Redis CPU. Two replicas behind the load balancer reach 3,000 cycles/s in
-aggregate — *less* than one replica alone — because each instance drives its own unbounded concurrency at
-the shared Redis, and a failing acquire costs about five times a succeeding one, so contention amplifies
-into congestion collapse instead of degrading gracefully. The next levers are per-instance admission
-control on the Acquire path, making a rejected candidate cheap, and then Redis Cluster.
-[`docs/benchmarks.md`](docs/benchmarks.md) has the full before/after tables, the per-script costs and the
-Valkey settings the numbers depend on.
+**Two replicas share one Redis, so extra replicas add server capacity, not acquire throughput.** Measured
+from a rebuilt and warmed pool: two replicas serve **4,000 cycles/s**, one replica serves **4,499/s** at
+4,500 offered. Redis capacity is what raises the acquire ceiling; replicas raise long-poll capacity, report
+processing and availability.
+
+v0.1 bounds each instance's concurrency at Redis with **acquire admission control**
+(`SPINNERET_ACQUIRE_FLEET_INFLIGHT`, 64 across the whole fleet by default, divided by the live instances
+each one sees; `0` turns it off). Excess acquires are shed inside the server, before any Redis command is
+issued, as `unavailable`/`overloaded` with a jittered retry hint. Measured: it costs a single replica
+nothing (4,499 of 4,500 offered, p99 1.97 ms, 0.4 sheds/s); at capacity two replicas behave the same gated
+or ungated (~4,000 cycles/s either way, for some tail — acquire p99 2.99 ms against 1.66 ms); and past
+capacity it converts overload into shedding rather than timeouts (at 4,500 offered: 2,418 cycles/s served,
+1,881/s shed, acquire p99 a finite 89 ms).
+
+An earlier round of this README reported two replicas peaking at 3,000 cycles/s and collapsing at 3,500.
+**That does not reproduce** — it was at least partly a measurement artefact, and the gate is not its cure.
+[Performance and tuning](documents/en/17-performance.md) has the full tables, what was deliberately *not*
+measured and why, the per-script costs, the Valkey settings the numbers depend on, and the A/B recipe for
+measuring the gate on your own hardware. The remaining levers are making a rejected candidate cheap, and
+then Redis Cluster.
 
 Candidates for v0.2 (explicitly out of scope for v0.1): distributed global rate limiting, external validator
 and refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
 fingerprint distribution, browser pools.
 
-**License:** none yet — no license file is published with this repository, so all rights are reserved by the
-authors until one is added. Ask before redistributing.
+---
+
+## Contributing and support
+
+| | |
+| --- | --- |
+| Found a bug, or want a feature? | Open an issue — see [CONTRIBUTING.md](CONTRIBUTING.md) for what makes a good one, and [documents/en/20-contributing.md](documents/en/20-contributing.md) for the development guide |
+| Found a security problem? | Do **not** open a public issue. [SECURITY.md](SECURITY.md) explains private reporting |
+| Not sure how something works? | [FAQ and glossary](documents/en/21-faq.md), then [Troubleshooting](documents/en/18-troubleshooting.md) |
+
+**License:** [Apache License 2.0](LICENSE). Maintained and open-sourced by [TikHub](https://github.com/TikHub).

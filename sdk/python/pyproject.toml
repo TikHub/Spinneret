@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Python SDK for Spinneret: identity leasing, proxy assignment, outcome reporting and config center for crawler nodes."
 readme = "README.md"
 requires-python = ">=3.9"
-authors = [{ name = "Evil0ctal" }]
+authors = [{ name = "TikHub", email = "support@tikhub.io" }]
 keywords = ["crawler", "scraping", "proxy", "identity", "rotation", "connectrpc"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -44,8 +44,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Evil0ctal/Spinneret"
-Source = "https://github.com/Evil0ctal/Spinneret/tree/main/sdk/python"
+Homepage = "https://github.com/TikHub/Spinneret"
+Source = "https://github.com/TikHub/Spinneret/tree/main/sdk/python"
 
 [tool.hatch.version]
 path = "src/spinneret/_version.py"

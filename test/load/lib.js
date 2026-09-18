@@ -59,6 +59,16 @@ export function connectError(res) {
   return `http_${res.status}`;
 }
 
+// connectReason returns the Spinneret-Reason header of a failed response, or ''.
+// The header is what distinguishes the failure modes that share one Connect code:
+// unavailable is sent for an open breaker, a paused site and an admission-control
+// shed alike, and resource_exhausted for an empty identity pool and for a missing
+// proxy.
+export function connectReason(res) {
+  const h = res.headers || {};
+  return h['Spinneret-Reason'] || h['spinneret-reason'] || '';
+}
+
 // summaryMetrics flattens the k6 summary into a small JSON object: counters and
 // rates as numbers, trends as their statistics. test/load/run.sh stores it next
 // to the server-side metric delta of the same run.

@@ -25,6 +25,7 @@ export const KNOWN_REASONS = [
   'no_proxy_available',
   'circuit_open',
   'site_paused',
+  'overloaded',
   'rebuilding',
   'lease_unknown',
   'lease_released',

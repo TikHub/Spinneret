@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/TikHub/Spinneret/security/advisories/new
+    about: Report privately. Never open a public issue for a security problem.
+  - name: Question or discussion
+    url: https://github.com/TikHub/Spinneret/discussions
+    about: Ask how something works, or propose an idea before it becomes an issue.
+  - name: Documentation
+    url: https://github.com/TikHub/Spinneret/tree/main/documents
+    about: The full bilingual manual — quick start, deployment, operations, API.

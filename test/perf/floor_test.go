@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	storeredis "github.com/Evil0ctal/Spinneret/internal/store/redis"
+	storeredis "github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 // acquireFloorLua issues exactly the twelve Redis commands that one successful

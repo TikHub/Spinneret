@@ -1,7 +1,7 @@
 -- Spinneret core schema: tenancy, access control, sites, identities, proxies,
 -- policies, hot-state snapshots, breaker history, config center, vault,
 -- notifications and system settings. Column lists follow section 4 of
--- docs/design/1_implementation_spec.md.
+-- the implementation specification.
 
 -- +goose Up
 

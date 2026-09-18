@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	storeredis "github.com/Evil0ctal/Spinneret/internal/store/redis"
+	storeredis "github.com/TikHub/Spinneret/internal/store/redis"
 )
 
 var (

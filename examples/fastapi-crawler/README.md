@@ -31,7 +31,7 @@ headers (a real crawler would parse the page instead).
 | `GET /healthz` | Liveness |
 
 A crawl answers `200` with `{"ok", "status", "identity_id", "proxy_id", "endpoint_group", "markers",
-"business_code", "data"}`. Lease failures are mapped to HTTP answers: `503` for `circuit_open` / `site_paused`,
+"business_code", "data"}`. Lease failures are mapped to HTTP answers: `503` for `circuit_open` / `site_paused` / `overloaded`,
 `429` for `no_identity_available` / `no_proxy_available` (both with `Retry-After` from the server hint), `502`
 for other Spinneret errors and for requests that never got a response (reported with their `error_kind`).
 
@@ -110,6 +110,8 @@ host; use the compose service or add `127.0.0.1 mocktarget` to `/etc/hosts` and 
   `deploy/compose/.env` and restart the `spinneret` service.
 - `503 site_paused`: the site switch is off (`BreakerAdminService/SetSitePaused` or the console).
 - `503 circuit_open`: the endpoint group breaker is open; it closes again once the target recovers.
+- `503 overloaded`: the server is at its acquire concurrency limit and shed the call before it
+  reached Redis. Nothing was consumed; retry after `Retry-After`.
 
 ## Production notes
 

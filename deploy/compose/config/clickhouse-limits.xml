@@ -6,7 +6,7 @@
   is 90 % of RAM and the mark cache alone is allowed 5 GiB. In a laptop Docker VM that is
   shared with PostgreSQL, Valkey, the server replicas and the k6 load generator, that made
   ClickHouse grow past 1.1 GiB and get picked by the kernel OOM killer during the 5,000/s
-  load run — which froze the whole VM, not just ClickHouse (docs/benchmarks.md, Scenario A).
+  load run — which froze the whole VM, not just ClickHouse (documents/en/17-performance.md, Scenario A).
 
   Spinneret uses ClickHouse for batched append-only analytics writes and for console
   queries over them, so it needs a working set, not a cache of the whole dataset.
