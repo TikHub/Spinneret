@@ -31,7 +31,7 @@ dependencies = [
 [project.optional-dependencies]
 # Enables encrypted on-disk snapshots of config items that reference secrets
 # (ConfigWatcher(cache_secrets=True)).
-crypto = ["cryptography>=42"]
+crypto = ["cryptography>=50.0.1"]
 dev = [
   "pytest>=8",
   "pytest-asyncio>=0.24",
@@ -39,7 +39,7 @@ dev = [
   "respx>=0.22",
   "ruff>=0.5",
   "mypy>=1.10",
-  "cryptography>=42",
+  "cryptography>=50.0.1",
 ]
 
 [project.urls]
