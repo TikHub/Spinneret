@@ -17,7 +17,12 @@ import (
 	"github.com/TikHub/Spinneret/internal/pkg/idgen"
 )
 
-const fixtureTimeout = 10 * time.Second
+// fixtureTimeout guards against a hung fixture; it is not a latency assertion.
+// It is generous on purpose: in CI the whole Go suite runs with -race against one
+// PostgreSQL service container, and a ten-second bound turned that contention into
+// "i/o timeout" on a plain INSERT. The ClickHouse helpers allow three minutes for
+// the same reason.
+const fixtureTimeout = time.Minute
 
 func exec(t testing.TB, pool *pgxpool.Pool, sql string, args ...any) {
 	t.Helper()
