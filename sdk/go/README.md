@@ -2,9 +2,11 @@
 
 [中文文档](README.zh-CN.md)
 
-Go client for [Spinneret](https://github.com/TikHub/Spinneret), the control plane that leases
-identities (cookies, device parameters, accounts) and proxies to crawler nodes, turns request
-reports into cooldowns, bans and circuit breaking, and distributes configuration and secrets.
+Go client for [Spinneret](https://github.com/TikHub/Spinneret), the control plane for fleets that share
+scarce, rate-limited credentials and egress. It leases one identity (an API key, a token, an
+account session, a cookie jar, a device fingerprint) and one proxy per request, turns the reports
+workers send back into cooldowns, bans, health scores and circuit breaking, and distributes
+versioned configuration and secrets to the same fleet.
 
 - `Client` on top of the generated Connect clients, speaking Connect JSON (default) or gRPC
 - Authentication (`Authorization: Bearer`) and node (`X-Spinneret-Node`) headers on every call

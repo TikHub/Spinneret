@@ -2,8 +2,9 @@
 
 [English](README.md)
 
-[Spinneret](https://github.com/TikHub/Spinneret) 的 Python 客户端。Spinneret 是爬虫与 API 节点的控制面：
-向节点租出身份（Cookie、设备参数、账号）与代理，根据请求上报执行冷却、封禁与熔断，并下发配置与密钥。
+[Spinneret](https://github.com/TikHub/Spinneret) 的 Python 客户端。Spinneret 是共用稀缺、限速凭据与
+出口的节点集群的控制平面：每次请求租出一个身份（API key、token、账号会话、Cookie 罐、设备指纹）和一个代理，
+把节点上报的结果转成冷却、封禁、健康分与熔断，并向同一批节点下发带版本的配置与密钥。
 
 - 基于 `httpx` 的同步客户端 `Client` 与 asyncio 客户端 `AsyncClient`
 - 覆盖全部节点接口消息的 pydantic v2 类型模型

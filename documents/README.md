@@ -1,7 +1,7 @@
 # Documentation
 
-Everything you need to deploy, use, operate and extend **Spinneret** — the control plane for
-multi-node crawlers and API nodes.
+Everything you need to deploy, use, operate and extend **Spinneret** — a control plane for fleets
+that share scarce, rate-limited credentials and egress.
 
 **中文文档：[README.zh-CN.md](./README.zh-CN.md)** — every page here exists in both languages and
 they say the same thing.

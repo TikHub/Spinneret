@@ -111,7 +111,8 @@ All notable changes to Spinneret are documented here. The format follows
 
 ## [0.1.0] — 2026-09-17
 
-First release. Spinneret is a control plane for multi-node crawlers and API nodes: it leases identities and
+First release. Spinneret is a control plane for fleets that share scarce, rate-limited credentials and
+egress: it leases identities and
 proxies to nodes, turns the request results they report into cooldowns, bans, health scores and circuit
 breaking, and distributes versioned configuration and secrets. Nodes need only a server URL and an API
 token.

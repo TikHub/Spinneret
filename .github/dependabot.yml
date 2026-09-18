@@ -1,0 +1,61 @@
+# Dependabot keeps the four ecosystems this repository actually builds from up to date.
+# Alerts alone only tell you about a vulnerability; these entries are what open the pull request.
+#
+# Updates are grouped so that a week of patch bumps arrives as one reviewable PR per ecosystem
+# rather than a dozen. Major versions are deliberately left ungrouped: they need a human.
+version: 2
+
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope
+    groups:
+      go-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope
+    groups:
+      # The console's toolchain moves as a set; splitting it produces PRs that
+      # cannot pass CI on their own.
+      console-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /sdk/python
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: scope
+    groups:
+      python-sdk-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
+      include: scope
+    groups:
+      actions-all:
+        patterns: ["*"]
