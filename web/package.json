@@ -84,6 +84,9 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "dompurify": ">=3.4.13"
+    }
   }
 }
