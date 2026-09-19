@@ -27,6 +27,20 @@ import (
 	"github.com/TikHub/Spinneret/internal/vault/vaulttest"
 )
 
+// alertWait bounds the asynchronous path this package's tests keep waiting on:
+// an event is published to the bus, a worker evaluates it, and an alert is
+// stored and delivered. It is a liveness bound and never a performance
+// assertion — locally the path completes in tens of milliseconds, and
+// require.Eventually returns the moment the condition holds, so a generous
+// bound costs a passing run nothing.
+//
+// It is generous because the bound, not the code, is what breaks: the package
+// runs about seventy tests in parallel against one PostgreSQL, and CI runs them
+// under -race on a two-core runner. waitDeliveries had already been raised from
+// five seconds to ten for that reason, and TestBusBreakerTrackEventShape still
+// failed on CI at five while passing everywhere else.
+const alertWait = time.Minute
+
 // recorder captures audit entries.
 type recorder struct {
 	mu      sync.Mutex
@@ -155,7 +169,7 @@ func (e *env) waitDeliveries(alertID string, n int) []Delivery {
 		}
 		got = alertEventOf(row).Deliveries
 		return len(got) >= n
-	}, 10*time.Second, 10*time.Millisecond)
+	}, alertWait, 10*time.Millisecond)
 	return got
 }
 

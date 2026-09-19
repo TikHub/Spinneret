@@ -89,7 +89,7 @@ func TestIdentityExpiredRecoveredAfterBusOverflow(t *testing.T) {
 
 	// The queued events are converted by the bus loop.
 	e.startService()
-	require.Eventually(t, func() bool { return len(expiredIdentityIDs(e)) == queued }, 5*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return len(expiredIdentityIDs(e)) == queued }, alertWait, 10*time.Millisecond)
 
 	// The evaluation job restores the dropped ones.
 	require.NoError(t, e.svc.EvaluateJob().Run(ctx))
@@ -98,7 +98,7 @@ func TestIdentityExpiredRecoveredAfterBusOverflow(t *testing.T) {
 	for _, id := range ids {
 		require.Equal(t, 1, got[id], "identity %s must alert exactly once", id)
 	}
-	require.Eventually(t, func() bool { return len(hook.received()) == total }, 5*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return len(hook.received()) == total }, alertWait, 10*time.Millisecond)
 	for _, a := range e.alerts() {
 		require.Equal(t, "web_cookie", a.Details["type"])
 		require.Equal(t, "shop", a.Details["site"])

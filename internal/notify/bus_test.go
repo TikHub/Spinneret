@@ -44,7 +44,7 @@ func waitAlerts(t *testing.T, e *env, kind string, n int) []AlertEvent {
 		require.NoError(t, err)
 		got = page.Events
 		return len(got) >= n
-	}, 5*time.Second, 10*time.Millisecond)
+	}, alertWait, 10*time.Millisecond)
 	return got
 }
 
@@ -100,7 +100,7 @@ func TestBusBreakerTransitions(t *testing.T) {
 	require.NoError(t, e.bus.Publish(context.Background(), events.ChannelCatalog, events.Event{Type: events.TypeBreakerTransition}))
 
 	// Deliveries: opened + reopened + closed.
-	require.Eventually(t, func() bool { return len(hook.received()) == 3 }, 5*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return len(hook.received()) == 3 }, alertWait, 10*time.Millisecond)
 	time.Sleep(50 * time.Millisecond)
 	require.Len(t, waitAlerts(t, e, KindBreakerOpened, 1), 1)
 	require.Len(t, e.alerts(), 3)
@@ -140,7 +140,7 @@ func TestBusIdentityExpired(t *testing.T) {
 		"identity_id": identityID, "site": "shop", "site_id": e.site.ID, "type": "web_cookie",
 		"client": "web", "reason": "auth_invalid x3", "from": "active",
 	}, a.Details)
-	require.Eventually(t, func() bool { return len(hook.received()) == 1 }, 5*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return len(hook.received()) == 1 }, alertWait, 10*time.Millisecond)
 	body := decodeJSON(t, hook.received()[0].Body)
 	require.Equal(t, KindIdentityExpired, body["kind"])
 	require.Equal(t, identityID, body["details"].(map[string]any)["identity_id"])
@@ -150,7 +150,7 @@ func TestBusIdentityExpired(t *testing.T) {
 	publish(t, e, change("", deleted, "active", "expired"))
 	require.Eventually(t, func() bool {
 		return len(waitAlerts(t, e, KindIdentityExpired, 1)) == 2
-	}, 5*time.Second, 10*time.Millisecond)
+	}, alertWait, 10*time.Millisecond)
 	for _, ev := range e.alerts() {
 		if ev.Details["identity_id"] == deleted {
 			require.Equal(t, "", ev.Details["type"])

@@ -82,7 +82,7 @@ func TestEmitMatchesChannelsAndPersistsDeliveries(t *testing.T) {
 	require.Eventually(t, func() bool {
 		ch, err := e.svc.GetChannel(ctx, matching[0].ID)
 		return err == nil && ch.LastDeliveryStatus == "ok" && ch.LastDeliveryAt != nil
-	}, 5*time.Second, 10*time.Millisecond)
+	}, alertWait, 10*time.Millisecond)
 	require.Equal(t, 2.0, counterValue(t, e.metrics.NotifyDeliveries.WithLabelValues(ChannelWebhook, "ok")))
 
 	mu.Lock()
@@ -160,7 +160,7 @@ func TestEmitRetriesAndFailures(t *testing.T) {
 		}
 		return statuses["flaky"] == "ok" && statuses["broken"] == "http: unexpected status 500" &&
 			statuses["gone"] == "http: unexpected status 404"
-	}, 5*time.Second, 10*time.Millisecond)
+	}, alertWait, 10*time.Millisecond)
 	require.Equal(t, 2.0, counterValue(t, e.metrics.NotifyDeliveries.WithLabelValues(ChannelWebhook, "error")))
 }
 
