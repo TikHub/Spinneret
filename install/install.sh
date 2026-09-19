@@ -937,6 +937,17 @@ write_env() {
     else
       printf '# This install builds the image from the checkout; there is no compose.image.yml.\n'
     fi
+    # Valkey's four I/O threads buy latency on a host with cores to spare, and
+    # cost a core this host does not have: it runs PostgreSQL, ClickHouse, the
+    # server and the load balancer on the same two. Valkey executes every command
+    # on its main thread whatever this is set to, so lowering it gives up tail
+    # latency at high rates rather than throughput.
+    if [ "$CPUS" -gt 0 ] && [ "$CPUS" -le 2 ]; then
+      printf '\n# %s CPU core%s: Valkey gets one I/O thread instead of the default four, which\n' \
+        "$CPUS" "$( [ "$CPUS" = 1 ] && echo '' || echo 's')"
+      printf '# would oversubscribe this host. Raise it if you move Valkey to its own machine.\n'
+      printf 'VALKEY_IO_THREADS=1\n'
+    fi
   } >"$tmp"
   umask "$old_umask"
   chmod 600 "$tmp"

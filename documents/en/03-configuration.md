@@ -615,7 +615,7 @@ passwords, and which is git-ignored and excluded from the Docker build context.
 | `SPINNERET_ADMIN_PASSWORD` | generated | The same. Change it after the first sign-in; until you do, it also sits here in clear. |
 | `SPINNERET_PORT` | `8080` | Host port of the load balancer. |
 | `SPINNERET_REPLICAS` | `2` | Number of `spinneret` replicas. |
-| `VALKEY_IO_THREADS` | `4` | Valkey's `io-threads`. `1` restores single-threaded behaviour — the measurement is in [Performance → Valkey io-threads](./17-performance.md#valkey-io-threads). **Not in `.env.example`**: it exists only as an interpolation in `docker-compose.yml`, so add the line to `.env` yourself to change it. |
+| `VALKEY_IO_THREADS` | `4` | Valkey's `io-threads`. `1` restores single-threaded behaviour — the measurement is in [Performance → Valkey io-threads](./17-performance.md#valkey-io-threads). The guided installer writes `1` on a host with two cores or fewer, where four would oversubscribe a machine that also runs PostgreSQL, ClickHouse, the server and the load balancer. **Not in `.env.example`**: it exists only as an interpolation in `docker-compose.yml`, so add the line to `.env` yourself to change it. |
 | `PROMETHEUS_PORT` | `9090` | Host port of the `observability` profile's Prometheus. |
 | `MOCK_TARGET_PORT` / `MOCK_PROXY_PORT` | `19090` / `19091` | Host ports of the mock target site and its authenticating proxy. |
 | `EXAMPLE_PORT` | `18000` | Host port of the example crawler. |
@@ -623,7 +623,7 @@ passwords, and which is git-ignored and excluded from the Docker build context.
 | `LOADTEST_TOKEN` | empty | Node token for the k6 scenarios; `spnr seed` prints one. |
 | `K6_SCRIPT` | `acquire_report.js` | Which scenario the `loadtest` profile runs. **Not in `.env.example`**: like `VALKEY_IO_THREADS` it is only an interpolation in `docker-compose.yml`; add the line to `.env` yourself. |
 
-The guided installer writes up to three of its own into `.env` — `SPINNERET_BIND_HOST` always, plus
+The guided installer writes up to four of its own into `.env` — `SPINNERET_BIND_HOST` always, `VALKEY_IO_THREADS=1` on a host with two cores or fewer, plus
 `SPINNERET_IMAGE` and `SPINNERET_IMAGE_TAG` when it installs the published image rather than building from
 a checkout — and reads the rest only from your shell:
 

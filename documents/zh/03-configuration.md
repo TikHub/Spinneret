@@ -573,7 +573,7 @@ ID；把一个值套在所有副本上会破坏 acquire 预算。见
 | `SPINNERET_ADMIN_PASSWORD` | 随机生成 | 同上。首次登录后就改掉；在你改之前，它也明文躺在这里。 |
 | `SPINNERET_PORT` | `8080` | 负载均衡在宿主机上的端口。 |
 | `SPINNERET_REPLICAS` | `2` | `spinneret` 服务的副本数。 |
-| `VALKEY_IO_THREADS` | `4` | Valkey 的 `io-threads`。`1` 恢复单线程行为——测量数据见[性能与调优 → Valkey io-threads](./17-performance.md#valkey-io-threads)。**`.env.example` 里没有这一项**：它只以插值形式出现在 `docker-compose.yml` 里，要改就自己往 `.env` 里加一行。 |
+| `VALKEY_IO_THREADS` | `4` | Valkey 的 `io-threads`。`1` 恢复单线程行为——测量数据见[性能与调优 → Valkey io-threads](./17-performance.md#valkey-io-threads)。引导式安装脚本在 CPU 不超过 2 核的主机上会写 `1`，因为那种机器上还跑着 PostgreSQL、ClickHouse、服务端和负载均衡器，4 个线程就是超订。**`.env.example` 里没有这一项**：它只以插值形式出现在 `docker-compose.yml` 里，要改就自己往 `.env` 里加一行。 |
 | `PROMETHEUS_PORT` | `9090` | `observability` profile 里 Prometheus 的宿主机端口。 |
 | `MOCK_TARGET_PORT` / `MOCK_PROXY_PORT` | `19090` / `19091` | mock 目标站点和它那个需要认证的代理的宿主机端口。 |
 | `EXAMPLE_PORT` | `18000` | 示例爬虫的宿主机端口。 |
@@ -581,8 +581,9 @@ ID；把一个值套在所有副本上会破坏 acquire 预算。见
 | `LOADTEST_TOKEN` | 空 | k6 场景用的节点令牌；`spnr seed` 会打印一个。 |
 | `K6_SCRIPT` | `acquire_report.js` | `loadtest` profile 跑哪个场景脚本。**`.env.example` 里同样没有这一项**：和 `VALKEY_IO_THREADS` 一样只是 `docker-compose.yml` 里的一个插值，自己往 `.env` 里加。 |
 
-引导式安装脚本最多会往 `.env` 里写三个自己的变量——`SPINNERET_BIND_HOST` 总是写，另外在安装已发布镜像
-（而不是从检出的源码构建）时还会写 `SPINNERET_IMAGE` 和 `SPINNERET_IMAGE_TAG`——其余的只从你的 shell 里读：
+引导式安装脚本最多会往 `.env` 里写四个自己的变量——`SPINNERET_BIND_HOST` 总是写，CPU 不超过 2 核时写
+`VALKEY_IO_THREADS=1`，另外在安装已发布镜像（而不是从检出的源码构建）时还会写 `SPINNERET_IMAGE` 和
+`SPINNERET_IMAGE_TAG`——其余的只从你的 shell 里读：
 
 | 变量 | 默认值 | 作用 |
 | --- | --- | --- |

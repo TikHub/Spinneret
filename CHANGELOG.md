@@ -12,6 +12,15 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.1] — 2026-09-19
+
+A patch release: no schema migration, no configuration you must change, and every default unchanged.
+Upgrading is `spnrctl pull && spnrctl up -d --wait`. Two of the fixes below are things that were wrong
+in 0.1.0 without saying so — container logs had no size limit at all, and the installer's default image
+was one that only TikHub could pull.
+
 ### Added
 
 - **Retention is editable from the console**, at Settings → System, instead of only through environment
@@ -47,6 +56,12 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ### Changed
 
+- **The installer gives Valkey one I/O thread on a host with two cores or fewer**, instead of the
+  default four. Four buys tail latency on a machine with cores to spare and oversubscribes one that runs
+  PostgreSQL, ClickHouse, the server and the load balancer on the same two. Valkey executes every command
+  on its main thread whatever this is set to, so the cost is tail latency at high rates, not throughput.
+  The installer already scales the per-container memory ceilings to the host; this is the same idea for
+  the CPU.
 - **The installer now pulls from Docker Hub by default**, `tikhubio/spinneret` instead of
   `ghcr.io/tikhub/spinneret`. GitHub Packages is private for this project, so the old default answered
   401 for everyone outside the organisation and the installer quietly fell back to building from source —
@@ -286,5 +301,6 @@ VM; the method, the hardware and every caveat are in `documents/en/17-performanc
   refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
   fingerprint distribution and browser pools.
 
+[0.1.1]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.1
 [0.1.0]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.0
-[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.1...HEAD

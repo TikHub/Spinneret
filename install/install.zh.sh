@@ -937,6 +937,16 @@ write_env() {
     else
       printf '# 这次安装从检出的源码构建镜像，所以没有 compose.image.yml。\n'
     fi
+    # Valkey's four I/O threads buy latency on a host with cores to spare, and
+    # cost a core this host does not have: it runs PostgreSQL, ClickHouse, the
+    # server and the load balancer on the same two. Valkey executes every command
+    # on its main thread whatever this is set to, so lowering it gives up tail
+    # latency at high rates rather than throughput.
+    if [ "$CPUS" -gt 0 ] && [ "$CPUS" -le 2 ]; then
+      printf '\n# 这台主机只有 %s 个 CPU 核心：Valkey 用 1 个 I/O 线程而不是默认的 4 个，否则会超订。\n' "$CPUS"
+      printf '# 如果以后把 Valkey 挪到独立机器上，可以调高。\n'
+      printf 'VALKEY_IO_THREADS=1\n'
+    fi
   } >"$tmp"
   umask "$old_umask"
   chmod 600 "$tmp"
