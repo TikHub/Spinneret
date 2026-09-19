@@ -107,6 +107,10 @@ type Service struct {
 	queue    chan deliveryJob
 	busQueue chan busItem
 	running  atomic.Bool
+	// subscribed reports that Run has registered its bus handler, which is a
+	// later moment than running: running is the guard against a second Run and
+	// is therefore set on the first statement, before anything is wired up.
+	subscribed atomic.Bool
 
 	channels *channelCache
 	failing  *failingChannels
@@ -176,6 +180,13 @@ func (s *Service) Run(ctx context.Context) error {
 		defer unsubscribe()
 		wg.Go(func() { s.busLoop(ctx) })
 	}
+	// Only now will an event published on the bus reach this service. The bus
+	// hands an event to the handlers registered at the moment it is published and
+	// keeps no backlog, so anything published before the Subscribe above is not
+	// delayed — it is gone.
+	s.subscribed.Store(true)
+	defer s.subscribed.Store(false)
+
 	<-ctx.Done()
 	wg.Wait()
 	if n := len(s.queue); n > 0 {
@@ -183,6 +194,18 @@ func (s *Service) Run(ctx context.Context) error {
 	}
 	return nil
 }
+
+// Subscribed reports whether Run has finished wiring up: its delivery workers
+// are started and its bus handler is registered, so an event published from now
+// on will be seen. It is false before Run is called, between the two, and after
+// Run returns.
+//
+// Anything that publishes an event and then waits for the alert has to wait for
+// this first, not merely for Run to have been called on a goroutine. The bus
+// delivers to the handlers a channel has when the event is published and keeps no
+// backlog, so an event published into the gap is lost rather than late, and no
+// amount of waiting afterwards will produce it.
+func (s *Service) Subscribed() bool { return s.subscribed.Load() }
 
 // countDelivery records a delivery outcome metric.
 func (s *Service) countDelivery(kind, result string) {

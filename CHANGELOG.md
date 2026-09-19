@@ -43,13 +43,14 @@ npm require. One release, two spellings, decided by where the string lives.
   `update_available` was already correct and is unchanged. Found by checking the console against the
   real feed immediately after publishing v0.1.0, which is the first time the "unversioned build, a
   release exists" combination could occur.
-- `TestBusBreakerTrackEventShape` failed on CI while passing everywhere else. The notify tests wait on an
-  asynchronous path — publish an event, let a worker evaluate it, find the alert stored and delivered —
-  and bounded that wait at five seconds, which is thin when about seventy tests in the package run in
-  parallel against one PostgreSQL under `-race` on a two-core runner. The bound is a liveness bound and
-  never a performance assertion, so the package's waits now share one named, generous `alertWait`, and
-  `require.Eventually` still returns the moment the condition holds: `-count=2 -race` takes the same time
-  it did before.
+- **The notification service reported itself ready before it had subscribed to the event bus**, so an
+  event published in that gap reached no handler. The bus delivers to the handlers a channel holds at the
+  moment of publication and keeps no backlog, so such an event is lost rather than late. `Service.Run`
+  sets `running` on its first statement because that flag is the guard against a second `Run`, several
+  statements before the subscription exists; readiness is now the separate `Service.Subscribed()`, set
+  once the delivery workers and the bus handler are in place. Anything that publishes and then waits for
+  the result should wait on that. Two CI builds failed on this, each in whichever notify bus test lost
+  the race.
 - `TestShedAfterRedisReplyKeepsExhausted` no longer depends on the order the scheduler's tests run in.
   It asserts that only the first acquire attempt reaches Redis by counting commands, and `Script.Exec`
   sends `EVALSHA` and falls back to `EVAL` when the server answers `NOSCRIPT`, so the first attempt of a

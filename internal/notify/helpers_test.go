@@ -34,12 +34,17 @@ import (
 // require.Eventually returns the moment the condition holds, so a generous
 // bound costs a passing run nothing.
 //
-// It is generous because the bound, not the code, is what breaks: the package
-// runs about seventy tests in parallel against one PostgreSQL, and CI runs them
-// under -race on a two-core runner. waitDeliveries had already been raised from
-// five seconds to ten for that reason, and TestBusBreakerTrackEventShape still
-// failed on CI at five while passing everywhere else.
-const alertWait = time.Minute
+// It is generous only so that a loaded runner cannot fail a correct build: the
+// package runs about seventy tests in parallel against one PostgreSQL, under
+// -race on two cores in CI. It is emphatically not the fix for a test that does
+// not see its alert. The CI failures that made this a named constant were a lost
+// event, not a slow one — the service reported itself ready before it had
+// subscribed to the bus, so the event went nowhere (see
+// TestSubscribedNeverLeadsTheSubscription). Raising this from five seconds to a
+// minute changed nothing except how long the failure took, which is the tell:
+// if a wait here ever burns its whole budget, the event is gone and the bound is
+// not the thing to look at.
+const alertWait = 30 * time.Second
 
 // recorder captures audit entries.
 type recorder struct {
@@ -145,7 +150,11 @@ func (e *env) startService() {
 		cancel()
 		<-done
 	})
-	require.Eventually(e.t, func() bool { return e.svc.running.Load() }, time.Second, time.Millisecond)
+	// Subscribed, not running: running is set on Run's first statement, before the
+	// bus handler exists, so waiting on it lets a publish race ahead of the
+	// subscription and be dropped for good. That raced on CI often enough to fail
+	// two builds in a row, each time in whichever bus test lost.
+	require.Eventually(e.t, e.svc.Subscribed, alertWait, time.Millisecond)
 }
 
 // alerts returns the stored alerts of the test tenant, newest first.
