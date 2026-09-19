@@ -17,9 +17,10 @@ npm require. One release, two spellings, decided by where the string lives.
 - **Every release is published to Docker Hub as well as to GitHub Packages.** It is one build pushed to
   both registries rather than a build each, so both serve the same digest and cannot drift apart, and
   the four tags (`v0.1.0`, `0.1.0`, `0.1`, and `latest` for a non-pre-release) are identical on each.
-  Docker Hub needs the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets; without them the run
-  publishes to GitHub Packages alone instead of failing, which is what a fork sees. The namespace is
-  that username unless the repository variable `DOCKERHUB_REPOSITORY` overrides it.
+  The Docker Hub image is `tikhubio/spinneret`, and it is the one to pull from a host that cannot read
+  GitHub Packages. Docker Hub needs the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets; without them
+  the run publishes to GitHub Packages alone instead of failing, which is what a fork sees. The namespace
+  is that username unless the repository variable `DOCKERHUB_REPOSITORY` overrides it.
 - The `release` workflow can be run by hand against a tag that already exists, from **Actions → release
   → Run workflow**. It rebuilds from the tag and publishes the images without touching that tag's GitHub
   release, which is how a registry added after a release was cut gets the images it missed. Its `latest`

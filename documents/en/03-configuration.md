@@ -621,7 +621,7 @@ a checkout — and reads the rest only from your shell:
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `SPINNERET_BIND_HOST` | `127.0.0.1` | The address the load balancer publishes on, `127.0.0.1` or `0.0.0.0`. Written to `.env`, read by the generated `compose.host.yml`. **The shipped `docker-compose.yml` does not read it**: it publishes `"${SPINNERET_PORT:-8080}:8080"` with no host part, so on a manual Compose stack this variable does nothing and you need the override in [Three worked configurations](#three-worked-configurations). |
-| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | Image repository. Each release is published to Docker Hub as well, as `tikhub/spinneret` with the same digest, so this is also how you pull from whichever of the two is reachable — or from a private mirror or a fork. Read by the generated `compose.image.yml`. |
+| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | Image repository. Every release is pushed to Docker Hub as `tikhubio/spinneret` too, from the same build and therefore at the same digest; set this to that when GitHub Packages is not reachable from the host, or to a private mirror or a fork. Read by the generated `compose.image.yml`. |
 | `SPINNERET_IMAGE_TAG` | `latest` | Image tag. Pin an exact one for production. Read by the same generated `compose.image.yml`. |
 | `SPINNERET_PROJECT` | `spinneret` | Compose project name, also how an existing install is found. |
 | `SPINNERET_INSTALL_DIR` | `/opt/spinneret` as root, `~/spinneret` otherwise | Where to install. |
