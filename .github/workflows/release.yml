@@ -19,8 +19,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # First, and on its own, because it is the one step that can fail because of
+  # something a human forgot. A tag whose version has no section in CHANGELOG.md
+  # fails here in seconds instead of after a twenty-minute multi-architecture
+  # build, and the notes are then a build artifact rather than something retyped
+  # into the release form by hand.
+  notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 .github/workflows/scripts/release_notes.py release-notes.md
+      - run: cat release-notes.md
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-notes
+          path: release-notes.md
+
   image:
     runs-on: ubuntu-latest
+    needs: [notes]
     permissions:
       contents: read
       packages: write
@@ -73,11 +90,14 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [image]
+    needs: [notes, image]
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-notes
       # The installer scripts are attached so an operator can fetch the exact
       # pair that goes with this image without cloning, and so a release can be
       # installed after main has moved on.
@@ -87,6 +107,11 @@ jobs:
             install/install.sh
             install/install.zh.sh
           fail_on_unmatched_files: true
+          # The changelog section is the release notes; GitHub appends its own
+          # generated list of merged pull requests and new contributors below it.
+          # Without the body that generated list would be the whole page, which
+          # for a first release reads as a handful of dependency bumps.
+          body_path: release-notes.md
           generate_release_notes: true
           # One definition of "pre-release" for the whole workflow. The image
           # step withholds `latest` from a tag with a dash in it; without this
