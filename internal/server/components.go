@@ -35,7 +35,9 @@ import (
 	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
 	"github.com/TikHub/Spinneret/internal/store/redis"
 	"github.com/TikHub/Spinneret/internal/tenancy"
+	"github.com/TikHub/Spinneret/internal/updatecheck"
 	"github.com/TikHub/Spinneret/internal/vault"
+	"github.com/TikHub/Spinneret/internal/version"
 	"github.com/TikHub/Spinneret/internal/worker"
 )
 
@@ -95,6 +97,7 @@ type components struct {
 	worker     *worker.Worker // nil unless the role runs workers
 	config     *configcenter.Service
 	notify     *notify.Service
+	updates    *updatecheck.Checker
 	analytics  *analytics.Service
 	partitions *partitionMaintainer
 
@@ -205,6 +208,8 @@ func buildComponents(cfg appconfig.Config, in *infra, metrics *observability.Met
 
 	// in.chConn is a nil interface (not a typed nil) when ClickHouse is disabled.
 	c.analytics = analytics.New(pool, in.chConn, rdb, keys, c.catalog, logger, analytics.WithReportShards(cfg.ReportShards))
+
+	c.updates = updatecheck.New(updatecheck.Config{URL: cfg.UpdateCheckURL, Current: version.String()})
 
 	c.partitions = newPartitionMaintainer(pool, cfg.Retention, logger)
 	return c, nil

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/TikHub/Spinneret/internal/updatecheck"
 )
 
 func env(kv map[string]string) func(string) (string, bool) {
@@ -79,6 +81,7 @@ func TestLoadFromDefaults(t *testing.T) {
 		RecordCooldownEvents: true,
 		MaxWatchers:          20_000,
 		UIEnabled:            true,
+		UpdateCheckURL:       updatecheck.DefaultURL,
 		ShutdownTimeout:      30 * time.Second,
 		AdminMaxRequestBytes: 64 << 20,
 	}
@@ -137,6 +140,7 @@ func TestLoadFromOverrides(t *testing.T) {
 		"SPINNERET_RECORD_COOLDOWN_EVENTS", "0",
 		"SPINNERET_MAX_WATCHERS", "1",
 		"SPINNERET_UI_ENABLED", "f",
+		"SPINNERET_UPDATE_CHECK_URL", "https://releases.example.invalid/latest",
 		"SPINNERET_ALLOWED_ORIGINS", "http://localhost:5173",
 		"SPINNERET_SHUTDOWN_TIMEOUT", "5s",
 		"SPINNERET_ADMIN_MAX_REQUEST_BYTES", "1048576",
@@ -166,6 +170,7 @@ func TestLoadFromOverrides(t *testing.T) {
 			StateEvents: 365 * 24 * time.Hour, Audit: 24 * time.Hour,
 		},
 		RecordCooldownEvents: false, MaxWatchers: 1, UIEnabled: false,
+		UpdateCheckURL: "https://releases.example.invalid/latest",
 		AllowedOrigins: []string{"http://localhost:5173"}, ShutdownTimeout: 5 * time.Second,
 		AdminMaxRequestBytes: 1 << 20, OTLPEndpoint: "otel:4317",
 	}

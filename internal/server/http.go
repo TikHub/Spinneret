@@ -30,6 +30,7 @@ import (
 	"github.com/TikHub/Spinneret/internal/api/reportapi"
 	"github.com/TikHub/Spinneret/internal/api/secretapi"
 	"github.com/TikHub/Spinneret/internal/api/siteapi"
+	"github.com/TikHub/Spinneret/internal/api/systemapi"
 	"github.com/TikHub/Spinneret/internal/api/tenantapi"
 	"github.com/TikHub/Spinneret/internal/auth"
 	"github.com/TikHub/Spinneret/web"
@@ -240,6 +241,7 @@ func (s *Server) mountConnect(mux *http.ServeMux) error {
 	mount(spinneretv1connect.NewSecretAdminServiceHandler(secretapi.New(c.secrets, c.rewrapper, c.catalog, c.audit, logger), admin...))
 	mount(spinneretv1connect.NewNotificationAdminServiceHandler(notifyapi.New(c.notify, c.catalog, logger), admin...))
 	mount(spinneretv1connect.NewDashboardServiceHandler(dashboardapi.New(c.analytics, c.catalog), admin...))
+	mount(spinneretv1connect.NewSystemServiceHandler(systemapi.New(c.updates, logger), admin...))
 	return nil
 }
 

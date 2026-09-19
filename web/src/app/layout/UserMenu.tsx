@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { LogOutIcon, ShieldCheckIcon, UserIcon } from 'lucide-react';
+import { LogOutIcon, SettingsIcon, ShieldCheckIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -68,6 +68,13 @@ export function UserMenu() {
             {t('shell.profile')}
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings/system">
+            <SettingsIcon />
+            {t('shell.system')}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void signOut()} data-testid="logout">
           <LogOutIcon />
           {t('shell.logout')}

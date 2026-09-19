@@ -186,6 +186,16 @@
         "Tenant access lists the tenants and namespaces your bindings cover."
       ],
       "when": "An administrator handed you an initial password and you want to replace it before doing anything else."
+    },
+    "system": {
+      "summary": "Which build this deployment runs, whether a newer release exists, and the documentation and reporting channels for it.",
+      "steps": [
+        "The update check runs only when you press the button. Nothing here polls, and the request carries nothing about this deployment.",
+        "Answers are cached for an hour because the release feed is rate limited by source address, so several operators clicking it costs one request.",
+        "A build without a release number — one built from source — is never reported as out of date.",
+        "Set SPINNERET_UPDATE_CHECK_URL to the empty string to disable the check and make the server reach nothing at all."
+      ],
+      "when": "Before an upgrade, or when a bug report needs the exact build a deployment is running."
     }
   }
 }

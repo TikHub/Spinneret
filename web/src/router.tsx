@@ -207,6 +207,13 @@ const profileRoute = createRoute({
   component: lazyRouteComponent(() => import('@/features/settings/pages/ProfilePage')),
 });
 
+const systemRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: 'settings/system',
+  staticData: { titleKey: 'nav.system', groupKey: 'nav.groups.settings', tenantOptional: true },
+  component: lazyRouteComponent(() => import('@/features/settings/pages/SystemPage')),
+});
+
 export const routeTree = rootRoute.addChildren([
   loginRoute,
   appRoute.addChildren([
@@ -230,6 +237,7 @@ export const routeTree = rootRoute.addChildren([
     auditRoute,
     tenantsRoute,
     profileRoute,
+    systemRoute,
   ]),
 ]);
 

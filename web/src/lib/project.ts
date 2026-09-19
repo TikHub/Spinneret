@@ -14,6 +14,9 @@ export const MAINTAINER_URL = 'https://github.com/TikHub';
 /** Maintainer name, shown as written — not translated. */
 export const MAINTAINER = 'TikHub';
 
+/** Copyright year, matching the notice in LICENSE. */
+export const COPYRIGHT_YEAR = '2026';
+
 /** Licence the project is published under. */
 export const LICENSE = 'Apache-2.0';
 

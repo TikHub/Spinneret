@@ -19,6 +19,7 @@ import (
 
 	"github.com/TikHub/Spinneret/internal/pkg/durationx"
 	"github.com/TikHub/Spinneret/internal/pkg/netx"
+	"github.com/TikHub/Spinneret/internal/updatecheck"
 )
 
 // Role selects which subsystems an instance runs.
@@ -111,6 +112,10 @@ type Config struct {
 	RecordCooldownEvents bool
 	MaxWatchers          int
 	UIEnabled            bool
+	// UpdateCheckURL is the release feed the console's update check reads. The
+	// empty string disables the check, so a deployment that must make no
+	// outbound call at all can say so.
+	UpdateCheckURL       string
 	AllowedOrigins       []string
 	ShutdownTimeout      time.Duration
 	AdminMaxRequestBytes int64
@@ -189,6 +194,7 @@ func LoadFrom(lookup func(string) (string, bool)) (Config, error) {
 		RecordCooldownEvents: l.bool("SPINNERET_RECORD_COOLDOWN_EVENTS", true),
 		MaxWatchers:          l.int("SPINNERET_MAX_WATCHERS", 20_000),
 		UIEnabled:            l.bool("SPINNERET_UI_ENABLED", true),
+		UpdateCheckURL:       l.str("SPINNERET_UPDATE_CHECK_URL", updatecheck.DefaultURL),
 		AllowedOrigins:       l.list("SPINNERET_ALLOWED_ORIGINS"),
 		ShutdownTimeout:      l.dur("SPINNERET_SHUTDOWN_TIMEOUT", 30*time.Second),
 		AdminMaxRequestBytes: int64(l.int("SPINNERET_ADMIN_MAX_REQUEST_BYTES", 64<<20)),

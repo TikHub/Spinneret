@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package spinneret.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1";
+
+// SystemService exposes facts about the deployment itself rather than about the
+// data inside it. Every call requires a console session.
+service SystemService {
+  // CheckForUpdate compares the running build against the latest published
+  // release.
+  //
+  // The call is what makes the deployment reach out: nothing here runs on a
+  // timer, and an operator who wants no outbound call at all sets
+  // SPINNERET_UPDATE_CHECK_URL to the empty string, after which this returns
+  // `disabled`. The request carries nothing about the deployment. Answers are
+  // cached for an hour because the default feed is rate limited per source
+  // address.
+  rpc CheckForUpdate(CheckForUpdateRequest) returns (CheckForUpdateResponse);
+}
+
+// CheckForUpdateRequest is empty.
+message CheckForUpdateRequest {}
+
+// CheckForUpdateResponse describes the running build and, when the check is
+// enabled and reached the feed, the latest published release.
+message CheckForUpdateResponse {
+  // Build this server runs, as `spnr version` reports it: a release tag such as
+  // "v0.1.0", or "dev-<revision>" for a build from source.
+  string current_version = 1;
+  // Newest published release. Empty when the check is disabled, when the feed
+  // could not be reached, or when the newest entry is a draft or pre-release.
+  string latest_version = 2;
+  // Release notes of latest_version.
+  string release_url = 3;
+  // True only when latest_version is a strictly newer release than a
+  // current_version that names a release. A build with no release number is
+  // never told it is out of date.
+  bool update_available = 4;
+  // When the feed was last read. Unset when it never was.
+  google.protobuf.Timestamp checked_at = 5;
+  // True when the operator turned the check off; no outbound call was made.
+  bool disabled = 6;
+  // Why the check could not be completed, empty on success. It is a message for
+  // an operator, not a machine-readable reason: the call itself succeeds so
+  // that the console can still show the running build.
+  string error = 7;
+}

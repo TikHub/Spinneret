@@ -6,6 +6,7 @@ import { BreakerAdminService } from '@/gen/spinneret/v1/breaker_admin_pb';
 import { ConfigAdminService } from '@/gen/spinneret/v1/config_admin_pb';
 import { ConfigService } from '@/gen/spinneret/v1/config_pb';
 import { DashboardService } from '@/gen/spinneret/v1/dashboard_pb';
+import { SystemService } from '@/gen/spinneret/v1/system_pb';
 import { IdentityAdminService } from '@/gen/spinneret/v1/identity_admin_pb';
 import { LeaseService } from '@/gen/spinneret/v1/lease_pb';
 import { NotificationAdminService } from '@/gen/spinneret/v1/notification_admin_pb';
@@ -44,6 +45,7 @@ export const notificationClient: Client<typeof NotificationAdminService> = creat
   transport,
 );
 export const dashboardClient: Client<typeof DashboardService> = createClient(DashboardService, transport);
+export const systemClient: Client<typeof SystemService> = createClient(SystemService, transport);
 
 // Node-facing services (token-authenticated); exposed for completeness and tooling pages.
 export const leaseClient: Client<typeof LeaseService> = createClient(LeaseService, transport);

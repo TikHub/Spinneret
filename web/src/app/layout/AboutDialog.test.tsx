@@ -1,18 +1,12 @@
 import { render, screen, type RenderResult } from '@testing-library/react';
 import i18next from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import common from '@/i18n/locales/en/common.json';
-import { docsUrl, MAINTAINER_URL, REPO_URL, SECURITY_URL } from '@/lib/project';
+import { docsUrl, MAINTAINER_URL, REPO_URL } from '@/lib/project';
 
 import { AboutDialog } from './AboutDialog';
-
-const serverVersion = vi.hoisted(() => ({ value: 'v1.2.3' }));
-
-vi.mock('@/app/auth/AuthContext', () => ({
-  useAuth: () => ({ serverVersion: serverVersion.value }),
-}));
 
 /** The dialog reads copy and the active language from i18n, so it needs a real instance. */
 async function open(): Promise<RenderResult> {
@@ -33,23 +27,20 @@ async function open(): Promise<RenderResult> {
 }
 
 describe('AboutDialog', () => {
-  it('names the maintainer, the licence and the server build', async () => {
-    serverVersion.value = 'v1.2.3';
+  it('states the copyright, the licence and the maintainer', async () => {
     await open();
-    expect(screen.getByText('TikHub')).toBeInTheDocument();
-    expect(screen.getByText('Apache-2.0')).toBeInTheDocument();
-    expect(screen.getByText('v1.2.3')).toBeInTheDocument();
+    expect(screen.getByText('© 2026 TikHub')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Apache-2.0' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'TikHub' })).toBeInTheDocument();
   });
 
-  it('says the version is unknown rather than showing an empty row', async () => {
-    // GetMe has not answered yet, or an older server did not send the field.
-    serverVersion.value = '';
+  it('carries no version and no update check — those belong on Settings → System', async () => {
     await open();
-    expect(screen.getByText('unknown')).toBeInTheDocument();
+    expect(screen.queryByText(/Server build/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /check for updates/i })).not.toBeInTheDocument();
   });
 
   it('opens every external link in a new tab without leaking a referrer', async () => {
-    serverVersion.value = 'v1.2.3';
     await open();
     const links = screen.getAllByRole('link');
     expect(links.length).toBeGreaterThan(0);
@@ -58,20 +49,9 @@ describe('AboutDialog', () => {
       // Both tokens matter: noopener for the opener reference, noreferrer for the header.
       expect(link.getAttribute('rel')).toContain('noopener');
       expect(link.getAttribute('rel')).toContain('noreferrer');
-      // Every link is either the organisation page or something under the repository.
       const href = link.getAttribute('href') ?? '';
-      expect(href === MAINTAINER_URL || href.startsWith(`${REPO_URL}/`) || href === REPO_URL).toBe(true);
+      expect(href === MAINTAINER_URL || href === REPO_URL || href.startsWith(`${REPO_URL}/`)).toBe(true);
     }
-  });
-
-  it('links the repository, the manual and the security policy', async () => {
-    serverVersion.value = 'v1.2.3';
-    await open();
-    const hrefs = screen.getAllByRole('link').map((l) => l.getAttribute('href'));
-    expect(hrefs).toContain(REPO_URL);
-    expect(hrefs).toContain(SECURITY_URL);
-    // The test environment runs in English, so the manual resolves to documents/en.
-    expect(hrefs).toContain(docsUrl('en'));
   });
 });
 

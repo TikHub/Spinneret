@@ -5,17 +5,12 @@
   },
   "about": {
     "title": "关于",
-    "summary": "为共用同一批稀缺、限速凭据与出口的节点集群提供控制平面。节点在每次请求之前向它要一个凭据和一个出口，用完把结果报回来；这个部署把这些上报转成冷却、封禁、健康分与熔断，并向同一批节点下发带版本的配置与密钥。",
-    "serverVersion": "服务端版本",
-    "versionUnknown": "未知",
+    "copyright": "版权",
+    "copyrightValue": "© {{year}} {{maintainer}}",
     "license": "许可证",
     "maintainer": "维护方",
-    "links": "项目链接",
-    "repository": "源代码",
-    "documentation": "文档",
-    "changelog": "版本变更记录",
-    "issues": "反馈问题或提功能建议",
-    "security": "安全策略",
+    "source": "源代码",
+    "sourceValue": "github.com/TikHub/Spinneret",
     "openSource": "开源项目，由 {{maintainer}} 维护并开源。"
   },
   "nav": {
@@ -49,7 +44,8 @@
     "tenants": "租户",
     "profile": "个人资料",
     "login": "登录",
-    "notFound": "页面不存在"
+    "notFound": "页面不存在",
+    "system": "系统"
   },
   "shell": {
     "mainNavigation": "主导航",
@@ -80,7 +76,37 @@
     "noTenantsAdminDescription": "还没有任何租户。请先创建第一个租户。",
     "manageTenants": "管理租户",
     "loadingSession": "正在加载会话…",
-    "sessionErrorTitle": "无法加载会话"
+    "sessionErrorTitle": "无法加载会话",
+    "system": "系统"
+  },
+  "system": {
+    "title": "系统",
+    "description": "这个部署跑的是哪个版本，以及去哪里找帮助。",
+    "updates": {
+      "title": "版本与更新",
+      "check": "检查更新",
+      "current": "当前版本",
+      "latest": "最新发布",
+      "checkedAt": "上次检查",
+      "unknown": "未知",
+      "available": "有新版本 {{version}}",
+      "releaseNotes": "更新说明",
+      "upToDate": "已经是最新版本。",
+      "noReleases": "还没有发布过任何版本。",
+      "failed": "读取发布源失败：{{error}}",
+      "disabled": "这个部署关闭了更新检查（SPINNERET_UPDATE_CHECK_URL 为空），不会发出任何外部请求。"
+    },
+    "help": {
+      "title": "文档与支持",
+      "documentation": "文档",
+      "documentationHint": "部署、运维、节点 API 与策略参考",
+      "issues": "反馈问题或提功能建议",
+      "issuesHint": "公开的 issue 列表",
+      "security": "安全策略",
+      "securityHint": "如何私密地报告漏洞",
+      "source": "源代码",
+      "sourceHint": "这个构建来自的仓库"
+    }
   },
   "theme": {
     "light": "浅色",
