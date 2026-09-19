@@ -65,10 +65,23 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "latest=$latest" >> "$GITHUB_OUTPUT"
           echo "Publishing $tag (push :latest = $latest)."
-      # Fails clearly when the dispatched tag does not exist.
+      # Deliberately the workflow's own commit and not the tag: release_notes.py
+      # is this workflow's tooling and has to be the version that belongs to it.
+      # Checking out the tag instead runs whatever script that release shipped
+      # with, which on a manual run means an older script that has never heard of
+      # the arguments the newer workflow passes it. On a tag push the two are the
+      # same commit anyway.
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ steps.resolve.outputs.tag }}
+      # So a tag that does not exist still fails here, in seconds, rather than in
+      # the build job twenty minutes later.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" --jq .object.sha; then
+            echo "::error::Tag ${TAG} does not exist in ${GITHUB_REPOSITORY}." >&2
+            exit 1
+          fi
       - env:
           RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
         run: python3 .github/workflows/scripts/release_notes.py release-notes.md
