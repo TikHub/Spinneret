@@ -946,7 +946,8 @@ Spinneret 遵循 SemVer 的 1.0 之前语义。在 1.0 之前，节点 API 的�
 
 表结构迁移用 `spnr migrate up` 执行、`spnr migrate status` 查看、`spnr migrate down --to <version>` 回滚；
 升级前先备份，具体见[运维](documents/zh/16-operations.md)。容器镜像由 `release` 工作流按每个发布 tag
-发布到 `ghcr.io/tikhub/spinneret`，覆盖 linux/amd64 与 linux/arm64。安全修复会同时进入最新发布版和
+发布到 `ghcr.io/tikhub/spinneret` 和 Docker Hub，覆盖 linux/amd64 与 linux/arm64——一次构建推两个
+registry，所以不管从哪里拉，digest 都是同一个。安全修复会同时进入最新发布版和
 `main`，流程见 [`SECURITY.md`](SECURITY.md)。
 
 ---

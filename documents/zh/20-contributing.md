@@ -535,8 +535,17 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 在 `go` 和 `web` 通过之后：用 buildx 构建 `deploy/docker/Dockerfile`，打标签 `spinneret:ci`，不推送。
 
 发布是另一个工作流。`.github/workflows/release.yml` 由 `v*` 标签触发，用同一份 Dockerfile 构建
-amd64 与 arm64 两个架构并推送到 `ghcr.io/tikhub/spinneret`；仓库里只有它会发布镜像。Pull Request 和
-推送到 `main` 都不会推送任何东西。
+amd64 与 arm64 两个架构，并推送到 `ghcr.io/tikhub/spinneret` 和 Docker Hub；仓库里只有它会发布镜像。
+Pull Request 和推送到 `main` 都不会推送任何东西。
+
+它是**一次构建推两个 registry**，而不是各构建一次，所以两边提供的是同一个 digest，不会互相漂移。当
+`DOCKERHUB_USERNAME` 和 `DOCKERHUB_TOKEN` 这两个 secret 不存在时（fork 就是这种情况），Docker Hub 会被
+跳过而不是让整个流程失败。Docker Hub 的命名空间默认就是那个用户名，除非用仓库变量
+`DOCKERHUB_REPOSITORY` 覆盖它——用于登录账号要推到某个组织命名空间的情形。
+
+这个工作流也可以从 **Actions → release → Run workflow** 指定一个已有 tag 手动运行：它会为那个 tag 构建
+并发布镜像，但不会改动它的 GitHub Release。某个 registry 是在版本发布之后才加上的，就用这个方式把漏掉的
+镜像补上。如果指定的 tag 不是最新发布版，记得把 `latest` 这个输入关掉，否则 `:latest` 会往回退。
 
 ### CI 不跑什么
 

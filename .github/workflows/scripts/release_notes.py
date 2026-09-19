@@ -6,9 +6,11 @@ from there rather than asking a human to retype them into the release form. Run 
 `.github/workflows/release.yml` before anything is built, so a tag whose version is
 missing from the changelog fails in seconds instead of after a multi-arch build.
 
-Inputs come from the workflow environment: GITHUB_REF_NAME is the tag (`v0.1.0`),
-and the section is looked up by the tag without its `v` (`## [0.1.0]`), which is the
-spelling the changelog uses. Writes the body to the path given as the argument.
+Inputs come from the workflow environment: RELEASE_TAG, or GITHUB_REF_NAME when it
+is unset, is the tag (`v0.1.0`), and the section is looked up by the tag without
+its `v` (`## [0.1.0]`), which is the spelling the changelog uses. A manual run is
+not started from the tag, so its ref is a branch and RELEASE_TAG is what carries
+the version. Writes the body to the path given as the argument.
 """
 
 from __future__ import annotations
@@ -67,7 +69,7 @@ def main() -> int:
         return 2
     out = Path(sys.argv[1])
 
-    tag = os.environ["GITHUB_REF_NAME"]
+    tag = os.environ.get("RELEASE_TAG") or os.environ["GITHUB_REF_NAME"]
     version = tag.removeprefix("v")
     server = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
     repo = os.environ["GITHUB_REPOSITORY"]

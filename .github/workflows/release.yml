@@ -8,6 +8,21 @@ on:
     # then push it as ghcr.io/tikhub/spinneret:latest, the tag install.sh pulls
     # by default.
     tags: ["v[0-9]*"]
+  # Publishing images for a tag that already exists, which is what a registry
+  # added after the fact needs: the workflow that ran at the tag pushed to the
+  # registries it knew about then. It rebuilds from the tag rather than from the
+  # branch, so the image is the release and not whatever main has become.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing version tag to publish images for, e.g. v0.1.0"
+        required: true
+        type: string
+      latest:
+        description: "Also push :latest. Turn this off when publishing a tag that is not the newest release."
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -15,20 +30,48 @@ permissions:
 # One release at a time per tag, and never cancelled: a half-pushed multi-arch
 # manifest is worse than a slow queue.
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
-  # First, and on its own, because it is the one step that can fail because of
-  # something a human forgot. A tag whose version has no section in CHANGELOG.md
-  # fails here in seconds instead of after a twenty-minute multi-architecture
-  # build, and the notes are then a build artifact rather than something retyped
-  # into the release form by hand.
-  notes:
+  # First, and on its own, because it holds the two things that can fail because
+  # of something a human forgot: a tag that does not exist, and a tag whose
+  # version has no section in CHANGELOG.md. Both fail here in seconds instead of
+  # after a twenty-minute multi-architecture build, and the notes are then a
+  # build artifact rather than something retyped into the release form by hand.
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      latest: ${{ steps.resolve.outputs.latest }}
     steps:
+      - id: resolve
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_LATEST: ${{ inputs.latest }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          tag="${INPUT_TAG:-$REF_NAME}"
+          case "$tag" in
+            v[0-9]*) ;;
+            *) echo "::error::'$tag' is not a version tag; releases are tagged vX.Y.Z." >&2; exit 1 ;;
+          esac
+          # A pre-release never takes :latest, whichever way the run started -
+          # install.sh reads tag_name from /releases/latest and pulls it, so a
+          # tag the workflow has decided is not latest must not become it here.
+          latest=true
+          case "$tag" in *-*) latest=false ;; esac
+          if [ "${INPUT_LATEST:-true}" = "false" ]; then latest=false; fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "Publishing $tag (push :latest = $latest)."
+      # Fails clearly when the dispatched tag does not exist.
       - uses: actions/checkout@v7
-      - run: python3 .github/workflows/scripts/release_notes.py release-notes.md
+        with:
+          ref: ${{ steps.resolve.outputs.tag }}
+      - env:
+          RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
+        run: python3 .github/workflows/scripts/release_notes.py release-notes.md
       - run: cat release-notes.md
       - uses: actions/upload-artifact@v7
         with:
@@ -37,12 +80,45 @@ jobs:
 
   image:
     runs-on: ubuntu-latest
-    needs: [notes]
+    needs: [plan]
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.tag }}
+      # Which registries this run publishes to. GitHub Packages is always one of
+      # them; Docker Hub joins when DOCKERHUB_USERNAME and DOCKERHUB_TOKEN are
+      # set, so a fork without those secrets still builds and publishes rather
+      # than failing on a login it cannot do.
+      #
+      # The Docker Hub namespace is the login account unless the repository
+      # variable DOCKERHUB_REPOSITORY overrides it, which is what an account
+      # pushing into an organisation namespace needs. Setting that variable also
+      # makes the logs readable: a namespace that comes from a secret is masked
+      # as *** everywhere it appears, the computed image tags included.
+      - id: registries
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKERHUB_REPOSITORY: ${{ vars.DOCKERHUB_REPOSITORY }}
+        run: |
+          images='ghcr.io/tikhub/spinneret'
+          if [ -n "${DOCKERHUB_USERNAME:-}" ] && [ -n "${DOCKERHUB_TOKEN:-}" ]; then
+            repo="${DOCKERHUB_REPOSITORY:-${DOCKERHUB_USERNAME}/spinneret}"
+            images="${images}"$'\n'"docker.io/${repo}"
+            echo 'dockerhub=true' >> "$GITHUB_OUTPUT"
+            echo "Publishing to ghcr.io and to docker.io/${repo}."
+          else
+            echo 'dockerhub=false' >> "$GITHUB_OUTPUT"
+            echo 'DOCKERHUB_USERNAME or DOCKERHUB_TOKEN is unset; publishing to ghcr.io only.'
+          fi
+          {
+            echo 'images<<SPINNERET_EOF'
+            echo "${images}"
+            echo 'SPINNERET_EOF'
+          } >> "$GITHUB_OUTPUT"
       - uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
@@ -52,20 +128,30 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - if: steps.registries.outputs.dockerhub == 'true'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/tikhub/spinneret
-          # Four tags. `v0.1.0` first because that is the spelling the installer
-          # and the GitHub release share: install.sh reads tag_name from the
-          # releases API and pulls it verbatim. `0.1.0` and `0.1` are there for
-          # anyone pinning the way a registry usually expects, and `latest` only
-          # when the tag has no pre-release suffix.
+          images: ${{ steps.registries.outputs.images }}
+          # Four tags, on every registry in the list above. `v0.1.0` first
+          # because that is the spelling the installer and the GitHub release
+          # share: install.sh reads tag_name from the releases API and pulls it
+          # verbatim. `0.1.0` and `0.1` are there for anyone pinning the way a
+          # registry usually expects, and `latest` only when this run is
+          # publishing the newest release.
+          #
+          # Every entry takes its version from the resolved tag rather than from
+          # the git ref, because a manual run's ref is a branch and `type=semver`
+          # would find no version in it.
           tags: |
-            type=raw,value=${{ github.ref_name }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+            type=raw,value=${{ needs.plan.outputs.tag }}
+            type=semver,pattern={{version}},value=${{ needs.plan.outputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.plan.outputs.tag }}
+            type=raw,value=latest,enable=${{ needs.plan.outputs.latest }}
           # Computed explicitly above rather than inferred.
           flavor: latest=false
       - uses: docker/build-push-action@v7
@@ -74,6 +160,8 @@ jobs:
           file: deploy/docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          # One build, pushed to every registry in the list, so the digest is
+          # the same everywhere and the two registries cannot drift.
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
@@ -82,19 +170,24 @@ jobs:
           # the console report the tag. The Makefile derives the same string
           # from `git describe --tags`, which at a tag is the tag itself.
           build-args: |
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ needs.plan.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max
           sbom: true
 
+  # Only a tag push creates or updates the GitHub release. A manual run exists to
+  # publish images for a tag that already has one, and must not touch it.
   release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: [notes, image]
+    needs: [plan, image]
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.tag }}
       - uses: actions/download-artifact@v8
         with:
           name: release-notes
@@ -119,4 +212,4 @@ jobs:
           # latest, and install.sh - which reads tag_name from
           # /releases/latest and offers it as the upgrade target - would
           # recommend an RC the workflow had already decided is not `latest`.
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(needs.plan.outputs.tag, '-') }}

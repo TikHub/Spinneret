@@ -564,8 +564,20 @@ After `go` and `web` pass: builds `deploy/docker/Dockerfile` with buildx, tagged
 without pushing.
 
 Publishing is a separate workflow. `.github/workflows/release.yml` triggers on a `v*` tag, builds the
-same Dockerfile for amd64 and arm64 and pushes it to `ghcr.io/tikhub/spinneret`; it is the only thing
-in the repository that publishes an image. Nothing on a pull request or on `main` pushes anything.
+same Dockerfile for amd64 and arm64 and pushes it to `ghcr.io/tikhub/spinneret` and to Docker Hub; it is
+the only thing in the repository that publishes an image. Nothing on a pull request or on `main` pushes
+anything.
+
+It is one build pushed to both registries rather than two builds, so the same digest is served
+everywhere and the registries cannot drift apart. Docker Hub is skipped, rather than failing the run,
+when the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets are absent — which is what a fork sees. The
+Docker Hub namespace is that username unless the repository variable `DOCKERHUB_REPOSITORY` overrides
+it, for an account that pushes into an organisation namespace.
+
+The workflow also runs from **Actions → release → Run workflow** with an existing tag, which builds and
+publishes images for that tag without touching its GitHub release. That is how a registry added after a
+release was cut gets the images it missed. Turn off the `latest` input when the tag is not the newest
+release, or `:latest` will move backwards.
 
 ### What CI does not run
 

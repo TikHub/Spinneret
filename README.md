@@ -1000,8 +1000,9 @@ change lands in [`CHANGELOG.md`](CHANGELOG.md), which follows Keep a Changelog.
 
 Schema migrations are applied with `spnr migrate up`, inspected with `spnr migrate status` and rolled
 back with `spnr migrate down --to <version>`; back up before upgrading, as
-[Operations](documents/en/16-operations.md) describes. Container images are published per release tag on
-`ghcr.io/tikhub/spinneret` for linux/amd64 and linux/arm64 by the `release` workflow. Security fixes go
+[Operations](documents/en/16-operations.md) describes. Container images are published per release tag to
+`ghcr.io/tikhub/spinneret` and to Docker Hub for linux/amd64 and linux/arm64 by the `release` workflow —
+one build pushed to both, so the digest is identical wherever you pull it from. Security fixes go
 to the latest release and `main`, per [`SECURITY.md`](SECURITY.md).
 
 ---

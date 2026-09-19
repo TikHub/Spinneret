@@ -331,7 +331,7 @@ install rather than just "all defaults":
 | `SPINNERET_REPLICAS` | derived from CPU and RAM | Server replicas. |
 | `SPINNERET_ENABLE_OBSERVABILITY` | `0` | `1` adds the Prometheus profile. |
 | `SPINNERET_USE_PUBLISHED` | `1` | `1` pulls the published image, `0` builds from the checkout. |
-| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | The image repository — a private mirror or a fork, without editing the script. |
+| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | The image repository — Docker Hub (`tikhub/spinneret`, the same digest), a private mirror or a fork, without editing the script. |
 | `SPINNERET_IMAGE_TAG` | `latest` | The image tag. Pin an exact one for a production install. |
 | `NO_COLOR` | unset | Set to anything to turn off colour. |
 
