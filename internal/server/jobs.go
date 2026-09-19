@@ -12,6 +12,7 @@ import (
 
 	"github.com/TikHub/Spinneret/internal/appconfig"
 	"github.com/TikHub/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/settings"
 	"github.com/TikHub/Spinneret/internal/store/postgres"
 )
 
@@ -20,33 +21,39 @@ const (
 	partitionJobName      = "partition_manager"
 	partitionJobInterval  = time.Hour
 	partitionJobTimeout   = 15 * time.Minute
-	alertEventsRetention  = 90 * 24 * time.Hour
 	alertEventsPurgeBatch = 5000
+	// defaultAlertEventsRetention is the alert history window when neither the
+	// environment nor the console has set one. It had no variable before this
+	// setting existed and was simply this constant.
+	defaultAlertEventsRetention = 90 * 24 * time.Hour
 )
 
 // partitionMaintainer abstracts the PostgreSQL maintenance calls so the job
 // logic can be tested without a database.
 type partitionMaintainer struct {
-	ensure    func(ctx context.Context, now time.Time) error
-	drop      func(ctx context.Context, now time.Time) error
-	purge     func(ctx context.Context, before time.Time) (int64, error)
-	now       func() time.Time
-	logger    *slog.Logger
-	retention time.Duration
+	ensure func(ctx context.Context, now time.Time) error
+	drop   func(ctx context.Context, now time.Time, r appconfig.Retention) error
+	purge  func(ctx context.Context, before time.Time) (int64, error)
+	// resolve reads the retention settings at the start of every pass rather than
+	// at construction, which is what lets the console change them without a
+	// restart: the next hourly pass picks the new values up.
+	resolve func(ctx context.Context) (settings.Resolved, error)
+	now     func() time.Time
+	logger  *slog.Logger
 }
 
-func newPartitionMaintainer(pool *pgxpool.Pool, r appconfig.Retention, logger *slog.Logger) *partitionMaintainer {
+func newPartitionMaintainer(pool *pgxpool.Pool, store *settings.Store, logger *slog.Logger) *partitionMaintainer {
 	return &partitionMaintainer{
 		ensure: func(ctx context.Context, now time.Time) error { return postgres.EnsurePartitions(ctx, pool, now) },
-		drop: func(ctx context.Context, now time.Time) error {
+		drop: func(ctx context.Context, now time.Time, r appconfig.Retention) error {
 			return postgres.DropExpiredPartitions(ctx, pool, r, now)
 		},
 		purge: func(ctx context.Context, before time.Time) (int64, error) {
 			return postgres.PurgeAlertEvents(ctx, pool, before, alertEventsPurgeBatch)
 		},
-		now:       time.Now,
-		logger:    logger.With(slog.String("component", partitionJobName)),
-		retention: alertEventsRetention,
+		resolve: store.Resolve,
+		now:     time.Now,
+		logger:  logger.With(slog.String("component", partitionJobName)),
 	}
 }
 
@@ -65,16 +72,34 @@ func (m *partitionMaintainer) job() jobs.Job {
 }
 
 // run performs one maintenance pass. Every step is attempted; failures are joined.
+//
+// Creating partitions comes first and runs whatever else happens, because a
+// missing partition is an insert that fails. The two destructive steps need the
+// retention settings, and if those cannot be read they are skipped rather than
+// run against a guess: not dropping a partition this hour costs an hour of disk,
+// and dropping the wrong one costs the data.
 func (m *partitionMaintainer) run(ctx context.Context) error {
 	now := m.now().UTC()
 	var errs []error
 	if err := m.ensure(ctx, now); err != nil {
 		errs = append(errs, fmt.Errorf("ensure partitions: %w", err))
 	}
-	if err := m.drop(ctx, now); err != nil {
+
+	resolved, err := m.resolve(ctx)
+	if err != nil {
+		return errors.Join(append(errs, fmt.Errorf("read retention settings: %w", err))...)
+	}
+
+	if err := m.drop(ctx, now, appconfig.Retention{
+		RiskEvents:  resolved.RiskEvents,
+		MinuteStats: resolved.MinuteStats,
+		HourStats:   resolved.HourStats,
+		StateEvents: resolved.StateEvents,
+		Audit:       resolved.Audit,
+	}); err != nil {
 		errs = append(errs, fmt.Errorf("drop expired partitions: %w", err))
 	}
-	deleted, err := m.purge(ctx, now.Add(-m.retention))
+	deleted, err := m.purge(ctx, now.Add(-resolved.AlertEvents))
 	if err != nil {
 		errs = append(errs, fmt.Errorf("purge alert events: %w", err))
 	}

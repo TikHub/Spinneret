@@ -241,7 +241,7 @@ func (s *Server) mountConnect(mux *http.ServeMux) error {
 	mount(spinneretv1connect.NewSecretAdminServiceHandler(secretapi.New(c.secrets, c.rewrapper, c.catalog, c.audit, logger), admin...))
 	mount(spinneretv1connect.NewNotificationAdminServiceHandler(notifyapi.New(c.notify, c.catalog, logger), admin...))
 	mount(spinneretv1connect.NewDashboardServiceHandler(dashboardapi.New(c.analytics, c.catalog), admin...))
-	mount(spinneretv1connect.NewSystemServiceHandler(systemapi.New(c.updates, logger), admin...))
+	mount(spinneretv1connect.NewSystemServiceHandler(systemapi.New(c.updates, c.settings, c.audit, logger), admin...))
 	return nil
 }
 

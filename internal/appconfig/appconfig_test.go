@@ -85,6 +85,12 @@ func TestLoadFromDefaults(t *testing.T) {
 		ShutdownTimeout:      30 * time.Second,
 		AdminMaxRequestBytes: 64 << 20,
 	}
+	// This fixture supplies only the three required variables, so those are the
+	// only ones recorded — which is the distinction the settings page depends on.
+	require.True(t, c.EnvSet("SPINNERET_DATABASE_URL"))
+	require.False(t, c.EnvSet("SPINNERET_RETENTION_AUDIT"), "defaulted, not supplied")
+	c.envSet = nil
+
 	require.Equal(t, want, c)
 	require.NoError(t, c.Validate())
 
@@ -174,6 +180,15 @@ func TestLoadFromOverrides(t *testing.T) {
 		AllowedOrigins: []string{"http://localhost:5173"}, ShutdownTimeout: 5 * time.Second,
 		AdminMaxRequestBytes: 1 << 20, OTLPEndpoint: "otel:4317",
 	}
+	// envSet is bookkeeping rather than configuration, and it holds one entry per
+	// override this test sets, so comparing it inside the struct would restate the
+	// override map. Assert what it is actually for — telling a supplied value from
+	// a defaulted one — and then leave it out of the comparison.
+	require.True(t, c.EnvSet("SPINNERET_RETENTION_AUDIT"), "this test sets it")
+	require.False(t, c.EnvSet("SPINNERET_REDIS_URL"), "this test does not set it")
+	require.False(t, c.EnvSet("SPINNERET_NOT_A_VARIABLE"))
+	c.envSet = nil
+
 	require.Equal(t, want, c)
 	require.False(t, c.Role.ServesAPI())
 	require.True(t, c.Role.RunsWorkers())

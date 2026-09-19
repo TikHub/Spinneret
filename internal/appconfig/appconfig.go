@@ -38,6 +38,11 @@ func (r Role) ServesAPI() bool { return r == RoleAll || r == RoleAPI }
 // RunsWorkers reports whether the instance runs background workers.
 func (r Role) RunsWorkers() bool { return r == RoleAll || r == RoleWorker }
 
+// EnvSet reports whether the named environment variable supplied a value, as
+// opposed to the configuration falling back to its default. Only the settings
+// that the console can also change need to ask.
+func (c Config) EnvSet(key string) bool { return c.envSet[key] }
+
 // Retention holds data retention periods for partitioned tables.
 type Retention struct {
 	RiskEvents  time.Duration
@@ -120,6 +125,10 @@ type Config struct {
 	ShutdownTimeout      time.Duration
 	AdminMaxRequestBytes int64
 	OTLPEndpoint         string
+
+	// envSet names the variables the environment supplied, filled by Load. It is
+	// unexported because it is an implementation detail of EnvSet.
+	envSet map[string]bool
 }
 
 // Load reads the configuration from the process environment.
@@ -203,6 +212,7 @@ func LoadFrom(lookup func(string) (string, bool)) (Config, error) {
 	if c.InstanceID == "" {
 		c.InstanceID = defaultInstanceID()
 	}
+	c.envSet = l.seen
 	if err := errors.Join(l.errs...); err != nil {
 		return Config{}, err
 	}
@@ -425,6 +435,12 @@ func defaultInstanceID() string {
 type loader struct {
 	lookup func(string) (string, bool)
 	errs   []error
+	// seen records the keys the environment actually supplied a value for, as
+	// opposed to the ones that fell back to a default. Settings that can also be
+	// changed from the console need the difference: a variable that is set pins
+	// the setting, so that a deployment managed from a file keeps the guarantee
+	// that the file is what runs.
+	seen map[string]bool
 }
 
 func (l *loader) raw(key string) (string, bool) {
@@ -433,7 +449,14 @@ func (l *loader) raw(key string) (string, bool) {
 		return "", false
 	}
 	v = strings.TrimSpace(v)
-	return v, v != ""
+	if v == "" {
+		return "", false
+	}
+	if l.seen == nil {
+		l.seen = map[string]bool{}
+	}
+	l.seen[key] = true
+	return v, true
 }
 
 func (l *loader) str(key, def string) string {

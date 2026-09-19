@@ -9,7 +9,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/TikHub/Spinneret/internal/appconfig"
 	"github.com/TikHub/Spinneret/internal/jobs"
+	"github.com/TikHub/Spinneret/internal/settings"
 )
 
 func TestPartitionMaintainerRunsEveryStep(t *testing.T) {
@@ -22,8 +24,9 @@ func TestPartitionMaintainerRunsEveryStep(t *testing.T) {
 			calls = append(calls, "ensure")
 			return errors.New("ensure failed")
 		},
-		drop: func(context.Context, time.Time) error {
+		drop: func(_ context.Context, _ time.Time, r appconfig.Retention) error {
 			calls = append(calls, "drop")
+			require.Equal(t, 7*24*time.Hour, r.RiskEvents, "the retention comes from the settings store, not from startup")
 			return nil
 		},
 		purge: func(_ context.Context, before time.Time) (int64, error) {
@@ -31,9 +34,11 @@ func TestPartitionMaintainerRunsEveryStep(t *testing.T) {
 			purgedBefore = before
 			return 12, errors.New("purge failed")
 		},
-		now:       func() time.Time { return now },
-		logger:    discardLogger(),
-		retention: alertEventsRetention,
+		resolve: func(context.Context) (settings.Resolved, error) {
+			return settings.Resolved{RiskEvents: 7 * 24 * time.Hour, AlertEvents: defaultAlertEventsRetention}, nil
+		},
+		now:    func() time.Time { return now },
+		logger: discardLogger(),
 	}
 	err := m.run(context.Background())
 	require.ErrorContains(t, err, "ensure failed")
@@ -47,6 +52,31 @@ func TestPartitionMaintainerRunsEveryStep(t *testing.T) {
 	require.Equal(t, time.Hour, job.Interval)
 	require.Positive(t, job.InitialDelay, "the first run happens right after startup")
 	require.Less(t, job.InitialDelay, time.Second)
+}
+
+func TestPartitionMaintainerStillCreatesPartitionsWhenSettingsAreUnreadable(t *testing.T) {
+	// Creating partitions has to happen whatever else fails, because a missing
+	// partition is an insert that fails. Dropping and purging are destructive and
+	// need the retention, so an unreadable settings row skips them rather than
+	// running them against a guess.
+	var calls []string
+	m := &partitionMaintainer{
+		ensure: func(context.Context, time.Time) error { calls = append(calls, "ensure"); return nil },
+		drop: func(context.Context, time.Time, appconfig.Retention) error {
+			calls = append(calls, "drop")
+			return nil
+		},
+		purge: func(context.Context, time.Time) (int64, error) { calls = append(calls, "purge"); return 0, nil },
+		resolve: func(context.Context) (settings.Resolved, error) {
+			return settings.Resolved{}, errors.New("database is down")
+		},
+		now:    time.Now,
+		logger: discardLogger(),
+	}
+
+	err := m.run(context.Background())
+	require.ErrorContains(t, err, "read retention settings")
+	require.Equal(t, []string{"ensure"}, calls, "nothing destructive runs without the retention")
 }
 
 func TestCheckPoolSize(t *testing.T) {

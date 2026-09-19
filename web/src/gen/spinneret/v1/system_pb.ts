@@ -2,8 +2,8 @@
 // @generated from file spinneret/v1/system.proto (package spinneret.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -12,7 +12,150 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file spinneret/v1/system.proto.
  */
 export const file_spinneret_v1_system: GenFile = /*@__PURE__*/
-  fileDesc("ChlzcGlubmVyZXQvdjEvc3lzdGVtLnByb3RvEgxzcGlubmVyZXQudjEiFwoVQ2hlY2tGb3JVcGRhdGVSZXF1ZXN0IuUBChZDaGVja0ZvclVwZGF0ZVJlc3BvbnNlEhcKD2N1cnJlbnRfdmVyc2lvbhgBIAEoCRIWCg5sYXRlc3RfdmVyc2lvbhgCIAEoCRITCgtyZWxlYXNlX3VybBgDIAEoCRIYChB1cGRhdGVfYXZhaWxhYmxlGAQgASgIEi4KCmNoZWNrZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCGRpc2FibGVkGAYgASgIEg0KBWVycm9yGAcgASgJEhoKEmN1cnJlbnRfaXNfcmVsZWFzZRgIIAEoCDJsCg1TeXN0ZW1TZXJ2aWNlElsKDkNoZWNrRm9yVXBkYXRlEiMuc3Bpbm5lcmV0LnYxLkNoZWNrRm9yVXBkYXRlUmVxdWVzdBokLnNwaW5uZXJldC52MS5DaGVja0ZvclVwZGF0ZVJlc3BvbnNlQj1aO2dpdGh1Yi5jb20vVGlrSHViL1NwaW5uZXJldC9nZW4vZ28vc3Bpbm5lcmV0L3YxO3NwaW5uZXJldHYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChlzcGlubmVyZXQvdjEvc3lzdGVtLnByb3RvEgxzcGlubmVyZXQudjEiqgEKB1NldHRpbmcSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJEhUKDWRlZmF1bHRfdmFsdWUYAyABKAkSKwoGb3JpZ2luGAQgASgOMhsuc3Bpbm5lcmV0LnYxLlNldHRpbmdPcmlnaW4SDwoHZW52X3ZhchgFIAEoCRIMCgR1bml0GAYgASgJEg8KB21pbmltdW0YByABKAkSDwoHbWF4aW11bRgIIAEoCSIVChNMaXN0U2V0dGluZ3NSZXF1ZXN0IlEKFExpc3RTZXR0aW5nc1Jlc3BvbnNlEicKCHNldHRpbmdzGAEgAygLMhUuc3Bpbm5lcmV0LnYxLlNldHRpbmcSEAoIY2FuX2VkaXQYAiABKAgihwEKFVVwZGF0ZVNldHRpbmdzUmVxdWVzdBI/CgZ2YWx1ZXMYASADKAsyLy5zcGlubmVyZXQudjEuVXBkYXRlU2V0dGluZ3NSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiQQoWVXBkYXRlU2V0dGluZ3NSZXNwb25zZRInCghzZXR0aW5ncxgBIAMoCzIVLnNwaW5uZXJldC52MS5TZXR0aW5nIhcKFUNoZWNrRm9yVXBkYXRlUmVxdWVzdCLlAQoWQ2hlY2tGb3JVcGRhdGVSZXNwb25zZRIXCg9jdXJyZW50X3ZlcnNpb24YASABKAkSFgoObGF0ZXN0X3ZlcnNpb24YAiABKAkSEwoLcmVsZWFzZV91cmwYAyABKAkSGAoQdXBkYXRlX2F2YWlsYWJsZRgEIAEoCBIuCgpjaGVja2VkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIQCghkaXNhYmxlZBgGIAEoCBINCgVlcnJvchgHIAEoCRIaChJjdXJyZW50X2lzX3JlbGVhc2UYCCABKAgqiAEKDVNldHRpbmdPcmlnaW4SHgoaU0VUVElOR19PUklHSU5fVU5TUEVDSUZJRUQQABIaChZTRVRUSU5HX09SSUdJTl9ERUZBVUxUEAESGwoXU0VUVElOR19PUklHSU5fREFUQUJBU0UQAhIeChpTRVRUSU5HX09SSUdJTl9FTlZJUk9OTUVOVBADMqACCg1TeXN0ZW1TZXJ2aWNlElsKDkNoZWNrRm9yVXBkYXRlEiMuc3Bpbm5lcmV0LnYxLkNoZWNrRm9yVXBkYXRlUmVxdWVzdBokLnNwaW5uZXJldC52MS5DaGVja0ZvclVwZGF0ZVJlc3BvbnNlElUKDExpc3RTZXR0aW5ncxIhLnNwaW5uZXJldC52MS5MaXN0U2V0dGluZ3NSZXF1ZXN0GiIuc3Bpbm5lcmV0LnYxLkxpc3RTZXR0aW5nc1Jlc3BvbnNlElsKDlVwZGF0ZVNldHRpbmdzEiMuc3Bpbm5lcmV0LnYxLlVwZGF0ZVNldHRpbmdzUmVxdWVzdBokLnNwaW5uZXJldC52MS5VcGRhdGVTZXR0aW5nc1Jlc3BvbnNlQj1aO2dpdGh1Yi5jb20vVGlrSHViL1NwaW5uZXJldC9nZW4vZ28vc3Bpbm5lcmV0L3YxO3NwaW5uZXJldHYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+
+/**
+ * One deployment setting.
+ *
+ * @generated from message spinneret.v1.Setting
+ */
+export type Setting = Message<"spinneret.v1.Setting"> & {
+  /**
+   * Stable identifier, e.g. "retention.risk_events".
+   *
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * Effective value as text: a duration such as "30d", or a whole number for a
+   * setting counted in days.
+   *
+   * @generated from field: string value = 2;
+   */
+  value: string;
+
+  /**
+   * The built-in default, so the console can offer to reset to it.
+   *
+   * @generated from field: string default_value = 3;
+   */
+  defaultValue: string;
+
+  /**
+   * @generated from field: spinneret.v1.SettingOrigin origin = 4;
+   */
+  origin: SettingOrigin;
+
+  /**
+   * The variable that would pin this setting, whatever the origin is, so an
+   * operator can be told which one to remove.
+   *
+   * @generated from field: string env_var = 5;
+   */
+  envVar: string;
+
+  /**
+   * "duration" or "days".
+   *
+   * @generated from field: string unit = 6;
+   */
+  unit: string;
+
+  /**
+   * Inclusive bounds, in the same spelling as value.
+   *
+   * @generated from field: string minimum = 7;
+   */
+  minimum: string;
+
+  /**
+   * @generated from field: string maximum = 8;
+   */
+  maximum: string;
+};
+
+/**
+ * Describes the message spinneret.v1.Setting.
+ * Use `create(SettingSchema)` to create a new message.
+ */
+export const SettingSchema: GenMessage<Setting> = /*@__PURE__*/
+  messageDesc(file_spinneret_v1_system, 0);
+
+/**
+ * ListSettingsRequest is empty.
+ *
+ * @generated from message spinneret.v1.ListSettingsRequest
+ */
+export type ListSettingsRequest = Message<"spinneret.v1.ListSettingsRequest"> & {
+};
+
+/**
+ * Describes the message spinneret.v1.ListSettingsRequest.
+ * Use `create(ListSettingsRequestSchema)` to create a new message.
+ */
+export const ListSettingsRequestSchema: GenMessage<ListSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_spinneret_v1_system, 1);
+
+/**
+ * @generated from message spinneret.v1.ListSettingsResponse
+ */
+export type ListSettingsResponse = Message<"spinneret.v1.ListSettingsResponse"> & {
+  /**
+   * @generated from field: repeated spinneret.v1.Setting settings = 1;
+   */
+  settings: Setting[];
+
+  /**
+   * Whether the caller may change the settings that are not pinned.
+   *
+   * @generated from field: bool can_edit = 2;
+   */
+  canEdit: boolean;
+};
+
+/**
+ * Describes the message spinneret.v1.ListSettingsResponse.
+ * Use `create(ListSettingsResponseSchema)` to create a new message.
+ */
+export const ListSettingsResponseSchema: GenMessage<ListSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_spinneret_v1_system, 2);
+
+/**
+ * @generated from message spinneret.v1.UpdateSettingsRequest
+ */
+export type UpdateSettingsRequest = Message<"spinneret.v1.UpdateSettingsRequest"> & {
+  /**
+   * Only the keys present are changed. An empty value resets that setting.
+   *
+   * @generated from field: map<string, string> values = 1;
+   */
+  values: { [key: string]: string };
+};
+
+/**
+ * Describes the message spinneret.v1.UpdateSettingsRequest.
+ * Use `create(UpdateSettingsRequestSchema)` to create a new message.
+ */
+export const UpdateSettingsRequestSchema: GenMessage<UpdateSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_spinneret_v1_system, 3);
+
+/**
+ * @generated from message spinneret.v1.UpdateSettingsResponse
+ */
+export type UpdateSettingsResponse = Message<"spinneret.v1.UpdateSettingsResponse"> & {
+  /**
+   * @generated from field: repeated spinneret.v1.Setting settings = 1;
+   */
+  settings: Setting[];
+};
+
+/**
+ * Describes the message spinneret.v1.UpdateSettingsResponse.
+ * Use `create(UpdateSettingsResponseSchema)` to create a new message.
+ */
+export const UpdateSettingsResponseSchema: GenMessage<UpdateSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_spinneret_v1_system, 4);
 
 /**
  * CheckForUpdateRequest is empty.
@@ -27,7 +170,7 @@ export type CheckForUpdateRequest = Message<"spinneret.v1.CheckForUpdateRequest"
  * Use `create(CheckForUpdateRequestSchema)` to create a new message.
  */
 export const CheckForUpdateRequestSchema: GenMessage<CheckForUpdateRequest> = /*@__PURE__*/
-  messageDesc(file_spinneret_v1_system, 0);
+  messageDesc(file_spinneret_v1_system, 5);
 
 /**
  * CheckForUpdateResponse describes the running build and, when the check is
@@ -108,7 +251,48 @@ export type CheckForUpdateResponse = Message<"spinneret.v1.CheckForUpdateRespons
  * Use `create(CheckForUpdateResponseSchema)` to create a new message.
  */
 export const CheckForUpdateResponseSchema: GenMessage<CheckForUpdateResponse> = /*@__PURE__*/
-  messageDesc(file_spinneret_v1_system, 1);
+  messageDesc(file_spinneret_v1_system, 6);
+
+/**
+ * Where a setting's effective value came from.
+ *
+ * @generated from enum spinneret.v1.SettingOrigin
+ */
+export enum SettingOrigin {
+  /**
+   * @generated from enum value: SETTING_ORIGIN_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Nothing has set it; the value is the built-in default.
+   *
+   * @generated from enum value: SETTING_ORIGIN_DEFAULT = 1;
+   */
+  DEFAULT = 1,
+
+  /**
+   * An operator set it from the console.
+   *
+   * @generated from enum value: SETTING_ORIGIN_DATABASE = 2;
+   */
+  DATABASE = 2,
+
+  /**
+   * An environment variable set it, which also pins it: the console shows the
+   * value and refuses to change it, so that a deployment managed from a file
+   * keeps the guarantee that the file is what runs.
+   *
+   * @generated from enum value: SETTING_ORIGIN_ENVIRONMENT = 3;
+   */
+  ENVIRONMENT = 3,
+}
+
+/**
+ * Describes the enum spinneret.v1.SettingOrigin.
+ */
+export const SettingOriginSchema: GenEnum<SettingOrigin> = /*@__PURE__*/
+  enumDesc(file_spinneret_v1_system, 0);
 
 /**
  * SystemService exposes facts about the deployment itself rather than about the
@@ -134,6 +318,36 @@ export const SystemService: GenService<{
     methodKind: "unary";
     input: typeof CheckForUpdateRequestSchema;
     output: typeof CheckForUpdateResponseSchema;
+  },
+  /**
+   * ListSettings returns the deployment settings an operator may change while
+   * the server runs, each with where its effective value came from. Any console
+   * session may read them; what a deployment keeps its data for is not secret,
+   * and an operator investigating a full disk should not need a role binding to
+   * see it.
+   *
+   * @generated from rpc spinneret.v1.SystemService.ListSettings
+   */
+  listSettings: {
+    methodKind: "unary";
+    input: typeof ListSettingsRequestSchema;
+    output: typeof ListSettingsResponseSchema;
+  },
+  /**
+   * UpdateSettings changes deployment settings. Platform administrators only:
+   * these are properties of the whole deployment rather than of one tenant, and
+   * shortening a retention deletes data on the next hourly pass.
+   *
+   * Only the keys present in the request are touched, and an empty value returns
+   * that setting to its default. The whole request is validated before anything
+   * is written, so one rejected value leaves the others unchanged.
+   *
+   * @generated from rpc spinneret.v1.SystemService.UpdateSettings
+   */
+  updateSettings: {
+    methodKind: "unary";
+    input: typeof UpdateSettingsRequestSchema;
+    output: typeof UpdateSettingsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_spinneret_v1_system, 0);

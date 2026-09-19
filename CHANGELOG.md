@@ -14,6 +14,29 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ### Added
 
+- **Retention is editable from the console**, at Settings → System, instead of only through environment
+  variables and a restart. The five PostgreSQL retentions and the ClickHouse TTL are joined there by the
+  alert history window, which was hard-coded at 90 days and had no variable at all. A change applies on
+  the next hourly maintenance pass.
+
+  The two sources compose in one direction: an environment variable that is explicitly set **wins and
+  pins** the setting, which the console shows read-only next to the name of the variable to remove. That
+  keeps the guarantee a deployment managed from a file depends on, and since nothing in the shipped
+  `.env` sets a retention variable, every existing deployment starts with all of them at their defaults
+  and nothing about its current behaviour changes. Values are stored as one row in `system_settings`, which
+  has existed since the first migration and already holds the notification watermark, so there is no new
+  migration.
+
+  Reading them needs only a console session — what a deployment keeps its data for is not secret, and an
+  operator looking at a filling disk should not need a role binding. Changing them requires a platform
+  administrator, because it is deployment-wide and destructive, and every change is audited, accepted or
+  refused: retention decides how long evidence is kept, so the change to it is evidence.
+
+  Deliberately not editable here: anything encoded into data (`SPINNERET_REPORT_SHARDS` lives in every
+  lease id), anything needed before the database can be reached (its own URL, the key-encryption keys),
+  and the acquire and report hot paths. The test for inclusion is not whether someone would like to
+  change a value but what happens if it changes between two reads.
+
 - **Every release is published to Docker Hub as well as to GitHub Packages.** It is one build pushed to
   both registries rather than a build each, so both serve the same digest and cannot drift apart, and
   the four tags (`v0.1.0`, `0.1.0`, `0.1`, and `latest` for a non-pre-release) are identical on each.

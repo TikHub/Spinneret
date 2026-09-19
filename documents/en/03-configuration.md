@@ -494,6 +494,14 @@ The pool model, assignment modes and what "dead" does to scheduling: [Proxies](.
 
 ## Retention
 
+**These are also editable in the console, at Settings → System.** That page is the easier place for
+them: a change takes effect on the next hourly pass with no restart, and it cannot differ between
+replicas the way an environment variable can. The two sources compose in one direction — **a variable
+that is set here wins and pins the setting**, which the console then shows read-only next to the name of
+the variable to remove. Nothing in this project's shipped `.env` sets one, so on a normal deployment all
+of them start at their defaults and the console owns them. The console also exposes two retentions that
+have no variable at all: the alert history, fixed at 90 days before, and the ClickHouse TTL below.
+
 These five cover the partitioned PostgreSQL tables. The hourly `partition_manager` leader job keeps
 future partitions rolling and drops those whose whole range is older than the retention, so a partition
 is only dropped when every row in it has expired. Each value must be at least `24h`.
@@ -507,7 +515,8 @@ is only dropped when every row in it has expired. Each value must be at least `2
 | `SPINNERET_RETENTION_AUDIT` | `8760h` (365 days) | `audit_logs` — including every secret read | Usually a compliance decision, not a disk one. |
 
 Raw request events are in ClickHouse and expire on `SPINNERET_CLICKHOUSE_TTL_DAYS` instead, quite
-independently of these. Alert events are purged on a fixed 90-day window that is not configurable.
+independently of these. Alert events are purged on a 90-day window by default, which is now settable in
+the console alongside the rest.
 
 Lengthening a retention takes effect on the next hourly pass and costs nothing immediately — the data has
 to accumulate. Shortening one drops partitions on the next pass, and dropped is dropped. Measuring what

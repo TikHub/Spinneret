@@ -92,7 +92,7 @@
       "available": "{{version}} is available",
       "releaseNotes": "Release notes",
       "upToDate": "This is the latest release.",
-      "sourceBuild": "This build was made from source, so it carries no release number and cannot be compared with the published releases \u2014 it may be ahead of the latest one.",
+      "sourceBuild": "This build was made from source, so it carries no release number and cannot be compared with the published releases — it may be ahead of the latest one.",
       "noReleases": "No release has been published yet.",
       "failed": "The release feed could not be read: {{error}}",
       "disabled": "Update checking is turned off on this deployment (SPINNERET_UPDATE_CHECK_URL is empty), so no outbound request is made."
@@ -107,6 +107,35 @@
       "securityHint": "How to report a vulnerability privately",
       "source": "Source code",
       "sourceHint": "The repository this build came from"
+    },
+    "retention": {
+      "title": "Data retention",
+      "description": "How long this deployment keeps each kind of history. Changes take effect on the next hourly maintenance pass; no restart is needed.",
+      "pinned": "From the environment",
+      "pinnedBy": "Set by {{envVar}}. Remove it from the environment and restart to manage this here.",
+      "customized": "Changed",
+      "readOnly": "Only a platform administrator can change these.",
+      "reset": "Reset to the default ({{value}})",
+      "days": "days",
+      "warning": "Shortening a retention deletes the history outside the new window on the next pass. Dropped is dropped.",
+      "keys": {
+        "retention.risk_events": "Risk events",
+        "retention.minute_stats": "Per-minute statistics",
+        "retention.hour_stats": "Hourly statistics",
+        "retention.state_events": "State changes",
+        "retention.audit": "Audit log",
+        "retention.alert_events": "Alert history",
+        "retention.clickhouse_ttl_days": "Request history (ClickHouse)"
+      },
+      "hints": {
+        "retention.risk_events": "The rows behind the risk feed.",
+        "retention.minute_stats": "The largest of these by row count — shorten this one first when PostgreSQL disk is the constraint.",
+        "retention.hour_stats": "The long trends. Cheap to keep.",
+        "retention.state_events": "Every identity and proxy state transition.",
+        "retention.audit": "Including every secret read. Usually a compliance decision, not a disk one.",
+        "retention.alert_events": "Delivered notifications and their history.",
+        "retention.clickhouse_ttl_days": "Raw request and lease events. The store that decides your disk; applied by ClickHouse itself."
+      }
     }
   },
   "theme": {

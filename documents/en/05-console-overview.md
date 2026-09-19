@@ -228,8 +228,12 @@ display name, email, last sign-in, creation time — the tenants your role bindi
 they give you there, the same language and theme controls, and the password change form.
 
 The **System** page (`/settings/system`) is about the deployment rather than about you: the version of
-the server you are talking to, an on-demand check against the published releases, and links to the
-manual, the issue tracker, the security policy and the source. Any signed-in user can open it; it needs
+the server you are talking to, an on-demand check against the published releases, how long each kind of
+history is kept, and links to the manual, the issue tracker, the security policy and the source. The
+retention settings are editable by a platform administrator and read-only for everyone else; a setting
+an environment variable pins shows a lock and the name of the variable. A change applies on the next
+hourly maintenance pass, with no restart — and shortening one deletes the history outside the new window
+on that pass. Any signed-in user can open it; it needs
 no role binding, because knowing which build you are on is not privileged information. The check itself
 makes no outbound request until you press the button, caches its answer for an hour, and can be turned
 off with `SPINNERET_UPDATE_CHECK_URL=""` — see

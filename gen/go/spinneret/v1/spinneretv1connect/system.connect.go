@@ -36,6 +36,12 @@ const (
 	// SystemServiceCheckForUpdateProcedure is the fully-qualified name of the SystemService's
 	// CheckForUpdate RPC.
 	SystemServiceCheckForUpdateProcedure = "/spinneret.v1.SystemService/CheckForUpdate"
+	// SystemServiceListSettingsProcedure is the fully-qualified name of the SystemService's
+	// ListSettings RPC.
+	SystemServiceListSettingsProcedure = "/spinneret.v1.SystemService/ListSettings"
+	// SystemServiceUpdateSettingsProcedure is the fully-qualified name of the SystemService's
+	// UpdateSettings RPC.
+	SystemServiceUpdateSettingsProcedure = "/spinneret.v1.SystemService/UpdateSettings"
 )
 
 // SystemServiceClient is a client for the spinneret.v1.SystemService service.
@@ -50,6 +56,20 @@ type SystemServiceClient interface {
 	// cached for an hour because the default feed is rate limited per source
 	// address.
 	CheckForUpdate(context.Context, *connect.Request[v1.CheckForUpdateRequest]) (*connect.Response[v1.CheckForUpdateResponse], error)
+	// ListSettings returns the deployment settings an operator may change while
+	// the server runs, each with where its effective value came from. Any console
+	// session may read them; what a deployment keeps its data for is not secret,
+	// and an operator investigating a full disk should not need a role binding to
+	// see it.
+	ListSettings(context.Context, *connect.Request[v1.ListSettingsRequest]) (*connect.Response[v1.ListSettingsResponse], error)
+	// UpdateSettings changes deployment settings. Platform administrators only:
+	// these are properties of the whole deployment rather than of one tenant, and
+	// shortening a retention deletes data on the next hourly pass.
+	//
+	// Only the keys present in the request are touched, and an empty value returns
+	// that setting to its default. The whole request is validated before anything
+	// is written, so one rejected value leaves the others unchanged.
+	UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error)
 }
 
 // NewSystemServiceClient constructs a client for the spinneret.v1.SystemService service. By
@@ -69,17 +89,41 @@ func NewSystemServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(systemServiceMethods.ByName("CheckForUpdate")),
 			connect.WithClientOptions(opts...),
 		),
+		listSettings: connect.NewClient[v1.ListSettingsRequest, v1.ListSettingsResponse](
+			httpClient,
+			baseURL+SystemServiceListSettingsProcedure,
+			connect.WithSchema(systemServiceMethods.ByName("ListSettings")),
+			connect.WithClientOptions(opts...),
+		),
+		updateSettings: connect.NewClient[v1.UpdateSettingsRequest, v1.UpdateSettingsResponse](
+			httpClient,
+			baseURL+SystemServiceUpdateSettingsProcedure,
+			connect.WithSchema(systemServiceMethods.ByName("UpdateSettings")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // systemServiceClient implements SystemServiceClient.
 type systemServiceClient struct {
 	checkForUpdate *connect.Client[v1.CheckForUpdateRequest, v1.CheckForUpdateResponse]
+	listSettings   *connect.Client[v1.ListSettingsRequest, v1.ListSettingsResponse]
+	updateSettings *connect.Client[v1.UpdateSettingsRequest, v1.UpdateSettingsResponse]
 }
 
 // CheckForUpdate calls spinneret.v1.SystemService.CheckForUpdate.
 func (c *systemServiceClient) CheckForUpdate(ctx context.Context, req *connect.Request[v1.CheckForUpdateRequest]) (*connect.Response[v1.CheckForUpdateResponse], error) {
 	return c.checkForUpdate.CallUnary(ctx, req)
+}
+
+// ListSettings calls spinneret.v1.SystemService.ListSettings.
+func (c *systemServiceClient) ListSettings(ctx context.Context, req *connect.Request[v1.ListSettingsRequest]) (*connect.Response[v1.ListSettingsResponse], error) {
+	return c.listSettings.CallUnary(ctx, req)
+}
+
+// UpdateSettings calls spinneret.v1.SystemService.UpdateSettings.
+func (c *systemServiceClient) UpdateSettings(ctx context.Context, req *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error) {
+	return c.updateSettings.CallUnary(ctx, req)
 }
 
 // SystemServiceHandler is an implementation of the spinneret.v1.SystemService service.
@@ -94,6 +138,20 @@ type SystemServiceHandler interface {
 	// cached for an hour because the default feed is rate limited per source
 	// address.
 	CheckForUpdate(context.Context, *connect.Request[v1.CheckForUpdateRequest]) (*connect.Response[v1.CheckForUpdateResponse], error)
+	// ListSettings returns the deployment settings an operator may change while
+	// the server runs, each with where its effective value came from. Any console
+	// session may read them; what a deployment keeps its data for is not secret,
+	// and an operator investigating a full disk should not need a role binding to
+	// see it.
+	ListSettings(context.Context, *connect.Request[v1.ListSettingsRequest]) (*connect.Response[v1.ListSettingsResponse], error)
+	// UpdateSettings changes deployment settings. Platform administrators only:
+	// these are properties of the whole deployment rather than of one tenant, and
+	// shortening a retention deletes data on the next hourly pass.
+	//
+	// Only the keys present in the request are touched, and an empty value returns
+	// that setting to its default. The whole request is validated before anything
+	// is written, so one rejected value leaves the others unchanged.
+	UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error)
 }
 
 // NewSystemServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -109,10 +167,26 @@ func NewSystemServiceHandler(svc SystemServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(systemServiceMethods.ByName("CheckForUpdate")),
 		connect.WithHandlerOptions(opts...),
 	)
+	systemServiceListSettingsHandler := connect.NewUnaryHandler(
+		SystemServiceListSettingsProcedure,
+		svc.ListSettings,
+		connect.WithSchema(systemServiceMethods.ByName("ListSettings")),
+		connect.WithHandlerOptions(opts...),
+	)
+	systemServiceUpdateSettingsHandler := connect.NewUnaryHandler(
+		SystemServiceUpdateSettingsProcedure,
+		svc.UpdateSettings,
+		connect.WithSchema(systemServiceMethods.ByName("UpdateSettings")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/spinneret.v1.SystemService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SystemServiceCheckForUpdateProcedure:
 			systemServiceCheckForUpdateHandler.ServeHTTP(w, r)
+		case SystemServiceListSettingsProcedure:
+			systemServiceListSettingsHandler.ServeHTTP(w, r)
+		case SystemServiceUpdateSettingsProcedure:
+			systemServiceUpdateSettingsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -124,4 +198,12 @@ type UnimplementedSystemServiceHandler struct{}
 
 func (UnimplementedSystemServiceHandler) CheckForUpdate(context.Context, *connect.Request[v1.CheckForUpdateRequest]) (*connect.Response[v1.CheckForUpdateResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("spinneret.v1.SystemService.CheckForUpdate is not implemented"))
+}
+
+func (UnimplementedSystemServiceHandler) ListSettings(context.Context, *connect.Request[v1.ListSettingsRequest]) (*connect.Response[v1.ListSettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("spinneret.v1.SystemService.ListSettings is not implemented"))
+}
+
+func (UnimplementedSystemServiceHandler) UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("spinneret.v1.SystemService.UpdateSettings is not implemented"))
 }

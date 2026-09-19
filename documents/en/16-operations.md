@@ -818,6 +818,10 @@ the envelope-encryption details behind all of this.
 
 ### Every retention setting
 
+All of these except the stream cap are also editable at **Settings → System** in the console, where a
+change applies on the next hourly pass without a restart. An environment variable that is set wins over
+the console and pins the setting.
+
 | Setting | Default | Prunes | Mechanism |
 | --- | --- | --- | --- |
 | `SPINNERET_RETENTION_RISK_EVENTS` | `720h` (30 d) | `risk_events` | Daily partitions dropped |

@@ -19,6 +19,73 @@ service SystemService {
   // cached for an hour because the default feed is rate limited per source
   // address.
   rpc CheckForUpdate(CheckForUpdateRequest) returns (CheckForUpdateResponse);
+
+  // ListSettings returns the deployment settings an operator may change while
+  // the server runs, each with where its effective value came from. Any console
+  // session may read them; what a deployment keeps its data for is not secret,
+  // and an operator investigating a full disk should not need a role binding to
+  // see it.
+  rpc ListSettings(ListSettingsRequest) returns (ListSettingsResponse);
+
+  // UpdateSettings changes deployment settings. Platform administrators only:
+  // these are properties of the whole deployment rather than of one tenant, and
+  // shortening a retention deletes data on the next hourly pass.
+  //
+  // Only the keys present in the request are touched, and an empty value returns
+  // that setting to its default. The whole request is validated before anything
+  // is written, so one rejected value leaves the others unchanged.
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
+}
+
+// Where a setting's effective value came from.
+enum SettingOrigin {
+  SETTING_ORIGIN_UNSPECIFIED = 0;
+  // Nothing has set it; the value is the built-in default.
+  SETTING_ORIGIN_DEFAULT = 1;
+  // An operator set it from the console.
+  SETTING_ORIGIN_DATABASE = 2;
+  // An environment variable set it, which also pins it: the console shows the
+  // value and refuses to change it, so that a deployment managed from a file
+  // keeps the guarantee that the file is what runs.
+  SETTING_ORIGIN_ENVIRONMENT = 3;
+}
+
+// One deployment setting.
+message Setting {
+  // Stable identifier, e.g. "retention.risk_events".
+  string key = 1;
+  // Effective value as text: a duration such as "30d", or a whole number for a
+  // setting counted in days.
+  string value = 2;
+  // The built-in default, so the console can offer to reset to it.
+  string default_value = 3;
+  SettingOrigin origin = 4;
+  // The variable that would pin this setting, whatever the origin is, so an
+  // operator can be told which one to remove.
+  string env_var = 5;
+  // "duration" or "days".
+  string unit = 6;
+  // Inclusive bounds, in the same spelling as value.
+  string minimum = 7;
+  string maximum = 8;
+}
+
+// ListSettingsRequest is empty.
+message ListSettingsRequest {}
+
+message ListSettingsResponse {
+  repeated Setting settings = 1;
+  // Whether the caller may change the settings that are not pinned.
+  bool can_edit = 2;
+}
+
+message UpdateSettingsRequest {
+  // Only the keys present are changed. An empty value resets that setting.
+  map<string, string> values = 1;
+}
+
+message UpdateSettingsResponse {
+  repeated Setting settings = 1;
 }
 
 // CheckForUpdateRequest is empty.

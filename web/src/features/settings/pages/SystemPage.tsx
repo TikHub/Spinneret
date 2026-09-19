@@ -1,11 +1,13 @@
 import { BookOpenIcon, ExternalLinkIcon, MessageSquareWarningIcon, ShieldIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { useAuth } from '@/app/auth/AuthContext';
 import { PageHeader } from '@/components/PageHeader';
 import { PageIntro } from '@/components/PageIntro';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { docsUrl, ISSUES_URL, REPO_URL, SECURITY_URL } from '@/lib/project';
 
+import { RetentionCard } from '../components/RetentionCard';
 import { UpdateCard } from '../components/UpdateCard';
 
 function LinkRow({
@@ -39,6 +41,7 @@ function LinkRow({
 /** Deployment-level settings: which build is running, and where to get help. */
 export default function SystemPage() {
   const { t, i18n } = useTranslation();
+  const { isPlatformAdmin } = useAuth();
 
   return (
     <>
@@ -47,6 +50,7 @@ export default function SystemPage() {
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="grid content-start gap-4">
           <UpdateCard />
+          <RetentionCard canEdit={isPlatformAdmin} />
         </div>
         <div className="grid content-start gap-4">
           <Card>

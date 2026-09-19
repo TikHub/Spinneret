@@ -22,6 +22,352 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Where a setting's effective value came from.
+type SettingOrigin int32
+
+const (
+	SettingOrigin_SETTING_ORIGIN_UNSPECIFIED SettingOrigin = 0
+	// Nothing has set it; the value is the built-in default.
+	SettingOrigin_SETTING_ORIGIN_DEFAULT SettingOrigin = 1
+	// An operator set it from the console.
+	SettingOrigin_SETTING_ORIGIN_DATABASE SettingOrigin = 2
+	// An environment variable set it, which also pins it: the console shows the
+	// value and refuses to change it, so that a deployment managed from a file
+	// keeps the guarantee that the file is what runs.
+	SettingOrigin_SETTING_ORIGIN_ENVIRONMENT SettingOrigin = 3
+)
+
+// Enum value maps for SettingOrigin.
+var (
+	SettingOrigin_name = map[int32]string{
+		0: "SETTING_ORIGIN_UNSPECIFIED",
+		1: "SETTING_ORIGIN_DEFAULT",
+		2: "SETTING_ORIGIN_DATABASE",
+		3: "SETTING_ORIGIN_ENVIRONMENT",
+	}
+	SettingOrigin_value = map[string]int32{
+		"SETTING_ORIGIN_UNSPECIFIED": 0,
+		"SETTING_ORIGIN_DEFAULT":     1,
+		"SETTING_ORIGIN_DATABASE":    2,
+		"SETTING_ORIGIN_ENVIRONMENT": 3,
+	}
+)
+
+func (x SettingOrigin) Enum() *SettingOrigin {
+	p := new(SettingOrigin)
+	*p = x
+	return p
+}
+
+func (x SettingOrigin) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SettingOrigin) Descriptor() protoreflect.EnumDescriptor {
+	return file_spinneret_v1_system_proto_enumTypes[0].Descriptor()
+}
+
+func (SettingOrigin) Type() protoreflect.EnumType {
+	return &file_spinneret_v1_system_proto_enumTypes[0]
+}
+
+func (x SettingOrigin) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SettingOrigin.Descriptor instead.
+func (SettingOrigin) EnumDescriptor() ([]byte, []int) {
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{0}
+}
+
+// One deployment setting.
+type Setting struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Stable identifier, e.g. "retention.risk_events".
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Effective value as text: a duration such as "30d", or a whole number for a
+	// setting counted in days.
+	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	// The built-in default, so the console can offer to reset to it.
+	DefaultValue string        `protobuf:"bytes,3,opt,name=default_value,json=defaultValue,proto3" json:"default_value,omitempty"`
+	Origin       SettingOrigin `protobuf:"varint,4,opt,name=origin,proto3,enum=spinneret.v1.SettingOrigin" json:"origin,omitempty"`
+	// The variable that would pin this setting, whatever the origin is, so an
+	// operator can be told which one to remove.
+	EnvVar string `protobuf:"bytes,5,opt,name=env_var,json=envVar,proto3" json:"env_var,omitempty"`
+	// "duration" or "days".
+	Unit string `protobuf:"bytes,6,opt,name=unit,proto3" json:"unit,omitempty"`
+	// Inclusive bounds, in the same spelling as value.
+	Minimum       string `protobuf:"bytes,7,opt,name=minimum,proto3" json:"minimum,omitempty"`
+	Maximum       string `protobuf:"bytes,8,opt,name=maximum,proto3" json:"maximum,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Setting) Reset() {
+	*x = Setting{}
+	mi := &file_spinneret_v1_system_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Setting) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Setting) ProtoMessage() {}
+
+func (x *Setting) ProtoReflect() protoreflect.Message {
+	mi := &file_spinneret_v1_system_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Setting.ProtoReflect.Descriptor instead.
+func (*Setting) Descriptor() ([]byte, []int) {
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Setting) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Setting) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *Setting) GetDefaultValue() string {
+	if x != nil {
+		return x.DefaultValue
+	}
+	return ""
+}
+
+func (x *Setting) GetOrigin() SettingOrigin {
+	if x != nil {
+		return x.Origin
+	}
+	return SettingOrigin_SETTING_ORIGIN_UNSPECIFIED
+}
+
+func (x *Setting) GetEnvVar() string {
+	if x != nil {
+		return x.EnvVar
+	}
+	return ""
+}
+
+func (x *Setting) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *Setting) GetMinimum() string {
+	if x != nil {
+		return x.Minimum
+	}
+	return ""
+}
+
+func (x *Setting) GetMaximum() string {
+	if x != nil {
+		return x.Maximum
+	}
+	return ""
+}
+
+// ListSettingsRequest is empty.
+type ListSettingsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSettingsRequest) Reset() {
+	*x = ListSettingsRequest{}
+	mi := &file_spinneret_v1_system_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSettingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSettingsRequest) ProtoMessage() {}
+
+func (x *ListSettingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_spinneret_v1_system_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSettingsRequest.ProtoReflect.Descriptor instead.
+func (*ListSettingsRequest) Descriptor() ([]byte, []int) {
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{1}
+}
+
+type ListSettingsResponse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Settings []*Setting             `protobuf:"bytes,1,rep,name=settings,proto3" json:"settings,omitempty"`
+	// Whether the caller may change the settings that are not pinned.
+	CanEdit       bool `protobuf:"varint,2,opt,name=can_edit,json=canEdit,proto3" json:"can_edit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSettingsResponse) Reset() {
+	*x = ListSettingsResponse{}
+	mi := &file_spinneret_v1_system_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSettingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSettingsResponse) ProtoMessage() {}
+
+func (x *ListSettingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_spinneret_v1_system_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSettingsResponse.ProtoReflect.Descriptor instead.
+func (*ListSettingsResponse) Descriptor() ([]byte, []int) {
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ListSettingsResponse) GetSettings() []*Setting {
+	if x != nil {
+		return x.Settings
+	}
+	return nil
+}
+
+func (x *ListSettingsResponse) GetCanEdit() bool {
+	if x != nil {
+		return x.CanEdit
+	}
+	return false
+}
+
+type UpdateSettingsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Only the keys present are changed. An empty value resets that setting.
+	Values        map[string]string `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSettingsRequest) Reset() {
+	*x = UpdateSettingsRequest{}
+	mi := &file_spinneret_v1_system_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSettingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSettingsRequest) ProtoMessage() {}
+
+func (x *UpdateSettingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_spinneret_v1_system_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSettingsRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSettingsRequest) Descriptor() ([]byte, []int) {
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UpdateSettingsRequest) GetValues() map[string]string {
+	if x != nil {
+		return x.Values
+	}
+	return nil
+}
+
+type UpdateSettingsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Settings      []*Setting             `protobuf:"bytes,1,rep,name=settings,proto3" json:"settings,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSettingsResponse) Reset() {
+	*x = UpdateSettingsResponse{}
+	mi := &file_spinneret_v1_system_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSettingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSettingsResponse) ProtoMessage() {}
+
+func (x *UpdateSettingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_spinneret_v1_system_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSettingsResponse.ProtoReflect.Descriptor instead.
+func (*UpdateSettingsResponse) Descriptor() ([]byte, []int) {
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpdateSettingsResponse) GetSettings() []*Setting {
+	if x != nil {
+		return x.Settings
+	}
+	return nil
+}
+
 // CheckForUpdateRequest is empty.
 type CheckForUpdateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -31,7 +377,7 @@ type CheckForUpdateRequest struct {
 
 func (x *CheckForUpdateRequest) Reset() {
 	*x = CheckForUpdateRequest{}
-	mi := &file_spinneret_v1_system_proto_msgTypes[0]
+	mi := &file_spinneret_v1_system_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +389,7 @@ func (x *CheckForUpdateRequest) String() string {
 func (*CheckForUpdateRequest) ProtoMessage() {}
 
 func (x *CheckForUpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_spinneret_v1_system_proto_msgTypes[0]
+	mi := &file_spinneret_v1_system_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +402,7 @@ func (x *CheckForUpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckForUpdateRequest.ProtoReflect.Descriptor instead.
 func (*CheckForUpdateRequest) Descriptor() ([]byte, []int) {
-	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{0}
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{5}
 }
 
 // CheckForUpdateResponse describes the running build and, when the check is
@@ -95,7 +441,7 @@ type CheckForUpdateResponse struct {
 
 func (x *CheckForUpdateResponse) Reset() {
 	*x = CheckForUpdateResponse{}
-	mi := &file_spinneret_v1_system_proto_msgTypes[1]
+	mi := &file_spinneret_v1_system_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -107,7 +453,7 @@ func (x *CheckForUpdateResponse) String() string {
 func (*CheckForUpdateResponse) ProtoMessage() {}
 
 func (x *CheckForUpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_spinneret_v1_system_proto_msgTypes[1]
+	mi := &file_spinneret_v1_system_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -120,7 +466,7 @@ func (x *CheckForUpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckForUpdateResponse.ProtoReflect.Descriptor instead.
 func (*CheckForUpdateResponse) Descriptor() ([]byte, []int) {
-	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{1}
+	return file_spinneret_v1_system_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CheckForUpdateResponse) GetCurrentVersion() string {
@@ -183,7 +529,27 @@ var File_spinneret_v1_system_proto protoreflect.FileDescriptor
 
 const file_spinneret_v1_system_proto_rawDesc = "" +
 	"\n" +
-	"\x19spinneret/v1/system.proto\x12\fspinneret.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x17\n" +
+	"\x19spinneret/v1/system.proto\x12\fspinneret.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xec\x01\n" +
+	"\aSetting\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12#\n" +
+	"\rdefault_value\x18\x03 \x01(\tR\fdefaultValue\x123\n" +
+	"\x06origin\x18\x04 \x01(\x0e2\x1b.spinneret.v1.SettingOriginR\x06origin\x12\x17\n" +
+	"\aenv_var\x18\x05 \x01(\tR\x06envVar\x12\x12\n" +
+	"\x04unit\x18\x06 \x01(\tR\x04unit\x12\x18\n" +
+	"\aminimum\x18\a \x01(\tR\aminimum\x12\x18\n" +
+	"\amaximum\x18\b \x01(\tR\amaximum\"\x15\n" +
+	"\x13ListSettingsRequest\"d\n" +
+	"\x14ListSettingsResponse\x121\n" +
+	"\bsettings\x18\x01 \x03(\v2\x15.spinneret.v1.SettingR\bsettings\x12\x19\n" +
+	"\bcan_edit\x18\x02 \x01(\bR\acanEdit\"\x9b\x01\n" +
+	"\x15UpdateSettingsRequest\x12G\n" +
+	"\x06values\x18\x01 \x03(\v2/.spinneret.v1.UpdateSettingsRequest.ValuesEntryR\x06values\x1a9\n" +
+	"\vValuesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"K\n" +
+	"\x16UpdateSettingsResponse\x121\n" +
+	"\bsettings\x18\x01 \x03(\v2\x15.spinneret.v1.SettingR\bsettings\"\x17\n" +
 	"\x15CheckForUpdateRequest\"\xcf\x02\n" +
 	"\x16CheckForUpdateResponse\x12'\n" +
 	"\x0fcurrent_version\x18\x01 \x01(\tR\x0ecurrentVersion\x12%\n" +
@@ -195,9 +561,16 @@ const file_spinneret_v1_system_proto_rawDesc = "" +
 	"checked_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcheckedAt\x12\x1a\n" +
 	"\bdisabled\x18\x06 \x01(\bR\bdisabled\x12\x14\n" +
 	"\x05error\x18\a \x01(\tR\x05error\x12,\n" +
-	"\x12current_is_release\x18\b \x01(\bR\x10currentIsRelease2l\n" +
+	"\x12current_is_release\x18\b \x01(\bR\x10currentIsRelease*\x88\x01\n" +
+	"\rSettingOrigin\x12\x1e\n" +
+	"\x1aSETTING_ORIGIN_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16SETTING_ORIGIN_DEFAULT\x10\x01\x12\x1b\n" +
+	"\x17SETTING_ORIGIN_DATABASE\x10\x02\x12\x1e\n" +
+	"\x1aSETTING_ORIGIN_ENVIRONMENT\x10\x032\xa0\x02\n" +
 	"\rSystemService\x12[\n" +
-	"\x0eCheckForUpdate\x12#.spinneret.v1.CheckForUpdateRequest\x1a$.spinneret.v1.CheckForUpdateResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
+	"\x0eCheckForUpdate\x12#.spinneret.v1.CheckForUpdateRequest\x1a$.spinneret.v1.CheckForUpdateResponse\x12U\n" +
+	"\fListSettings\x12!.spinneret.v1.ListSettingsRequest\x1a\".spinneret.v1.ListSettingsResponse\x12[\n" +
+	"\x0eUpdateSettings\x12#.spinneret.v1.UpdateSettingsRequest\x1a$.spinneret.v1.UpdateSettingsResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 
 var (
 	file_spinneret_v1_system_proto_rawDescOnce sync.Once
@@ -211,21 +584,37 @@ func file_spinneret_v1_system_proto_rawDescGZIP() []byte {
 	return file_spinneret_v1_system_proto_rawDescData
 }
 
-var file_spinneret_v1_system_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_spinneret_v1_system_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_spinneret_v1_system_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_spinneret_v1_system_proto_goTypes = []any{
-	(*CheckForUpdateRequest)(nil),  // 0: spinneret.v1.CheckForUpdateRequest
-	(*CheckForUpdateResponse)(nil), // 1: spinneret.v1.CheckForUpdateResponse
-	(*timestamppb.Timestamp)(nil),  // 2: google.protobuf.Timestamp
+	(SettingOrigin)(0),             // 0: spinneret.v1.SettingOrigin
+	(*Setting)(nil),                // 1: spinneret.v1.Setting
+	(*ListSettingsRequest)(nil),    // 2: spinneret.v1.ListSettingsRequest
+	(*ListSettingsResponse)(nil),   // 3: spinneret.v1.ListSettingsResponse
+	(*UpdateSettingsRequest)(nil),  // 4: spinneret.v1.UpdateSettingsRequest
+	(*UpdateSettingsResponse)(nil), // 5: spinneret.v1.UpdateSettingsResponse
+	(*CheckForUpdateRequest)(nil),  // 6: spinneret.v1.CheckForUpdateRequest
+	(*CheckForUpdateResponse)(nil), // 7: spinneret.v1.CheckForUpdateResponse
+	nil,                            // 8: spinneret.v1.UpdateSettingsRequest.ValuesEntry
+	(*timestamppb.Timestamp)(nil),  // 9: google.protobuf.Timestamp
 }
 var file_spinneret_v1_system_proto_depIdxs = []int32{
-	2, // 0: spinneret.v1.CheckForUpdateResponse.checked_at:type_name -> google.protobuf.Timestamp
-	0, // 1: spinneret.v1.SystemService.CheckForUpdate:input_type -> spinneret.v1.CheckForUpdateRequest
-	1, // 2: spinneret.v1.SystemService.CheckForUpdate:output_type -> spinneret.v1.CheckForUpdateResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: spinneret.v1.Setting.origin:type_name -> spinneret.v1.SettingOrigin
+	1, // 1: spinneret.v1.ListSettingsResponse.settings:type_name -> spinneret.v1.Setting
+	8, // 2: spinneret.v1.UpdateSettingsRequest.values:type_name -> spinneret.v1.UpdateSettingsRequest.ValuesEntry
+	1, // 3: spinneret.v1.UpdateSettingsResponse.settings:type_name -> spinneret.v1.Setting
+	9, // 4: spinneret.v1.CheckForUpdateResponse.checked_at:type_name -> google.protobuf.Timestamp
+	6, // 5: spinneret.v1.SystemService.CheckForUpdate:input_type -> spinneret.v1.CheckForUpdateRequest
+	2, // 6: spinneret.v1.SystemService.ListSettings:input_type -> spinneret.v1.ListSettingsRequest
+	4, // 7: spinneret.v1.SystemService.UpdateSettings:input_type -> spinneret.v1.UpdateSettingsRequest
+	7, // 8: spinneret.v1.SystemService.CheckForUpdate:output_type -> spinneret.v1.CheckForUpdateResponse
+	3, // 9: spinneret.v1.SystemService.ListSettings:output_type -> spinneret.v1.ListSettingsResponse
+	5, // 10: spinneret.v1.SystemService.UpdateSettings:output_type -> spinneret.v1.UpdateSettingsResponse
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_spinneret_v1_system_proto_init() }
@@ -238,13 +627,14 @@ func file_spinneret_v1_system_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_spinneret_v1_system_proto_rawDesc), len(file_spinneret_v1_system_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   2,
+			NumEnums:      1,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_spinneret_v1_system_proto_goTypes,
 		DependencyIndexes: file_spinneret_v1_system_proto_depIdxs,
+		EnumInfos:         file_spinneret_v1_system_proto_enumTypes,
 		MessageInfos:      file_spinneret_v1_system_proto_msgTypes,
 	}.Build()
 	File_spinneret_v1_system_proto = out.File

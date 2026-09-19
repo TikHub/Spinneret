@@ -107,6 +107,35 @@
       "securityHint": "如何私密地报告漏洞",
       "source": "源代码",
       "sourceHint": "这个构建来自的仓库"
+    },
+    "retention": {
+      "title": "数据保留期",
+      "description": "这套部署各类历史数据保留多久。修改在下一次每小时的维护任务时生效，不需要重启。",
+      "pinned": "来自环境变量",
+      "pinnedBy": "由 {{envVar}} 设定。把它从环境里去掉并重启，才能在这里管理。",
+      "customized": "已修改",
+      "readOnly": "只有平台管理员能修改这些设置。",
+      "reset": "恢复默认值（{{value}}）",
+      "days": "天",
+      "warning": "调短保留期会在下一次维护任务时删掉新窗口之外的历史数据。删掉就没了。",
+      "keys": {
+        "retention.risk_events": "风险事件",
+        "retention.minute_stats": "分钟级统计",
+        "retention.hour_stats": "小时级统计",
+        "retention.state_events": "状态变更",
+        "retention.audit": "审计日志",
+        "retention.alert_events": "告警历史",
+        "retention.clickhouse_ttl_days": "请求历史（ClickHouse）"
+      },
+      "hints": {
+        "retention.risk_events": "风险事件页面背后的数据。",
+        "retention.minute_stats": "这里面行数最多的一项——PostgreSQL 磁盘吃紧时先调它。",
+        "retention.hour_stats": "长期趋势，留着很便宜。",
+        "retention.state_events": "每一次身份和代理的状态变化。",
+        "retention.audit": "包含每一次机密读取。通常是合规决定，不是磁盘决定。",
+        "retention.alert_events": "已投递的通知及其历史。",
+        "retention.clickhouse_ttl_days": "原始请求与租约事件。决定磁盘用量的就是它；由 ClickHouse 自己执行。"
+      }
     }
   },
   "theme": {

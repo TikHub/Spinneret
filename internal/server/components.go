@@ -29,10 +29,12 @@ import (
 	"github.com/TikHub/Spinneret/internal/policysvc"
 	"github.com/TikHub/Spinneret/internal/proxy"
 	"github.com/TikHub/Spinneret/internal/scheduler"
+	"github.com/TikHub/Spinneret/internal/settings"
 	"github.com/TikHub/Spinneret/internal/signal"
 	"github.com/TikHub/Spinneret/internal/sitesvc"
 	"github.com/TikHub/Spinneret/internal/stats"
 	chstore "github.com/TikHub/Spinneret/internal/store/clickhouse"
+	"github.com/TikHub/Spinneret/internal/store/postgres/db"
 	"github.com/TikHub/Spinneret/internal/store/redis"
 	"github.com/TikHub/Spinneret/internal/tenancy"
 	"github.com/TikHub/Spinneret/internal/updatecheck"
@@ -99,6 +101,7 @@ type components struct {
 	notify     *notify.Service
 	updates    *updatecheck.Checker
 	analytics  *analytics.Service
+	settings   *settings.Store
 	partitions *partitionMaintainer
 
 	unsubscribeResolver func()
@@ -211,7 +214,30 @@ func buildComponents(cfg appconfig.Config, in *infra, metrics *observability.Met
 
 	c.updates = updatecheck.New(updatecheck.Config{URL: cfg.UpdateCheckURL, Current: version.String()})
 
-	c.partitions = newPartitionMaintainer(pool, cfg.Retention, logger)
+	// The environment's values are the defaults the database may override, except
+	// where the environment set the variable explicitly — then it pins the
+	// setting and the console shows it read-only.
+	c.settings = settings.New(db.New(pool), settings.Config{
+		Defaults: settings.Defaults{
+			RiskEvents:        cfg.Retention.RiskEvents,
+			MinuteStats:       cfg.Retention.MinuteStats,
+			HourStats:         cfg.Retention.HourStats,
+			StateEvents:       cfg.Retention.StateEvents,
+			Audit:             cfg.Retention.Audit,
+			AlertEvents:       defaultAlertEventsRetention,
+			ClickHouseTTLDays: cfg.ClickHouseTTLDays,
+		},
+		FromEnv: map[string]bool{
+			settings.KeyRiskEvents:  cfg.EnvSet("SPINNERET_RETENTION_RISK_EVENTS"),
+			settings.KeyMinuteStats: cfg.EnvSet("SPINNERET_RETENTION_MINUTE_STATS"),
+			settings.KeyHourStats:   cfg.EnvSet("SPINNERET_RETENTION_HOUR_STATS"),
+			settings.KeyStateEvents: cfg.EnvSet("SPINNERET_RETENTION_STATE_EVENTS"),
+			settings.KeyAudit:       cfg.EnvSet("SPINNERET_RETENTION_AUDIT"),
+			settings.KeyClickHouse:  cfg.EnvSet("SPINNERET_CLICKHOUSE_TTL_DAYS"),
+		},
+	})
+
+	c.partitions = newPartitionMaintainer(pool, c.settings, logger)
 	return c, nil
 }
 
