@@ -1,6 +1,6 @@
 import { ADMIN_PASSWORD, ADMIN_USER } from './fixtures/env';
 import { expect, test } from './fixtures/test';
-import { dismissToasts, gotoPage } from './fixtures/ui';
+import { dialog, dismissToasts, gotoPage } from './fixtures/ui';
 
 test.describe('sign in and out', () => {
   // These journeys start without a session.
@@ -110,6 +110,29 @@ test.describe('shell', () => {
     await expect(page.getByRole('definition').first()).toContainText(ADMIN_USER);
     await expect(page.getByText('Platform administrator')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Change password' })).toBeVisible();
+  });
+
+  test('the About dialog names the maintainer and links the source and the manual', async ({ page }) => {
+    await gotoPage(page, '/', 'Overview');
+    await page.getByRole('button', { name: 'About' }).click();
+
+    const about = dialog(page);
+    await expect(about.getByRole('heading', { name: 'Spinneret' })).toBeVisible();
+    // The server fills this in through GetMe; any build reports something.
+    await expect(about.getByText('Server build')).toBeVisible();
+    await expect(about.getByRole('link', { name: 'Apache-2.0' })).toBeVisible();
+    await expect(about.getByRole('link', { name: 'TikHub' })).toBeVisible();
+
+    const source = about.getByRole('link', { name: 'Source code' });
+    await expect(source).toHaveAttribute('href', 'https://github.com/TikHub/Spinneret');
+    await expect(source).toHaveAttribute('target', '_blank');
+    await expect(about.getByRole('link', { name: 'Documentation' })).toHaveAttribute(
+      'href',
+      'https://github.com/TikHub/Spinneret/tree/main/documents/en',
+    );
+
+    await page.keyboard.press('Escape');
+    await expect(about).toBeHidden();
   });
 
   test('renders a not-found page for an unknown route', async ({ page }) => {

@@ -85,7 +85,10 @@ type LoginResponse struct {
 	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	// Tenants the user can access with the effective permissions per namespace
 	// and site.
-	Tenants       []*TenantAccess `protobuf:"bytes,2,rep,name=tenants,proto3" json:"tenants,omitempty"`
+	Tenants []*TenantAccess `protobuf:"bytes,2,rep,name=tenants,proto3" json:"tenants,omitempty"`
+	// Build version of the server, as in GetMeResponse. It is repeated here so
+	// that a console seeding its cache from the login reply has it immediately.
+	ServerVersion string `protobuf:"bytes,3,opt,name=server_version,json=serverVersion,proto3" json:"server_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -132,6 +135,13 @@ func (x *LoginResponse) GetTenants() []*TenantAccess {
 		return x.Tenants
 	}
 	return nil
+}
+
+func (x *LoginResponse) GetServerVersion() string {
+	if x != nil {
+		return x.ServerVersion
+	}
+	return ""
 }
 
 // LogoutRequest is empty.
@@ -252,7 +262,11 @@ type GetMeResponse struct {
 	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	// Tenants the user can access with the effective permissions per namespace
 	// and site. Platform admins get every tenant.
-	Tenants       []*TenantAccess `protobuf:"bytes,2,rep,name=tenants,proto3" json:"tenants,omitempty"`
+	Tenants []*TenantAccess `protobuf:"bytes,2,rep,name=tenants,proto3" json:"tenants,omitempty"`
+	// Build version of the server answering this call, as `spnr version` reports
+	// it: a release tag, or "dev-<revision>" for a build from source. The console
+	// shows it so that an operator reading a bug report knows what they are on.
+	ServerVersion string `protobuf:"bytes,3,opt,name=server_version,json=serverVersion,proto3" json:"server_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -299,6 +313,13 @@ func (x *GetMeResponse) GetTenants() []*TenantAccess {
 		return x.Tenants
 	}
 	return nil
+}
+
+func (x *GetMeResponse) GetServerVersion() string {
+	if x != nil {
+		return x.ServerVersion
+	}
+	return ""
 }
 
 // ChangePasswordRequest changes the current user's password.
@@ -1045,16 +1066,18 @@ const file_spinneret_v1_auth_proto_rawDesc = "" +
 	"\fLoginRequest\x12%\n" +
 	"\busername\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18@R\busername\x12&\n" +
 	"\bpassword\x18\x02 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\x80\bR\bpassword\"m\n" +
+	"\xbaH\ar\x05\x10\x01\x18\x80\bR\bpassword\"\x94\x01\n" +
 	"\rLoginResponse\x12&\n" +
 	"\x04user\x18\x01 \x01(\v2\x12.spinneret.v1.UserR\x04user\x124\n" +
-	"\atenants\x18\x02 \x03(\v2\x1a.spinneret.v1.TenantAccessR\atenants\"\x0f\n" +
+	"\atenants\x18\x02 \x03(\v2\x1a.spinneret.v1.TenantAccessR\atenants\x12%\n" +
+	"\x0eserver_version\x18\x03 \x01(\tR\rserverVersion\"\x0f\n" +
 	"\rLogoutRequest\"\x10\n" +
 	"\x0eLogoutResponse\"\x0e\n" +
-	"\fGetMeRequest\"m\n" +
+	"\fGetMeRequest\"\x94\x01\n" +
 	"\rGetMeResponse\x12&\n" +
 	"\x04user\x18\x01 \x01(\v2\x12.spinneret.v1.UserR\x04user\x124\n" +
-	"\atenants\x18\x02 \x03(\v2\x1a.spinneret.v1.TenantAccessR\atenants\"}\n" +
+	"\atenants\x18\x02 \x03(\v2\x1a.spinneret.v1.TenantAccessR\atenants\x12%\n" +
+	"\x0eserver_version\x18\x03 \x01(\tR\rserverVersion\"}\n" +
 	"\x15ChangePasswordRequest\x125\n" +
 	"\x10current_password\x18\x01 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01\x18\x80\bR\x0fcurrentPassword\x12-\n" +

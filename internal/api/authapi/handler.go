@@ -14,6 +14,7 @@ import (
 	"github.com/TikHub/Spinneret/internal/apperr"
 	"github.com/TikHub/Spinneret/internal/auth"
 	"github.com/TikHub/Spinneret/internal/authz"
+	"github.com/TikHub/Spinneret/internal/version"
 )
 
 // Handler implements spinneretv1connect.AuthServiceHandler.
@@ -48,7 +49,11 @@ func (h *Handler) Login(ctx context.Context, req *connect.Request[spinneretv1.Lo
 		}
 		return nil, err
 	}
-	resp := connect.NewResponse(&spinneretv1.LoginResponse{User: UserProto(me.User), Tenants: TenantAccessProtos(me.Tenants)})
+	resp := connect.NewResponse(&spinneretv1.LoginResponse{
+		User:          UserProto(me.User),
+		Tenants:       TenantAccessProtos(me.Tenants),
+		ServerVersion: version.String(),
+	})
 	resp.Header().Add("Set-Cookie", h.users.SessionCookie(cookie, meta.Secure).String())
 	resp.Header().Set("Cache-Control", "no-store")
 	return resp, nil
@@ -78,7 +83,11 @@ func (h *Handler) GetMe(ctx context.Context, _ *connect.Request[spinneretv1.GetM
 	if err != nil {
 		return nil, err
 	}
-	resp := connect.NewResponse(&spinneretv1.GetMeResponse{User: UserProto(me.User), Tenants: TenantAccessProtos(me.Tenants)})
+	resp := connect.NewResponse(&spinneretv1.GetMeResponse{
+		User:          UserProto(me.User),
+		Tenants:       TenantAccessProtos(me.Tenants),
+		ServerVersion: version.String(),
+	})
 	resp.Header().Set("Cache-Control", "no-store")
 	return resp, nil
 }

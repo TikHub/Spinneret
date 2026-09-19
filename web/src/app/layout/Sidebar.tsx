@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { PanelLeftCloseIcon, PanelLeftOpenIcon } from 'lucide-react';
-import { useMemo } from 'react';
+import { InfoIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/app/auth/AuthContext';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
+import { AboutDialog } from './AboutDialog';
 import { visibleNavGroups } from './nav';
 
 export interface SidebarProps {
@@ -33,6 +34,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { t } = useTranslation();
   const { canAny, canInTenant } = useAuth();
   const groups = useMemo(() => visibleNavGroups({ canAny, canInTenant }), [canAny, canInTenant]);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   return (
     <aside
@@ -93,7 +95,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
         ))}
       </nav>
-      <div className={cn('border-t border-sidebar-border p-2', collapsed && 'flex justify-center')}>
+      <div
+        className={cn(
+          'flex items-center gap-1 border-t border-sidebar-border p-2',
+          collapsed && 'flex-col justify-center',
+        )}
+      >
         <Button
           variant="ghost"
           size="icon-sm"
@@ -103,7 +110,30 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         >
           {collapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
         </Button>
+        {collapsed ? (
+          <SimpleTooltip content={t('about.title')} side="right">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setAboutOpen(true)}
+              aria-label={t('about.title')}
+            >
+              <InfoIcon />
+            </Button>
+          </SimpleTooltip>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAboutOpen(true)}
+            className="min-w-0 flex-1 justify-start gap-2.5 px-2 font-normal text-muted-foreground"
+          >
+            <InfoIcon className="size-4 shrink-0" aria-hidden />
+            <span className="truncate">{t('about.title')}</span>
+          </Button>
+        )}
       </div>
+      <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </aside>
   );
 }

@@ -1,7 +1,22 @@
 {
   "app": {
     "name": "Spinneret",
-    "tagline": "身份、代理与策略控制平面"
+    "tagline": "面向分布式节点集群的凭据、代理与配置控制平面"
+  },
+  "about": {
+    "title": "关于",
+    "summary": "为共用同一批稀缺、限速凭据与出口的节点集群提供控制平面。节点在每次请求之前向它要一个凭据和一个出口，用完把结果报回来；这个部署把这些上报转成冷却、封禁、健康分与熔断，并向同一批节点下发带版本的配置与密钥。",
+    "serverVersion": "服务端版本",
+    "versionUnknown": "未知",
+    "license": "许可证",
+    "maintainer": "维护方",
+    "links": "项目链接",
+    "repository": "源代码",
+    "documentation": "文档",
+    "changelog": "版本变更记录",
+    "issues": "反馈问题或提功能建议",
+    "security": "安全策略",
+    "openSource": "开源项目，由 {{maintainer}} 维护并开源。"
   },
   "nav": {
     "groups": {

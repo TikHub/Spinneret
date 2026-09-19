@@ -32,6 +32,8 @@ export interface AuthContextValue {
   error: unknown;
   user: User | undefined;
   isPlatformAdmin: boolean;
+  /** Build version of the server, empty until the first GetMe answers. */
+  serverVersion: string;
   /** Accessible tenants with effective permissions. */
   tenants: readonly TenantAccess[];
   /** Active tenant access. */
@@ -132,7 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearSession(queryClient);
       queryClient.setQueryData(
         ME_QUERY_KEY,
-        create(GetMeResponseSchema, { user: res.user, tenants: res.tenants }),
+        create(GetMeResponseSchema, {
+          user: res.user,
+          tenants: res.tenants,
+          serverVersion: res.serverVersion,
+        }),
       );
     },
     [queryClient],
@@ -157,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error: meQuery.error,
       user: me?.user,
       isPlatformAdmin,
+      serverVersion: me?.serverVersion ?? '',
       tenants,
       tenant: selection.tenant,
       tenantId,

@@ -44,6 +44,9 @@ message LoginResponse {
   // Tenants the user can access with the effective permissions per namespace
   // and site.
   repeated TenantAccess tenants = 2;
+  // Build version of the server, as in GetMeResponse. It is repeated here so
+  // that a console seeding its cache from the login reply has it immediately.
+  string server_version = 3;
 }
 
 // LogoutRequest is empty.
@@ -62,6 +65,10 @@ message GetMeResponse {
   // Tenants the user can access with the effective permissions per namespace
   // and site. Platform admins get every tenant.
   repeated TenantAccess tenants = 2;
+  // Build version of the server answering this call, as `spnr version` reports
+  // it: a release tag, or "dev-<revision>" for a build from source. The console
+  // shows it so that an operator reading a bug report knows what they are on.
+  string server_version = 3;
 }
 
 // ChangePasswordRequest changes the current user's password.

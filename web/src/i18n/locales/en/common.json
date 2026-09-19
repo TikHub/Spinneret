@@ -1,7 +1,22 @@
 {
   "app": {
     "name": "Spinneret",
-    "tagline": "Identity, proxy and policy control plane"
+    "tagline": "Credential, proxy and config control plane for distributed node fleets"
+  },
+  "about": {
+    "title": "About",
+    "summary": "A control plane for fleets that share scarce, rate-limited credentials and egress. Nodes ask for a credential and an exit per request and report what happened; this deployment turns those reports into cooldowns, bans, health scores and circuit breaking, and distributes versioned configuration and secrets to the same fleet.",
+    "serverVersion": "Server build",
+    "versionUnknown": "unknown",
+    "license": "Licence",
+    "maintainer": "Maintained by",
+    "links": "Project links",
+    "repository": "Source code",
+    "documentation": "Documentation",
+    "changelog": "Release notes",
+    "issues": "Report a bug or request a feature",
+    "security": "Security policy",
+    "openSource": "Open source, maintained and open-sourced by {{maintainer}}."
   },
   "nav": {
     "groups": {
