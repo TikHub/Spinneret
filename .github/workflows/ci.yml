@@ -8,6 +8,16 @@ on:
 permissions:
   contents: read
 
+# Supersede rather than pile up. Every job here starts service containers and the
+# go job runs the whole suite with -race against them, so four merges in a row
+# meant four full runs competing for the same shared runners — wasteful, and enough
+# contention to time out a PostgreSQL fixture. On main the newest commit is the one
+# whose verdict matters; on a pull request a new push supersedes the old one.
+# release.yml deliberately does the opposite: a publish must not be cancelled.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   go:
     runs-on: ubuntu-latest
