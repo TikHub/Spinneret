@@ -36,6 +36,14 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ### Fixed
 
+- **Container logs are capped.** Every service in the Compose files now sets `json-file` with
+  `max-size=20m` and `max-file=10`. Docker's default keeps container output forever, so this was the one
+  store in the stack with no bound of any kind — not governed by a retention variable, not trimmed by a
+  job, and not in any of the three volumes an operator is told to watch. It writes to the Docker data
+  root, which is the filesystem PostgreSQL and ClickHouse are on. The retention table in the operations
+  runbook now lists it alongside the settings, and the disk alert covers the data root and not only the
+  volumes.
+
 - **Settings → System no longer tells a build made from source that it is on the latest release.** A
   build with no release number cannot be ordered against one — it may well be ahead of it — so the card
   now says the build came from source and shows the latest release beside it without claiming either is

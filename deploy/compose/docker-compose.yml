@@ -9,6 +9,19 @@
 #           · example (FastAPI example crawler + mock target, see scripts/example-quickstart.sh)
 name: spinneret
 
+# Docker's default json-file driver has no size limit, so container logs are the
+# one store in this stack that grows without any bound at all — not governed by a
+# retention variable, not trimmed by a job, and not visible in any of the three
+# data volumes an operator is told to watch. A busy deployment fills the disk with
+# them, and it fills the same disk PostgreSQL and ClickHouse are on. Ten files of
+# 20 MiB caps each service at 200 MiB and keeps enough history to debug an
+# incident from yesterday.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "10"
+
 x-spinneret-build: &spinneret-build
   context: ../..
   dockerfile: deploy/docker/Dockerfile
@@ -43,6 +56,7 @@ x-spinneret-env: &spinneret-env
 
 services:
   postgres:
+    logging: *logging
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -68,6 +82,7 @@ services:
       retries: 30
 
   valkey:
+    logging: *logging
     image: valkey/valkey:8-alpine
     restart: unless-stopped
     # Durability is the AOF. The RDB `save` points are switched off because they would
@@ -116,6 +131,7 @@ services:
       retries: 30
 
   clickhouse:
+    logging: *logging
     image: clickhouse/clickhouse-server:25.8-alpine
     restart: unless-stopped
     environment:
@@ -136,6 +152,7 @@ services:
       retries: 40
 
   migrate:
+    logging: *logging
     image: spinneret:local
     build: *spinneret-build
     command: ["/usr/local/bin/spnr", "migrate", "up"]
@@ -150,6 +167,7 @@ services:
         condition: service_healthy
 
   spinneret:
+    logging: *logging
     image: spinneret:local
     build: *spinneret-build
     restart: unless-stopped
@@ -167,6 +185,7 @@ services:
         condition: service_healthy
 
   lb:
+    logging: *logging
     image: caddy:2-alpine
     restart: unless-stopped
     # --watch reloads the Caddyfile in place when it is edited, so tuning the
@@ -186,6 +205,7 @@ services:
       retries: 30
 
   init-admin:
+    logging: *logging
     profiles: ["init"]
     image: spinneret:local
     build: *spinneret-build
@@ -210,6 +230,7 @@ services:
         condition: service_completed_successfully
 
   prometheus:
+    logging: *logging
     profiles: ["observability"]
     image: prom/prometheus:v2.54.1
     restart: unless-stopped
@@ -219,6 +240,7 @@ services:
       - "${PROMETHEUS_PORT:-9090}:9090"
 
   mocktarget:
+    logging: *logging
     profiles: ["test", "loadtest", "example"]
     image: spinneret-mocktarget:local
     build:
@@ -233,6 +255,7 @@ services:
   # scripts/example-quickstart.sh; it is optional here so that the other services work without it
   # (the crawler refuses to start without a token).
   example-crawler:
+    logging: *logging
     profiles: ["example"]
     image: spinneret-example-crawler:local
     build:
@@ -253,6 +276,7 @@ services:
         condition: service_healthy
 
   k6:
+    logging: *logging
     profiles: ["loadtest"]
     image: grafana/k6:latest
     volumes:

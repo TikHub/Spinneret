@@ -5,8 +5,18 @@
 #   SPINNERET_TEST_CLICKHOUSE_URL=clickhouse://spinneret:spinneret@localhost:49000/default
 name: spinneret-infra
 
+# json-file has no default size limit, and this stack runs for days at a time on a
+# developer machine. Its PostgreSQL log was the largest single log on the machine
+# this was written on.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
 services:
   postgres:
+    logging: *logging
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: spinneret
@@ -22,6 +32,7 @@ services:
       retries: 30
 
   valkey:
+    logging: *logging
     image: valkey/valkey:8-alpine
     command: ["valkey-server", "--save", "", "--appendonly", "no", "--maxclients", "20000"]
     ports: ["46379:6379"]
@@ -32,6 +43,7 @@ services:
       retries: 30
 
   clickhouse:
+    logging: *logging
     image: clickhouse/clickhouse-server:25.8-alpine
     environment:
       CLICKHOUSE_USER: spinneret

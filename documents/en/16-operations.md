@@ -829,6 +829,14 @@ the envelope-encryption details behind all of this.
 | `SPINNERET_REPORT_DEDUP_TTL` | `1h` | Report dedup markers and ended lease hashes in Redis | Redis key expiry |
 | `SPINNERET_LATE_REPORT_WINDOW` | `10m` | Ended lease hashes in Redis (floor) | Redis key expiry |
 | `SPINNERET_STREAM_MAXLEN` | `1000000` | Report stream backlog, per shard | Shard owner trims to the consumer position |
+| Compose `x-logging` | 20 MiB × 10 per container | Container stdout/stderr | Docker's `json-file` driver rotates |
+
+Container logs are the one entry above that is not a Spinneret setting, and the only store in this stack
+that has no bound of its own: Docker's `json-file` driver keeps everything unless it is told a size, and it
+writes to the Docker data root — the same filesystem as the three volumes. The Compose files cap every
+service at 20 MiB × 10 files. **If you do not deploy with these Compose files, set the equivalent
+yourself**, either per container or as `log-opts` in `/etc/docker/daemon.json`; nothing inside Spinneret can
+do it for you, and a deployment whose logs are uncapped will eventually fill the disk PostgreSQL is on.
 
 Each PostgreSQL retention must be at least `24h`. `alert_events` is purged at a fixed **90 days** in batches of
 5,000 and is not configurable. Identity payload versions keep the last **5** per identity.
@@ -1268,7 +1276,7 @@ question — who gets woken up — and one warning.
 | `max(spinneret_breaker_state) by (site,group) == 2` for 5 m | A group has been circuit-broken for five minutes |
 | `increase(spinneret_db_write_batches_total{result="dropped"}[15m]) > 0` or `increase(spinneret_state_writer_dropped_changes_total[15m]) > 0` | Writes were discarded. This is data loss |
 | `spinneret_identities_available` at `0` for an endpoint group carrying traffic | That group cannot work at all |
-| Disk above your threshold on any of the three volumes | Recovery from a full disk is much worse than prevention |
+| Disk above your threshold on any of the three volumes **or on the Docker data root** | Recovery from a full disk is much worse than prevention. The data root is where container logs and image layers live, and it is easy to watch only the volumes |
 
 ### Ticket
 

@@ -770,6 +770,13 @@ spnr kek status
 | `SPINNERET_REPORT_DEDUP_TTL` | `1h` | Redis 里的上报去重标记和已结束的租约哈希 | Redis 键过期 |
 | `SPINNERET_LATE_REPORT_WINDOW` | `10m` | Redis 里已结束的租约哈希（下限） | Redis 键过期 |
 | `SPINNERET_STREAM_MAXLEN` | `1000000` | 每个分片的上报流积压 | 分片 owner 裁剪到消费位点 |
+| Compose 的 `x-logging` | 每个容器 20 MiB × 10 | 容器的 stdout/stderr | 由 Docker `json-file` 驱动轮转 |
+
+容器日志是上表里唯一**不属于 Spinneret 配置**的一项，也是这套栈里唯一自身没有任何上限的存储：Docker 的
+`json-file` 驱动在没被告知大小之前会全部留着，而且写在 Docker 数据目录——和三个数据卷同一个文件系统。本仓库
+的 Compose 文件把每个服务限制在 20 MiB × 10 个文件。**如果你不用这些 Compose 文件部署，就要自己设等价的
+配置**，按容器设，或者在 `/etc/docker/daemon.json` 里设 `log-opts`；Spinneret 内部没有任何东西能替你做这件
+事，而日志不设上限的部署最终会把 PostgreSQL 所在的那块盘写满。
 
 每个 PostgreSQL 保留期至少 `24h`。`alert_events` 按固定 **90 天**清理，每批 5,000 行，不可配置。身份载荷版
 本每个身份保留最近 **5** 个。
@@ -1170,7 +1177,7 @@ dump 视为已泄露。
 | `max(spinneret_breaker_state) by (site,group) == 2` 持续 5 分钟 | 某个组已经熔断五分钟了 |
 | `increase(spinneret_db_write_batches_total{result="dropped"}[15m]) > 0` 或 `increase(spinneret_state_writer_dropped_changes_total[15m]) > 0` | 有写入被丢弃了。这是数据丢失 |
 | 有流量的端点组上 `spinneret_identities_available` 为 `0` | 那个组完全无法工作 |
-| 三个数据卷中任何一个磁盘超过你的阈值 | 从磁盘满里恢复远比预防痛苦 |
+| 三个数据卷中任何一个、**或者 Docker 数据目录**的磁盘超过你的阈值 | 从磁盘满里恢复远比预防痛苦。数据目录是容器日志和镜像层所在的地方，而人们很容易只盯着数据卷 |
 
 ### 开单就行
 
