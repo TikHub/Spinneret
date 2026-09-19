@@ -41,6 +41,11 @@ type Result struct {
 	// UpdateAvailable is true only when Latest is a strictly newer release than
 	// a Current that names a release at all.
 	UpdateAvailable bool
+	// CurrentIsRelease is true when Current names a published release rather than
+	// a build from source. When it is false, UpdateAvailable is false because the
+	// two versions cannot be ordered — not because the build is up to date, and a
+	// caller must not present the two cases the same way.
+	CurrentIsRelease bool
 	// CheckedAt is when the feed was last read, zero when it never was.
 	CheckedAt time.Time
 	// Disabled is true when the operator turned the check off; the other
@@ -101,13 +106,21 @@ func New(cfg Config) *Checker {
 // Enabled reports whether a feed is configured.
 func (c *Checker) Enabled() bool { return c != nil && strings.TrimSpace(c.cfg.URL) != "" }
 
+// build is the part of a Result that depends only on the running build and is
+// therefore true of every answer, including a disabled check and a failed one.
+func (c *Checker) build() Result {
+	return Result{Current: c.cfg.Current, CurrentIsRelease: known(c.cfg.Current)}
+}
+
 // Check returns the newest release, from cache when a recent answer is held.
 // A failure returns the error and a Result that still carries the current
 // build, so a caller can show "we could not reach the feed" without losing the
 // version the operator came to read.
 func (c *Checker) Check(ctx context.Context) (Result, error) {
 	if !c.Enabled() {
-		return Result{Current: c.cfg.Current, Disabled: true}, nil
+		out := c.build()
+		out.Disabled = true
+		return out, nil
 	}
 
 	now := c.cfg.Now()
@@ -120,7 +133,7 @@ func (c *Checker) Check(ctx context.Context) (Result, error) {
 	if !c.cachedOK && c.lastErr != nil && now.Sub(c.cachedAt) < failureCacheTTL {
 		err := c.lastErr
 		c.mu.Unlock()
-		return Result{Current: c.cfg.Current}, err
+		return c.build(), err
 	}
 	c.mu.Unlock()
 
@@ -133,17 +146,15 @@ func (c *Checker) Check(ctx context.Context) (Result, error) {
 	if err != nil {
 		c.cachedOK = false
 		c.lastErr = err
-		return Result{Current: c.cfg.Current}, err
+		return c.build(), err
 	}
 	c.lastErr = nil
 	c.cachedOK = true
-	c.cached = Result{
-		Current:         c.cfg.Current,
-		Latest:          latest,
-		ReleaseURL:      url,
-		UpdateAvailable: IsNewer(c.cfg.Current, latest),
-		CheckedAt:       now,
-	}
+	c.cached = c.build()
+	c.cached.Latest = latest
+	c.cached.ReleaseURL = url
+	c.cached.UpdateAvailable = IsNewer(c.cfg.Current, latest)
+	c.cached.CheckedAt = now
 	return c.cached, nil
 }
 

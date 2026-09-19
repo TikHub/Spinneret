@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file spinneret/v1/system.proto.
  */
 export const file_spinneret_v1_system: GenFile = /*@__PURE__*/
-  fileDesc("ChlzcGlubmVyZXQvdjEvc3lzdGVtLnByb3RvEgxzcGlubmVyZXQudjEiFwoVQ2hlY2tGb3JVcGRhdGVSZXF1ZXN0IskBChZDaGVja0ZvclVwZGF0ZVJlc3BvbnNlEhcKD2N1cnJlbnRfdmVyc2lvbhgBIAEoCRIWCg5sYXRlc3RfdmVyc2lvbhgCIAEoCRITCgtyZWxlYXNlX3VybBgDIAEoCRIYChB1cGRhdGVfYXZhaWxhYmxlGAQgASgIEi4KCmNoZWNrZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCGRpc2FibGVkGAYgASgIEg0KBWVycm9yGAcgASgJMmwKDVN5c3RlbVNlcnZpY2USWwoOQ2hlY2tGb3JVcGRhdGUSIy5zcGlubmVyZXQudjEuQ2hlY2tGb3JVcGRhdGVSZXF1ZXN0GiQuc3Bpbm5lcmV0LnYxLkNoZWNrRm9yVXBkYXRlUmVzcG9uc2VCPVo7Z2l0aHViLmNvbS9UaWtIdWIvU3Bpbm5lcmV0L2dlbi9nby9zcGlubmVyZXQvdjE7c3Bpbm5lcmV0djFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChlzcGlubmVyZXQvdjEvc3lzdGVtLnByb3RvEgxzcGlubmVyZXQudjEiFwoVQ2hlY2tGb3JVcGRhdGVSZXF1ZXN0IuUBChZDaGVja0ZvclVwZGF0ZVJlc3BvbnNlEhcKD2N1cnJlbnRfdmVyc2lvbhgBIAEoCRIWCg5sYXRlc3RfdmVyc2lvbhgCIAEoCRITCgtyZWxlYXNlX3VybBgDIAEoCRIYChB1cGRhdGVfYXZhaWxhYmxlGAQgASgIEi4KCmNoZWNrZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCGRpc2FibGVkGAYgASgIEg0KBWVycm9yGAcgASgJEhoKEmN1cnJlbnRfaXNfcmVsZWFzZRgIIAEoCDJsCg1TeXN0ZW1TZXJ2aWNlElsKDkNoZWNrRm9yVXBkYXRlEiMuc3Bpbm5lcmV0LnYxLkNoZWNrRm9yVXBkYXRlUmVxdWVzdBokLnNwaW5uZXJldC52MS5DaGVja0ZvclVwZGF0ZVJlc3BvbnNlQj1aO2dpdGh1Yi5jb20vVGlrSHViL1NwaW5uZXJldC9nZW4vZ28vc3Bpbm5lcmV0L3YxO3NwaW5uZXJldHYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * CheckForUpdateRequest is empty.
@@ -90,6 +90,17 @@ export type CheckForUpdateResponse = Message<"spinneret.v1.CheckForUpdateRespons
    * @generated from field: string error = 7;
    */
   error: string;
+
+  /**
+   * True when current_version names a published release rather than a build
+   * from source. When it is false, update_available is false because the two
+   * versions cannot be ordered, which is not the same thing as being up to
+   * date: a build from source may be ahead of the latest release, behind it, or
+   * unrelated to it. Present the two cases differently.
+   *
+   * @generated from field: bool current_is_release = 8;
+   */
+  currentIsRelease: boolean;
 };
 
 /**

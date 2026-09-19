@@ -73,6 +73,19 @@ func (c *stubClient) DoMulti(ctx context.Context, cmds ...rueidis.Completed) []r
 	return c.Client.DoMulti(ctx, cmds...)
 }
 
+// warmScripts caches the Lua scripts on the server before a test starts counting
+// commands. Script.Exec sends EVALSHA and falls back to EVAL when the server
+// answers NOSCRIPT, so the very first attempt of a run costs two commands rather
+// than one — which made "only the first attempt reached Redis" depend on whether
+// some earlier test in the package happened to load the script first.
+func warmScripts(t *testing.T, f *fixture, scripts ...*redis.Script) {
+	t.Helper()
+	for _, s := range scripts {
+		res := f.svc.rdb.Do(context.Background(), f.svc.rdb.B().ScriptLoad().Script(s.Source()).Build())
+		require.NoError(t, res.Error())
+	}
+}
+
 // interceptRedis routes the scheduler's Redis traffic through a stub client and
 // returns it. The fixture keeps using the real client for its own assertions.
 func interceptRedis(f *fixture) *stubClient {
@@ -194,6 +207,7 @@ func TestShedAfterRedisReplyKeepsExhausted(t *testing.T) {
 	// and both SDKs and the console key off that reason.
 	f := pinnedFixture(t, 2)
 	holdPermit(t, f, 1)
+	warmScripts(t, f, acquireScript)
 	stub := interceptRedis(f)
 	stub.onDo = func(n int64) {
 		if n == 1 {

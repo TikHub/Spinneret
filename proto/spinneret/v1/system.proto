@@ -47,4 +47,10 @@ message CheckForUpdateResponse {
   // an operator, not a machine-readable reason: the call itself succeeds so
   // that the console can still show the running build.
   string error = 7;
+  // True when current_version names a published release rather than a build
+  // from source. When it is false, update_available is false because the two
+  // versions cannot be ordered, which is not the same thing as being up to
+  // date: a build from source may be ahead of the latest release, behind it, or
+  // unrelated to it. Present the two cases differently.
+  bool current_is_release = 8;
 }

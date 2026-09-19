@@ -12,7 +12,19 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **Settings → System no longer tells a build made from source that it is on the latest release.** A
+  build with no release number cannot be ordered against one — it may well be ahead of it — so the card
+  now says the build came from source and shows the latest release beside it without claiming either is
+  newer. `CheckForUpdateResponse` carries the new field `current_is_release` for the distinction;
+  `update_available` was already correct and is unchanged. Found by checking the console against the
+  real feed immediately after publishing v0.1.0, which is the first time the "unversioned build, a
+  release exists" combination could occur.
+- `TestShedAfterRedisReplyKeepsExhausted` no longer depends on the order the scheduler's tests run in.
+  It asserts that only the first acquire attempt reaches Redis by counting commands, and `Script.Exec`
+  sends `EVALSHA` and falls back to `EVAL` when the server answers `NOSCRIPT`, so the first attempt of a
+  cold run costs two commands instead of one. The test now loads the script before it starts counting.
 
 ## [0.1.0] — 2026-09-18
 

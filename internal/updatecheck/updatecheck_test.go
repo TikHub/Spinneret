@@ -87,6 +87,40 @@ func TestCheckOnTheLatestReleaseOffersNothing(t *testing.T) {
 	require.Equal(t, "v0.2.0", got.Latest)
 }
 
+func TestSourceBuildIsNotReportedAsUpToDate(t *testing.T) {
+	// A build from source carries no release number, so it cannot be ordered
+	// against a release: it may be ahead of the latest one. UpdateAvailable is
+	// false for it, and CurrentIsRelease is what stops a caller from rendering
+	// that as "you are on the latest release".
+	for _, current := range []string{"dev", "dev-1a2b3c4d5e6f", "dev-1a2b3c4d5e6f-dirty", ""} {
+		t.Run(current, func(t *testing.T) {
+			srv, _ := feed(t, releaseBody, http.StatusOK)
+			c := New(Config{URL: srv.URL, Current: current})
+
+			got, err := c.Check(context.Background())
+			require.NoError(t, err)
+			require.False(t, got.CurrentIsRelease)
+			require.False(t, got.UpdateAvailable, "an unversioned build is never told it is out of date")
+			require.Equal(t, "v0.2.0", got.Latest, "the latest release is still worth showing")
+		})
+	}
+}
+
+func TestCurrentIsReleaseSurvivesEveryAnswer(t *testing.T) {
+	// It is a fact about the running build, not about the feed, so it holds even
+	// when the check is off or the feed could not be read.
+	disabled := New(Config{URL: "", Current: "v0.1.0"})
+	got, err := disabled.Check(context.Background())
+	require.NoError(t, err)
+	require.True(t, got.CurrentIsRelease)
+
+	srv, _ := feed(t, `{"message":"boom"}`, http.StatusInternalServerError)
+	failing := New(Config{URL: srv.URL, Current: "v0.1.0"})
+	got, err = failing.Check(context.Background())
+	require.Error(t, err)
+	require.True(t, got.CurrentIsRelease)
+}
+
 func TestCheckCachesSuccess(t *testing.T) {
 	srv, hits := feed(t, releaseBody, http.StatusOK)
 	now := time.Now()

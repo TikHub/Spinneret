@@ -5,6 +5,7 @@ import {
   ExternalLinkIcon,
   LoaderCircleIcon,
   TriangleAlertIcon,
+  WrenchIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -105,10 +106,24 @@ export function UpdateCard() {
           </div>
         )}
 
+        {/* Three different "no upgrade offered" answers, which must not be
+            collapsed into one. A build from source carries no release number, so
+            it is not up to date — it is incomparable, and may well be ahead of
+            the latest release. */}
         {result && !result.updateAvailable && !result.error && !disabled && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CheckCircle2Icon className="size-4 shrink-0" aria-hidden />
-            {result.latestVersion ? t('system.updates.upToDate') : t('system.updates.noReleases')}
+          <p className="flex items-start gap-2 text-sm text-muted-foreground">
+            {result.currentIsRelease ? (
+              <CheckCircle2Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+            ) : (
+              <WrenchIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+            )}
+            <span>
+              {!result.latestVersion
+                ? t('system.updates.noReleases')
+                : result.currentIsRelease
+                  ? t('system.updates.upToDate')
+                  : t('system.updates.sourceBuild')}
+            </span>
           </p>
         )}
       </CardContent>

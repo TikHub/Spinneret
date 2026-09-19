@@ -82,9 +82,15 @@ type CheckForUpdateResponse struct {
 	// Why the check could not be completed, empty on success. It is a message for
 	// an operator, not a machine-readable reason: the call itself succeeds so
 	// that the console can still show the running build.
-	Error         string `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Error string `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	// True when current_version names a published release rather than a build
+	// from source. When it is false, update_available is false because the two
+	// versions cannot be ordered, which is not the same thing as being up to
+	// date: a build from source may be ahead of the latest release, behind it, or
+	// unrelated to it. Present the two cases differently.
+	CurrentIsRelease bool `protobuf:"varint,8,opt,name=current_is_release,json=currentIsRelease,proto3" json:"current_is_release,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CheckForUpdateResponse) Reset() {
@@ -166,12 +172,19 @@ func (x *CheckForUpdateResponse) GetError() string {
 	return ""
 }
 
+func (x *CheckForUpdateResponse) GetCurrentIsRelease() bool {
+	if x != nil {
+		return x.CurrentIsRelease
+	}
+	return false
+}
+
 var File_spinneret_v1_system_proto protoreflect.FileDescriptor
 
 const file_spinneret_v1_system_proto_rawDesc = "" +
 	"\n" +
 	"\x19spinneret/v1/system.proto\x12\fspinneret.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x17\n" +
-	"\x15CheckForUpdateRequest\"\xa1\x02\n" +
+	"\x15CheckForUpdateRequest\"\xcf\x02\n" +
 	"\x16CheckForUpdateResponse\x12'\n" +
 	"\x0fcurrent_version\x18\x01 \x01(\tR\x0ecurrentVersion\x12%\n" +
 	"\x0elatest_version\x18\x02 \x01(\tR\rlatestVersion\x12\x1f\n" +
@@ -181,7 +194,8 @@ const file_spinneret_v1_system_proto_rawDesc = "" +
 	"\n" +
 	"checked_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcheckedAt\x12\x1a\n" +
 	"\bdisabled\x18\x06 \x01(\bR\bdisabled\x12\x14\n" +
-	"\x05error\x18\a \x01(\tR\x05error2l\n" +
+	"\x05error\x18\a \x01(\tR\x05error\x12,\n" +
+	"\x12current_is_release\x18\b \x01(\bR\x10currentIsRelease2l\n" +
 	"\rSystemService\x12[\n" +
 	"\x0eCheckForUpdate\x12#.spinneret.v1.CheckForUpdateRequest\x1a$.spinneret.v1.CheckForUpdateResponseB=Z;github.com/TikHub/Spinneret/gen/go/spinneret/v1;spinneretv1b\x06proto3"
 

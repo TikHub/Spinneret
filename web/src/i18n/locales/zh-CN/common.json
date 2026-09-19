@@ -92,6 +92,7 @@
       "available": "有新版本 {{version}}",
       "releaseNotes": "更新说明",
       "upToDate": "已经是最新版本。",
+      "sourceBuild": "这是从源码构建的版本，没有发布版本号，无法与已发布的版本比较——它可能比最新发布版本还要新。",
       "noReleases": "还没有发布过任何版本。",
       "failed": "读取发布源失败：{{error}}",
       "disabled": "这个部署关闭了更新检查（SPINNERET_UPDATE_CHECK_URL 为空），不会发出任何外部请求。"

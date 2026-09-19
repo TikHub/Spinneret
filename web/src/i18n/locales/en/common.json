@@ -92,6 +92,7 @@
       "available": "{{version}} is available",
       "releaseNotes": "Release notes",
       "upToDate": "This is the latest release.",
+      "sourceBuild": "This build was made from source, so it carries no release number and cannot be compared with the published releases \u2014 it may be ahead of the latest one.",
       "noReleases": "No release has been published yet.",
       "failed": "The release feed could not be read: {{error}}",
       "disabled": "Update checking is turned off on this deployment (SPINNERET_UPDATE_CHECK_URL is empty), so no outbound request is made."

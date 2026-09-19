@@ -50,6 +50,7 @@ describe('UpdateCard', () => {
       latestVersion: 'v0.2.0',
       releaseUrl: 'https://github.com/TikHub/Spinneret/releases/tag/v0.2.0',
       updateAvailable: true,
+      currentIsRelease: true,
       disabled: false,
       error: '',
     });
@@ -68,6 +69,7 @@ describe('UpdateCard', () => {
       currentVersion: 'v0.2.0',
       latestVersion: 'v0.2.0',
       updateAvailable: false,
+      currentIsRelease: true,
       disabled: false,
       error: '',
     });
@@ -81,6 +83,7 @@ describe('UpdateCard', () => {
       currentVersion: 'v0.1.0',
       latestVersion: '',
       updateAvailable: false,
+      currentIsRelease: true,
       disabled: false,
       error: '',
     });
@@ -111,6 +114,7 @@ describe('UpdateCard', () => {
       currentVersion: 'v0.1.0',
       latestVersion: '',
       updateAvailable: false,
+      currentIsRelease: true,
       disabled: true,
       error: '',
     });
@@ -119,5 +123,26 @@ describe('UpdateCard', () => {
 
     expect(await screen.findByText(/turned off on this deployment/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /check for updates/i })).not.toBeInTheDocument();
+  });
+  it('does not tell a build made from source that it is on the latest release', async () => {
+    // A build with no release number cannot be ordered against one: it may be
+    // ahead of the latest release, behind it, or unrelated. Saying "this is the
+    // latest release" would be a claim the server never made.
+    checkForUpdate.mockResolvedValue({
+      currentVersion: 'dev-1a2b3c4d5e6f',
+      latestVersion: 'v0.1.0',
+      releaseUrl: 'https://github.com/TikHub/Spinneret/releases/tag/v0.1.0',
+      updateAvailable: false,
+      currentIsRelease: false,
+      disabled: false,
+      error: '',
+    });
+    await renderCard();
+    await userEvent.click(screen.getByRole('button', { name: /check for updates/i }));
+
+    expect(await screen.findByText(/made from source/i)).toBeInTheDocument();
+    expect(screen.queryByText('This is the latest release.')).not.toBeInTheDocument();
+    // The release it could not compare against is still worth showing.
+    expect(screen.getByText('v0.1.0')).toBeInTheDocument();
   });
 });

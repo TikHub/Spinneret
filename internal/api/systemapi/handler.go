@@ -51,11 +51,12 @@ func (h *Handler) CheckForUpdate(ctx context.Context, _ *connect.Request[spinner
 
 	res, checkErr := h.updates.Check(ctx)
 	out := &spinneretv1.CheckForUpdateResponse{
-		CurrentVersion:  res.Current,
-		LatestVersion:   res.Latest,
-		ReleaseUrl:      res.ReleaseURL,
-		UpdateAvailable: res.UpdateAvailable,
-		Disabled:        res.Disabled,
+		CurrentVersion:   res.Current,
+		LatestVersion:    res.Latest,
+		ReleaseUrl:       res.ReleaseURL,
+		UpdateAvailable:  res.UpdateAvailable,
+		CurrentIsRelease: res.CurrentIsRelease,
+		Disabled:         res.Disabled,
 	}
 	if !res.CheckedAt.IsZero() {
 		out.CheckedAt = timestamppb.New(res.CheckedAt)
