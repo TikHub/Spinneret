@@ -533,10 +533,15 @@ node-facing RPC bodies are capped at 8 MiB, and request headers at 1 MiB.
 | --- | --- | --- | --- |
 | `SPINNERET_UI_ENABLED` | `true` | Serve the embedded console from the main listener. `false` leaves the APIs and the health endpoints only. | `false` on instances that only serve nodes, so the console is reachable on one address you can protect. |
 | `SPINNERET_ALLOWED_ORIGINS` | empty | CORS allow-list of origins, e.g. `http://localhost:5173`. Empty installs no CORS middleware at all. `*` is accepted and allows any origin. | Only to run the console's development server against this instance. Leave it empty in production. |
+| `SPINNERET_UPDATE_CHECK_URL` | `https://api.github.com/repos/TikHub/Spinneret/releases/latest` | The release feed that **Settings → System** reads when an operator presses *Check for updates*. Nothing polls it; the answer is cached for an hour, a failure for a minute. Empty disables the check, and the console then hides the button and says so. | Empty on an air-gapped deployment, or on any host that must make no outbound connection. Point it at your own mirror if you publish internal builds. |
 
 A `worker`-role instance serves no console regardless of `SPINNERET_UI_ENABLED`, because it serves no
 API. What the console contains and which document covers which page:
 [Console overview](./05-console-overview.md).
+
+The update check runs in the server, not in the browser: the console's CSP is `connect-src 'self'`, and
+a console reached over a VPN often has no route out where the host does. The request carries nothing
+about the deployment — no version, no identifier — and asks for one public URL.
 
 ---
 

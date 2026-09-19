@@ -644,7 +644,7 @@ flowchart TB
 | ![Breakers](documents/images/breakers.png) | ![Requests](documents/images/requests.png) |
 | Breakers: state, windows, manual open and close, site switches | Request explorer: every report with its outcome and blame |
 
-21 routes covering every module, English and Chinese, light and dark, live updates over Server-Sent
+22 routes covering every module, English and Chinese, light and dark, live updates over Server-Sent
 Events. The same overview in Chinese: [`documents/images/overview-zh.png`](documents/images/overview-zh.png).
 
 ---
@@ -664,7 +664,7 @@ Every module below is implemented.
 | **[Config center](documents/en/09-config-center.md)** | Versioned config items with drafts, publish, rollback and diffs; long-poll `WatchConfig`; local snapshots in the SDKs; `${secret:path}` references; read-only `_runtime` group exposing breakers and site switches |
 | **[Vault](documents/en/10-secrets.md)** | AES-256-GCM envelope encryption (KEK → DEK → data), file or env KEK providers, online KEK rotation and rewrap, secret versions and expiry, every read audited |
 | **[Auth and tenancy](documents/en/11-access-control.md)** | Tenants → namespaces → sites; console users with roles `viewer / operator / admin / owner`, per-namespace and per-site bindings; node API tokens with fine-grained scopes; Argon2id passwords, login throttle, sessions, CSRF |
-| **[Web console](documents/en/05-console-overview.md)** | 21 routes covering every module, English and Chinese, light and dark, live updates over SSE |
+| **[Web console](documents/en/05-console-overview.md)** | 22 routes covering every module, English and Chinese, light and dark, live updates over SSE |
 | **[Notifications](documents/en/12-observability.md)** | Webhook with HMAC-signed delivery plus four chat-platform senders; 11 automatic alert kinds and a test alert, with de-duplication and per-site routing |
 | **[Observability](documents/en/12-observability.md)** | `/healthz`, `/readyz`, Prometheus `/metrics`, optional OTLP tracing, ClickHouse-backed request explorer |
 

@@ -602,7 +602,7 @@ flowchart TB
 | ![熔断器](documents/images/breakers.png) | ![请求明细](documents/images/requests.png) |
 | 熔断器：状态、窗口、手动开合、站点开关 | 请求明细：每一条上报及其结果分类与归因 |
 
-21 个路由覆盖全部模块，中英双语，明暗主题，通过 Server-Sent Events 实时更新。英文界面下的同一个概览页：
+22 个路由覆盖全部模块，中英双语，明暗主题，通过 Server-Sent Events 实时更新。英文界面下的同一个概览页：
 [`documents/images/overview.png`](documents/images/overview.png)。
 
 ---
@@ -622,7 +622,7 @@ flowchart TB
 | **[配置中心](documents/zh/09-config-center.md)** | 带草稿、发布、回滚与差异对比的版本化配置项；长轮询 `WatchConfig`；SDK 侧本地快照；`${secret:path}` 引用；只读的 `_runtime` 分组，暴露熔断状态与站点开关 |
 | **[密钥保管库](documents/zh/10-secrets.md)** | AES-256-GCM 信封加密（KEK → DEK → 数据）、文件或环境变量 KEK 提供者、在线 KEK 轮换与重加密、密钥版本与过期、每一次读取都留审计 |
 | **[认证与多租户](documents/zh/11-access-control.md)** | 租户 → 命名空间 → 站点；控制台用户与 `viewer / operator / admin / owner` 四种角色，可按命名空间和站点绑定；细粒度作用域的节点 API 令牌；Argon2id 口令、登录限流、会话、CSRF |
-| **[Web 控制台](documents/zh/05-console-overview.md)** | 21 个路由覆盖全部模块，中英双语，明暗主题，通过 SSE 实时更新 |
+| **[Web 控制台](documents/zh/05-console-overview.md)** | 22 个路由覆盖全部模块，中英双语，明暗主题，通过 SSE 实时更新 |
 | **[通知](documents/zh/12-observability.md)** | 带 HMAC 签名投递的 Webhook，外加四种聊天平台发送器；11 类自动告警和一个测试告警，带去重和按站点路由 |
 | **[可观测性](documents/zh/12-observability.md)** | `/healthz`、`/readyz`、Prometheus `/metrics`、可选 OTLP 链路追踪、基于 ClickHouse 的请求明细 |
 

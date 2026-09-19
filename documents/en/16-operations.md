@@ -423,6 +423,13 @@ The safe alternative when you are unsure: restore into a **separate** stack with
 
 ## Upgrades and migrations
 
+**Finding out there is one.** **Settings → System** in the console shows the build you are running and,
+when you press the button, the latest published release with a link to its notes. It asks only when
+asked — nothing polls — and `SPINNERET_UPDATE_CHECK_URL=""` switches it off on a deployment that must
+make no outbound connection; watch [Releases](https://github.com/TikHub/Spinneret/releases) instead.
+`spnr version` reports the same string from the command line, and so does the login reply the console
+seeds itself from.
+
 Migrations are embedded in the binary and applied by `spnr migrate up`, serialized by a session-level
 PostgreSQL advisory lock held on a dedicated connection — so several instances starting at once is safe, and a
 single-connection pool does not deadlock against it. The Compose stack runs them in the one-shot `migrate`

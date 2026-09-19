@@ -398,6 +398,12 @@ load dedupe_pepper system key (is the KEK the one used to initialize this databa
 
 ## 升级与数据库迁移
 
+**怎么知道有新版本。** 控制台的**设置 → 系统**页面会显示你正在运行的构建；按下按钮后，它会给出最新的发布版本和
+发布说明的链接。它只在你问的时候才问——没有任何轮询——不允许对外连接的部署可以用
+`SPINNERET_UPDATE_CHECK_URL=""` 关掉它，改为关注
+[Releases](https://github.com/TikHub/Spinneret/releases)。命令行上 `spnr version` 报告的是同一个字符串，
+控制台用来初始化自己的登录响应里也带着它。
+
 迁移脚本内嵌在二进制里，由 `spnr migrate up` 应用，用一个会话级 PostgreSQL 建议锁（持在一条专用连接上）串
 行化 —— 所以多个实例同时启动是安全的，单连接的连接池也不会和它死锁。Compose 编排把它放在 `spinneret`
 依赖的一次性 `migrate` 服务里执行。

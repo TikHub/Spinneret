@@ -115,8 +115,8 @@ The sidebar holds the navigation, in six groups:
 | Access | Tokens, Users, Audit |
 | Platform | Tenants |
 
-A seventh group, **Settings**, exists only as a breadcrumb: its one page, Profile, is reached from the
-account menu.
+A seventh group, **Settings**, exists only as a breadcrumb: its two pages, Profile and System, are
+reached from the account menu.
 
 Notes on its behaviour:
 
@@ -125,6 +125,9 @@ Notes on its behaviour:
 - **Collapsing.** The button at the bottom collapses the sidebar to icons only. The choice is stored
   in this browser under the `spinneret.sidebar.collapsed` key and survives a reload. While collapsed,
   hovering or focusing an icon shows the page name as a tooltip.
+- **About.** The button at the foot of the sidebar opens a dialog with the copyright, the licence, the
+  maintainer and a link to the source. Nothing operational lives there — the build number and the
+  update check are on **Settings → System**, which is a page you can link a colleague at.
 - **The logo** at the top links to the overview page.
 
 ### Top bar
@@ -217,12 +220,20 @@ live. The choice is saved under `spinneret.theme`. The language and theme menus 
 the sign-in page, before you have an account context.
 
 **Account menu.** The round button at the far right shows your initials. It opens to your display
-name, your email address, a *Platform admin* badge when you are one, a link to **Profile** and
-**Sign out**.
+name, your email address, a *Platform admin* badge when you are one, links to **Profile** and
+**System**, and **Sign out**.
 
 The **Profile** page (`/settings/profile`) shows the account as the server stores it — username,
 display name, email, last sign-in, creation time — the tenants your role bindings reach and the roles
 they give you there, the same language and theme controls, and the password change form.
+
+The **System** page (`/settings/system`) is about the deployment rather than about you: the version of
+the server you are talking to, an on-demand check against the published releases, and links to the
+manual, the issue tracker, the security policy and the source. Any signed-in user can open it; it needs
+no role binding, because knowing which build you are on is not privileged information. The check itself
+makes no outbound request until you press the button, caches its answer for an hour, and can be turned
+off with `SPINNERET_UPDATE_CHECK_URL=""` — see
+[Configuration → The console](./03-configuration.md#the-console).
 
 ---
 
@@ -274,6 +285,7 @@ open; without it the page shows *Permission denied* instead.
 | `/access/audit` | Audit | `audit:read` | Who did what in this tenant, whether it was allowed, and from which client | [11-access-control.md](./11-access-control.md) |
 | `/admin/tenants` | Tenants | `tenant:manage` or `namespace:write` | Tenants and the namespaces inside the active one | [11-access-control.md](./11-access-control.md) |
 | `/settings/profile` | Profile | — | Your account, your tenant access, and this browser's preferences | this page |
+| `/settings/system` | System | — | The running build, the update check, and where to get help | this page |
 
 Any other path shows the *Page not found* page with a button back to the overview.
 
