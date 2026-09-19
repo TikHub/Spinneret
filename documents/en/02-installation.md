@@ -868,8 +868,13 @@ the shape of the load, not as a fleet plan to the decimal — the
 | `SPINNERET_ACQUIRE_FLEET_INFLIGHT` | `64` (0–65536) | Concurrent acquire scripts the **whole fleet** may have in flight. Each API instance admits this divided by the number of live API instances it sees, clamped to `[4, 4096]`. `0` turns admission control off |
 | `SPINNERET_ACQUIRE_MAX_INFLIGHT` | `0` = derive (0–4096) | Pins this instance's limit instead of dividing the fleet budget, and stops the heartbeat that counts peers |
 
-The division uses the same kind of registry as the shards: every API instance heartbeats every 2 s, a
-heartbeat is live for 10 s, and each instance re-divides on every beat. With the stack's default of two
+The division uses the same kind of registry as the shards, with one deliberate difference: every API
+instance heartbeats every 2 s, a heartbeat is live for **60 s**, and each instance re-divides on every beat.
+Thirty beats of slack, where the worker shard registry allows five, because a beat needs Redis and the
+moment this gate matters is the moment Redis is saturated. Measured with a 10 s window, a busy instance
+missed enough beats to be pruned by its peer, which then divided the fleet budget by one and admitted all
+of it — widening the gate exactly when it should have held, which feeds the collapse the gate exists to
+prevent. The cost of the longer window is that a crashed instance keeps its share for up to a minute. With the stack's default of two
 replicas and a budget of 64, each admits 32. Scale to four and each admits 16 — the fleet total does not
 move. An attempt waits up to 50 ms for a permit, never longer than its own remaining `wait_ms`; beyond that
 it is shed as `unavailable` with reason `overloaded` and a retry hint jittered into 100–200 ms. A batch
