@@ -564,7 +564,7 @@ After `go` and `web` pass: builds `deploy/docker/Dockerfile` with buildx, tagged
 without pushing.
 
 Publishing is a separate workflow. `.github/workflows/release.yml` triggers on a `v*` tag, builds the
-same Dockerfile for amd64 and arm64 and pushes it to `ghcr.io/tikhub/spinneret` and to Docker Hub; it is
+same Dockerfile for amd64 and arm64 and pushes it to `ghcr.io/tikhub/spinneret` and to `tikhubio/spinneret` on Docker Hub; it is
 the only thing in the repository that publishes an image. Nothing on a pull request or on `main` pushes
 anything.
 

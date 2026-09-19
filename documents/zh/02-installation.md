@@ -203,7 +203,7 @@ curl -fsSL https://raw.githubusercontent.com/TikHub/Spinneret/main/install/insta
 | `SPINNERET_REPLICAS` | 由 CPU 和内存推导 | 服务端副本数 |
 | `SPINNERET_ENABLE_OBSERVABILITY` | `0` | `1` 加上 Prometheus profile |
 | `SPINNERET_USE_PUBLISHED` | `1` | `1` 拉已发布镜像，`0` 从检出构建 |
-| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | 镜像仓库 —— 用私有镜像站或 fork，不用改脚本 |
+| `SPINNERET_IMAGE` | `tikhubio/spinneret` | 镜像仓库 —— 换成 `ghcr.io/tikhub/spinneret` 可以从 GitHub Packages 拉同一个构建（那边需要登录），也可以指向私有镜像站或 fork，都不用改脚本 |
 | `SPINNERET_IMAGE_TAG` | `latest` | 镜像 tag。生产安装请钉一个确切的 |
 | `NO_COLOR` | 未设置 | 设成任何值都会关掉颜色 |
 
@@ -275,7 +275,7 @@ SPINNERET_REPLICAS=2 SPINNERET_IMAGE_TAG=v0.1.0 \
 ==> An install is already here
     ✓ /opt/spinneret
     ✓ Running v0.1.0
-    ✓ Image ghcr.io/tikhub/spinneret:latest
+    ✓ Image tikhubio/spinneret:latest
 
       1  Status — versions, containers, schema, disk
       2  Move to another image tag (re-pull, migrate, restart)
@@ -368,7 +368,9 @@ docker compose -f deploy/compose/docker-compose.yml run --rm -T \
 
 ## 已发布镜像还是从源码构建
 
-已发布的多架构镜像是 `ghcr.io/tikhub/spinneret`，构建 `linux/amd64` 和 `linux/arm64`，每个版本 tag
+已发布的多架构镜像是 Docker Hub 上的 `tikhubio/spinneret`，这是不需要凭据就能拉的那一份。同一次构建也会推到
+GitHub Packages 的 `ghcr.io/tikhub/spinneret`，digest 完全相同，但那边需要登录，所以只有在你有账号的情况下
+才把 `SPINNERET_IMAGE` 指过去。两者都构建 `linux/amd64` 和 `linux/arm64`，每个版本 tag
 （`v` 后面跟一个数字）都打上 `vX.Y.Z`、`X.Y.Z`、`X.Y` 和 `latest` —— `latest` 只给没有预发布后缀的 tag，
 所以 `v1.2.0-rc1` 永远不会变成 `latest`。tag 会被烙进二进制，所以 `spnr version` 和控制台报出的就是当前在跑的那个构建。
 拉取大约一分钟；构建要 5–15 分钟、首次约 2 GB 构建缓存，而且需要能访问 Go 和 Node 的包仓库。
@@ -378,13 +380,13 @@ docker compose -f deploy/compose/docker-compose.yml run --rm -T \
 ```yaml
 services:
   migrate:
-    image: ${SPINNERET_IMAGE:-ghcr.io/tikhub/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
+    image: ${SPINNERET_IMAGE:-tikhubio/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
     build: !reset null
   spinneret:
-    image: ${SPINNERET_IMAGE:-ghcr.io/tikhub/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
+    image: ${SPINNERET_IMAGE:-tikhubio/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
     build: !reset null
   init-admin:
-    image: ${SPINNERET_IMAGE:-ghcr.io/tikhub/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
+    image: ${SPINNERET_IMAGE:-tikhubio/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
     build: !reset null
 ```
 
@@ -1117,7 +1119,7 @@ curl -s 127.0.0.1:8080/readyz
 | `No terminal to ask questions on` | 脚本被管道执行，而且没有可用的 `/dev/tty`。下载下来直接跑，或者加 `--yes` |
 | `required variable PG_PASSWORD is missing a value` | Compose 找不到可读的 `.env`。要么 `deploy/compose/.env` 还没生成 —— 跑 `./scripts/compose-init.sh` —— 要么 `--env-file` / `COMPOSE_ENV_FILES` 指向了别处。Compose 是在编排文件旁边找它，不是在你当前目录找 |
 | `Docker is running, but your user cannot reach it` | 你的用户不在 `docker` 组里。在多数机器上那个组等于 root，所以这里不会替你加 |
-| `ghcr.io/tikhub/spinneret:latest cannot be fetched from here` | 这个 tag 还没发布，或者这台机器到不了镜像仓库。你的检出没问题，改成从源码构建 |
+| `tikhubio/spinneret:latest cannot be fetched from here` | 这个 tag 还没发布，或者这台机器到不了镜像仓库。你的检出没问题，改成从源码构建 |
 | `vault: read kek file … permission denied` | 容器里的用户读不到 `kek.key`。它必须是 `-rw-r--r--`；不要"加固"成 `0600` |
 | `vault: kek "k1" must be 32 bytes, got N` | 密钥文件被截断或损坏 |
 | `load dedupe_pepper system key (is the KEK the one used to initialize this database?)` | 这个数据库用的不是这把密钥 —— 这是"用错密钥恢复"的特征。除了那把正确的密钥没有别的办法 |

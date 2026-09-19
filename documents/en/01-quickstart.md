@@ -130,7 +130,7 @@ Each has a default you can accept with enter.
 | 4 | Administrator username | `admin`, validated against the server's own rule (`^[a-z0-9][a-z0-9._-]{2,63}$`) so a rejected name costs a keystroke rather than a failed bootstrap |
 | 5 | How many server replicas | one per two cores, clamped to 1–4, forced to 1 under 4 GiB |
 | 6 | The observability profile | off |
-| 7 | Published image or build from source | published, and only asked **after** checking whether `ghcr.io/tikhub/spinneret:latest` can actually be fetched from this host |
+| 7 | Published image or build from source | published, and only asked **after** checking whether `tikhubio/spinneret:latest` can actually be fetched from this host |
 
 Saying no to question 2 publishes on `0.0.0.0`, and the script warns you: the console is an admin
 surface and `/metrics` is on the same listener with no authentication, so that wants a TLS reverse

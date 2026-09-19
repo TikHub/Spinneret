@@ -621,7 +621,7 @@ a checkout — and reads the rest only from your shell:
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `SPINNERET_BIND_HOST` | `127.0.0.1` | The address the load balancer publishes on, `127.0.0.1` or `0.0.0.0`. Written to `.env`, read by the generated `compose.host.yml`. **The shipped `docker-compose.yml` does not read it**: it publishes `"${SPINNERET_PORT:-8080}:8080"` with no host part, so on a manual Compose stack this variable does nothing and you need the override in [Three worked configurations](#three-worked-configurations). |
-| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | Image repository. Every release is pushed to Docker Hub as `tikhubio/spinneret` too, from the same build and therefore at the same digest; set this to that when GitHub Packages is not reachable from the host, or to a private mirror or a fork. Read by the generated `compose.image.yml`. |
+| `SPINNERET_IMAGE` | `tikhubio/spinneret` | Image repository. The same build is pushed to GitHub Packages as `ghcr.io/tikhub/spinneret` at the same digest, which needs a login; set this to that, to a private mirror or to a fork as needed. Read by the generated `compose.image.yml`. |
 | `SPINNERET_IMAGE_TAG` | `latest` | Image tag. Pin an exact one for production. Read by the same generated `compose.image.yml`. |
 | `SPINNERET_PROJECT` | `spinneret` | Compose project name, also how an existing install is found. |
 | `SPINNERET_INSTALL_DIR` | `/opt/spinneret` as root, `~/spinneret` otherwise | Where to install. |
@@ -883,13 +883,13 @@ services:
   # The guided installer writes exactly this as compose.image.yml from
   # SPINNERET_IMAGE / SPINNERET_IMAGE_TAG.
   migrate:
-    image: ghcr.io/tikhub/spinneret:v0.1.0
+    image: tikhubio/spinneret:v0.1.0
     build: !reset null
   init-admin:
-    image: ghcr.io/tikhub/spinneret:v0.1.0
+    image: tikhubio/spinneret:v0.1.0
     build: !reset null
   spinneret:
-    image: ghcr.io/tikhub/spinneret:v0.1.0
+    image: tikhubio/spinneret:v0.1.0
     build: !reset null
     environment:
       # /metrics off the published listener, reachable only from the monitoring network.

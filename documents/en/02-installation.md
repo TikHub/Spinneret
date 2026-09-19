@@ -217,7 +217,7 @@ rather than just "all defaults".
 | `SPINNERET_REPLICAS` | derived from CPU and RAM | Server replicas |
 | `SPINNERET_ENABLE_OBSERVABILITY` | `0` | `1` adds the Prometheus profile |
 | `SPINNERET_USE_PUBLISHED` | `1` | `1` pulls the published image, `0` builds from the checkout |
-| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | The image repository — a private mirror or a fork, without editing the script |
+| `SPINNERET_IMAGE` | `tikhubio/spinneret` | The image repository — `ghcr.io/tikhub/spinneret` for the same build from GitHub Packages (which needs a login), a private mirror, or a fork, without editing the script |
 | `SPINNERET_IMAGE_TAG` | `latest` | The image tag. Pin an exact one for a production install |
 | `NO_COLOR` | unset | Set to anything to turn colour off |
 
@@ -292,7 +292,7 @@ looked for on **every** run.
 ==> An install is already here
     ✓ /opt/spinneret
     ✓ Running v0.1.0
-    ✓ Image ghcr.io/tikhub/spinneret:latest
+    ✓ Image tikhubio/spinneret:latest
 
       1  Status — versions, containers, schema, disk
       2  Move to another image tag (re-pull, migrate, restart)
@@ -390,8 +390,10 @@ an explicit `--env-file` / `COMPOSE_ENV_FILES` is pointing somewhere else.
 
 ## Published image or build from source
 
-The published multi-arch image is `ghcr.io/tikhub/spinneret`, built for `linux/amd64` and `linux/arm64`
-and tagged on every version tag (`v` followed by a digit) with `vX.Y.Z`, `X.Y.Z`, `X.Y` and `latest` —
+The published multi-arch image is `tikhubio/spinneret` on Docker Hub, which is the copy that pulls
+without credentials. The same build is pushed to `ghcr.io/tikhub/spinneret` on GitHub Packages at the
+same digest; that one needs a login, so point `SPINNERET_IMAGE` at it only if you have one. Both are
+built for `linux/amd64` and `linux/arm64` and tagged on every version tag (`v` followed by a digit) with `vX.Y.Z`, `X.Y.Z`, `X.Y` and `latest` —
 `latest` only for tags with no pre-release suffix, so `v1.2.0-rc1` never becomes `latest`. The tag is stamped into the binary, so
 `spnr version` and the console report exactly which build is running. Pulling takes about a minute.
 Building takes 5–15 minutes and about 2 GB of build cache on a first build, and needs to reach the Go and
@@ -402,13 +404,13 @@ The installer writes `compose.image.yml` for the published path:
 ```yaml
 services:
   migrate:
-    image: ${SPINNERET_IMAGE:-ghcr.io/tikhub/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
+    image: ${SPINNERET_IMAGE:-tikhubio/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
     build: !reset null
   spinneret:
-    image: ${SPINNERET_IMAGE:-ghcr.io/tikhub/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
+    image: ${SPINNERET_IMAGE:-tikhubio/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
     build: !reset null
   init-admin:
-    image: ${SPINNERET_IMAGE:-ghcr.io/tikhub/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
+    image: ${SPINNERET_IMAGE:-tikhubio/spinneret}:${SPINNERET_IMAGE_TAG:-latest}
     build: !reset null
 ```
 
@@ -1203,7 +1205,7 @@ deployment, because none of it is container-specific.
 | `No terminal to ask questions on` | The script was piped with no `/dev/tty` available. Download and run it, or pass `--yes` |
 | `required variable PG_PASSWORD is missing a value` | Compose found no `.env` to read. Either `deploy/compose/.env` does not exist yet — run `./scripts/compose-init.sh` — or `--env-file` / `COMPOSE_ENV_FILES` points somewhere else. Compose looks for it next to the Compose file, not in your current directory |
 | `Docker is running, but your user cannot reach it` | Your user is not in the `docker` group. That group is root on most machines, which is why nothing here adds you to it for you |
-| `ghcr.io/tikhub/spinneret:latest cannot be fetched from here` | No such tag published yet, or this host cannot reach the registry. Nothing is wrong with the checkout; build from source instead |
+| `tikhubio/spinneret:latest cannot be fetched from here` | No such tag published yet, or this host cannot reach the registry. Nothing is wrong with the checkout; build from source instead |
 | `vault: read kek file … permission denied` | `kek.key` is not readable by the container's user. It must be `-rw-r--r--`; do not "harden" it to `0600` |
 | `vault: kek "k1" must be 32 bytes, got N` | Truncated or corrupt key file |
 | `load dedupe_pepper system key (is the KEK the one used to initialize this database?)` | The wrong key for this database — the restore-with-the-wrong-key signature. Nothing but the right key fixes it |

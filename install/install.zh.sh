@@ -49,9 +49,12 @@ readonly DOCS_ZH="https://github.com/TikHub/Spinneret/blob/main/documents/zh/01-
 # ways that read like a problem with this project.
 readonly COMPOSE_MIN="2.24"
 
-# The published multi-arch image. SPINNERET_IMAGE replaces the repository part
-# so a private mirror or a fork can be used without editing this script.
-readonly DEFAULT_IMAGE="ghcr.io/tikhub/spinneret"
+# The published multi-arch image. Docker Hub rather than GitHub Packages because
+# this is the copy anyone can pull without credentials; the same build is pushed
+# to ghcr.io/tikhub/spinneret at the same digest, and that one needs a login.
+# SPINNERET_IMAGE replaces the repository part so a private mirror, a fork or the
+# GitHub Packages copy can be used without editing this script.
+readonly DEFAULT_IMAGE="tikhubio/spinneret"
 
 # How long to wait for /readyz to report every dependency ok. A cold host has to
 # pull five images, initialise PostgreSQL, let ClickHouse create its schema and

@@ -850,7 +850,7 @@ return lease.ReportResponse(resp, spinneret.ReportInput{Markers: detectMarkers(r
 | 数据 | PostgreSQL（事实来源）、Valkey 或 Redis（热状态、租约、上报流、会话）、ClickHouse（原始请求事件，可选） |
 | 热路径 | 在 Redis 服务端执行的 Lua 脚本：每次 `Acquire` 只有一次往返 |
 | 控制台 | React 18 + TypeScript，用 `go:embed` 嵌进二进制 |
-| 部署 | Docker Compose + Caddy；镜像发布在 `ghcr.io/tikhub/spinneret`，覆盖 linux/amd64 与 linux/arm64 |
+| 部署 | Docker Compose + Caddy；镜像发布在 Docker Hub 的 `tikhubio/spinneret`，覆盖 linux/amd64 与 linux/arm64 |
 | 可观测性 | Prometheus 指标，可选 OTLP 链路追踪 |
 | 工具链 | buf、sqlc、golangci-lint、k6、Playwright、Vitest、pytest |
 
@@ -946,8 +946,9 @@ Spinneret 遵循 SemVer 的 1.0 之前语义。在 1.0 之前，节点 API 的�
 
 表结构迁移用 `spnr migrate up` 执行、`spnr migrate status` 查看、`spnr migrate down --to <version>` 回滚；
 升级前先备份，具体见[运维](documents/zh/16-operations.md)。容器镜像由 `release` 工作流按每个发布 tag
-发布到 `ghcr.io/tikhub/spinneret` 和 Docker Hub，覆盖 linux/amd64 与 linux/arm64——一次构建推两个
-registry，所以不管从哪里拉，digest 都是同一个。安全修复会同时进入最新发布版和
+发布到 Docker Hub 的 `tikhubio/spinneret` 和 GitHub Packages 的 `ghcr.io/tikhub/spinneret`，覆盖
+linux/amd64 与 linux/arm64——一次构建推两个 registry，所以不管从哪里拉，digest 都是同一个。Docker Hub
+那一份不需要凭据就能拉，也是安装脚本的默认值。安全修复会同时进入最新发布版和
 `main`，流程见 [`SECURITY.md`](SECURITY.md)。
 
 ---

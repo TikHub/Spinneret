@@ -535,7 +535,7 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 在 `go` 和 `web` 通过之后：用 buildx 构建 `deploy/docker/Dockerfile`，打标签 `spinneret:ci`，不推送。
 
 发布是另一个工作流。`.github/workflows/release.yml` 由 `v*` 标签触发，用同一份 Dockerfile 构建
-amd64 与 arm64 两个架构，并推送到 `ghcr.io/tikhub/spinneret` 和 Docker Hub；仓库里只有它会发布镜像。
+amd64 与 arm64 两个架构，并推送到 `ghcr.io/tikhub/spinneret` 和 Docker Hub 的 `tikhubio/spinneret`；仓库里只有它会发布镜像。
 Pull Request 和推送到 `main` 都不会推送任何东西。
 
 它是**一次构建推两个 registry**，而不是各构建一次，所以两边提供的是同一个 digest，不会互相漂移。当

@@ -21,6 +21,14 @@ npm require. One release, two spellings, decided by where the string lives.
   GitHub Packages. Docker Hub needs the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets; without them
   the run publishes to GitHub Packages alone instead of failing, which is what a fork sees. The namespace
   is that username unless the repository variable `DOCKERHUB_REPOSITORY` overrides it.
+
+### Changed
+
+- **The installer now pulls from Docker Hub by default**, `tikhubio/spinneret` instead of
+  `ghcr.io/tikhub/spinneret`. GitHub Packages is private for this project, so the old default answered
+  401 for everyone outside the organisation and the installer quietly fell back to building from source —
+  which is the slow path the published image exists to avoid. The same build is on both registries at the
+  same digest, and `SPINNERET_IMAGE` still points at GitHub Packages, a private mirror or a fork.
 - The `release` workflow can be run by hand against a tag that already exists, from **Actions → release
   → Run workflow**. It rebuilds from the tag and publishes the images without touching that tag's GitHub
   release, which is how a registry added after a release was cut gets the images it missed. Its `latest`

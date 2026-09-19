@@ -897,7 +897,7 @@ No SDK for your language? Plain HTTP and JSON is a first-class client — see th
 | Data | PostgreSQL (source of truth), Valkey or Redis (hot state, leases, report streams, sessions), ClickHouse (raw request events, optional) |
 | Hot path | Lua scripts executed server-side in Redis: one round trip per `Acquire` |
 | Console | React 18 and TypeScript, embedded into the binary with `go:embed` |
-| Deployment | Docker Compose behind Caddy; images at `ghcr.io/tikhub/spinneret` for linux/amd64 and linux/arm64 |
+| Deployment | Docker Compose behind Caddy; images at `tikhubio/spinneret` on Docker Hub for linux/amd64 and linux/arm64 |
 | Observability | Prometheus metrics, optional OTLP tracing |
 | Tooling | buf, sqlc, golangci-lint, k6, Playwright, Vitest, pytest |
 
@@ -1001,8 +1001,9 @@ change lands in [`CHANGELOG.md`](CHANGELOG.md), which follows Keep a Changelog.
 Schema migrations are applied with `spnr migrate up`, inspected with `spnr migrate status` and rolled
 back with `spnr migrate down --to <version>`; back up before upgrading, as
 [Operations](documents/en/16-operations.md) describes. Container images are published per release tag to
-`ghcr.io/tikhub/spinneret` and to Docker Hub for linux/amd64 and linux/arm64 by the `release` workflow —
-one build pushed to both, so the digest is identical wherever you pull it from. Security fixes go
+`tikhubio/spinneret` on Docker Hub and to `ghcr.io/tikhub/spinneret` on GitHub Packages, for linux/amd64
+and linux/arm64, by the `release` workflow — one build pushed to both, so the digest is identical either
+way. Docker Hub is the copy that pulls without credentials and the one the installer defaults to. Security fixes go
 to the latest release and `main`, per [`SECURITY.md`](SECURITY.md).
 
 ---

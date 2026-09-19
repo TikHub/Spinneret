@@ -77,7 +77,7 @@ Seven questions, each with a default you can accept with enter:
    scraping the server's `/metrics`, published on `127.0.0.1` only — always,
    whatever the console is bound to, because it has no authentication.
 7. **Published image or build from source.** It checks whether
-   `ghcr.io/tikhub/spinneret:latest` can actually be fetched *before* asking, so
+   `tikhubio/spinneret:latest` can actually be fetched *before* asking, so
    the question knows which way it is about to go. Pulling takes about a minute;
    building takes 5–15 minutes and about 2 GB of build cache on a first build.
 
@@ -155,7 +155,7 @@ of installing:
 ==> An install is already here
     ✓ /opt/spinneret
     ✓ Running v0.1.0
-    ✓ Image ghcr.io/tikhub/spinneret:latest
+    ✓ Image tikhubio/spinneret:latest
 
       1  Status — versions, containers, schema, disk
       2  Move to another image tag (re-pull, migrate, restart)
@@ -331,7 +331,7 @@ install rather than just "all defaults":
 | `SPINNERET_REPLICAS` | derived from CPU and RAM | Server replicas. |
 | `SPINNERET_ENABLE_OBSERVABILITY` | `0` | `1` adds the Prometheus profile. |
 | `SPINNERET_USE_PUBLISHED` | `1` | `1` pulls the published image, `0` builds from the checkout. |
-| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | The image repository. `tikhubio/spinneret` is the same image on Docker Hub, at the same digest, and is the one to use from a host that cannot read GitHub Packages. Also for a private mirror or a fork, without editing the script. |
+| `SPINNERET_IMAGE` | `tikhubio/spinneret` | The image repository. `ghcr.io/tikhub/spinneret` is the same build at the same digest on GitHub Packages, which needs a login; also for a private mirror or a fork, without editing the script. |
 | `SPINNERET_IMAGE_TAG` | `latest` | The image tag. Pin an exact one for a production install. |
 | `NO_COLOR` | unset | Set to anything to turn off colour. |
 
@@ -467,7 +467,7 @@ it, or pass `--yes`.
 your user is not in the `docker` group. The script prints the two commands and
 deliberately does not run them: group membership is root access on that machine.
 
-**`ghcr.io/tikhub/spinneret:latest cannot be fetched from here.`** Either no such
+**`tikhubio/spinneret:latest cannot be fetched from here.`** Either no such
 tag has been published yet, or this host cannot reach the registry. Nothing is
 wrong with your checkout — the script falls back to building from source and
 says so.

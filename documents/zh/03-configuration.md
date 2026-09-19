@@ -581,7 +581,7 @@ ID；把一个值套在所有副本上会破坏 acquire 预算。见
 | 变量 | 默认值 | 作用 |
 | --- | --- | --- |
 | `SPINNERET_BIND_HOST` | `127.0.0.1` | 负载均衡对外监听的地址，`127.0.0.1` 或 `0.0.0.0`。写进 `.env`，由生成的 `compose.host.yml` 读取。**随包的 `docker-compose.yml` 不读它**：那里发布的是不带主机部分的 `"${SPINNERET_PORT:-8080}:8080"`，所以在手工 Compose 部署里这个变量什么也不做，你需要[三份实战配置](#三份实战配置)里的那个 override。 |
-| `SPINNERET_IMAGE` | `ghcr.io/tikhub/spinneret` | 镜像仓库。每个发布版同样会推到 Docker Hub 的 `tikhubio/spinneret`，来自同一次构建，因此 digest 完全相同；主机拉不到 GitHub Packages 时就把这个变量指向它，也可以指向私有镜像源或 fork。由生成的 `compose.image.yml` 读取。 |
+| `SPINNERET_IMAGE` | `tikhubio/spinneret` | 镜像仓库。同一次构建也会推到 GitHub Packages 的 `ghcr.io/tikhub/spinneret`，digest 完全相同，但那边需要登录；按需把这个变量指向它、私有镜像源或 fork。由生成的 `compose.image.yml` 读取。 |
 | `SPINNERET_IMAGE_TAG` | `latest` | 镜像标签。生产安装请固定到一个确切的标签。同样由生成的 `compose.image.yml` 读取。 |
 | `SPINNERET_PROJECT` | `spinneret` | Compose 项目名，也是查找已有安装的依据。 |
 | `SPINNERET_INSTALL_DIR` | root 下是 `/opt/spinneret`，否则是 `~/spinneret` | 安装到哪里。 |
@@ -830,13 +830,13 @@ services:
   # 拉下来的镜像。引导式安装脚本按 SPINNERET_IMAGE / SPINNERET_IMAGE_TAG 写出的
   # compose.image.yml 就是这个内容。
   migrate:
-    image: ghcr.io/tikhub/spinneret:v0.1.0
+    image: tikhubio/spinneret:v0.1.0
     build: !reset null
   init-admin:
-    image: ghcr.io/tikhub/spinneret:v0.1.0
+    image: tikhubio/spinneret:v0.1.0
     build: !reset null
   spinneret:
-    image: ghcr.io/tikhub/spinneret:v0.1.0
+    image: tikhubio/spinneret:v0.1.0
     build: !reset null
     environment:
       # 把 /metrics 从对外监听上移走，只对监控网络可达。
