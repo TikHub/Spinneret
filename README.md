@@ -34,7 +34,7 @@ a node's entire configuration is a server URL and an API token.
 
 ---
 
-## 🧭 The two calls
+## The two calls
 
 Two calls carry the hot path.
 
@@ -62,34 +62,33 @@ seconds. No redeploy, no worker restart.
 
 ---
 
-## 🕷 The main case: a large distributed crawler
+## The main case: a large distributed crawler
 
-Forty machines. One pool of a hundred thousand sessions. Nobody holds a list.
+Forty machines share one pool of a hundred thousand sessions, and nothing holds the state of it.
 
-Monday morning. Throughput halved over the weekend and nothing crashed. Forty workers are pulling cookies
-out of the same Redis set; four of those accounts were banned on Saturday night and are still being handed
-out. You cannot tell me how many requests that costs, and neither can anyone else on the team. One proxy
-subnet started answering with challenge pages at 02:00 and you cannot tell whether the proxies went bad or
-the accounts did, because the only place that knows is a log line on whichever worker happened to draw that
-pair. Someone has already pushed a `sleep(2)` to the hot loop and called it a fix, and the only way to
-change the rotation interval is to redeploy 40 containers.
+Here is what that looks like. Throughput halves over a weekend and nothing crashes. Forty workers are
+pulling cookies from the same Redis set; four of those accounts were banned on Saturday night and are
+still being handed out, and nobody can say how many requests that cost. A proxy subnet starts answering
+with challenge pages at 02:00, and whether the proxies or the accounts went bad is visible only in a log
+line on whichever worker happened to draw that pair. Changing the rotation interval means redeploying
+forty containers.
 
-The pool is shared. What anyone knows about it is not.
+The pool is shared; what is known about it is not.
 
-With Spinneret every machine is ignorant on purpose: it asks per request, gets one credential and one
-exit, and tells the server what happened. The pool has one state, and it lives in one place.
+Spinneret puts that state in one place. Each node asks per request, gets one credential and one exit, and
+reports what happened. The pool has one state, and one owner.
 
 ### Resource management
 
-You have a pool, and the pool has rules that a semaphore cannot express.
+A shared pool needs limits a semaphore cannot express.
 
 Identities live in the server, not in your workers. Each one is a row with an encrypted payload, a type
 that says how to render it, an optional account it belongs to, and a lifecycle state of its own —
 `pending`, `active`, `quarantined`, `banned`, `expired`, `disabled`, `retired`. Proxies are a separate
 namespace pool with kinds (`datacenter`, `residential`, `mobile`, `tunnel`), regions, providers and tags.
 
-The limits are the point, and they are evaluated in one Redis script at acquire time, so they hold across
-every worker on every machine instead of per process:
+The limits are evaluated in one Redis script at acquire time, so they hold across every worker on every
+machine rather than per process:
 
 | You want | The knob |
 | --- | --- |
@@ -99,25 +98,25 @@ every worker on every machine instead of per process:
 | the credential itself never sitting in a config file on forty machines | payload fields typed `secret_ref`, resolved out of the envelope-encrypted vault at acquire time, every read audited |
 | a new account eased in instead of run at full rate on day one | `warmup: {duration, quota_factor}` scales its quotas while it is young |
 | a freshly imported account proved before you trust it | `pending` identities get a probe trickle — weight factor `0.1`, at most 2 leases — and their first clean report activates them |
-| every request from one account leaving through the same exit | proxy mode `bind_identity`, with `rebind_tolerance` and `max_rebinds_per_day` so a route failure does not turn into an account that appears in three countries before lunch |
+| every request from one account leaving through the same exit | proxy mode `bind_identity`, with `rebind_tolerance` and `max_rebinds_per_day` so a route failure does not turn into one account appearing from three countries in an afternoon |
 | 20 accounts for one batch job in one round trip | `AcquireBatch`, up to 50 distinct identities |
 | a caller to wait for a free identity rather than fail | `wait_ms`, up to 5,000 |
 
-When the pool has nothing left you get `no_identity_available` with a reason, not a random pick that was
-going to fail. So when you go and ask for more accounts you bring the shortfall count with you.
+When the pool has nothing left you get `no_identity_available` with a reason, rather than a pick that was
+going to fail anyway — so the shortfall is a number you can take to whoever supplies the accounts.
 
 ### Risk-control monitoring
 
-One account gets banned. Thirty-nine machines do not know yet — that is the failure that costs you the
-rest of the pool, because they keep hitting it and the target keeps learning.
+When one account is banned and the other thirty-nine machines do not know yet, they keep using it and the
+target keeps learning from the attempts. That is how one ban becomes several.
 
 **A 200 with an empty list is not a success, and your worker should not be the one deciding that.** It
 reports the markers it recognised — `captcha_page`, `login_redirect`, `empty_list`, whatever names you
 invent — and the signal policy maps status, business code, error kind, markers, URI, method, latency and
 size onto 12 outcomes. A new failure mode is a new marker and a new rule, not a new release.
 
-**Punishment has a blast radius.** Open it too wide and you stop forty working accounts to punish one. An
-action lands at one of six scopes:
+**An action has a blast radius.** Too wide and one bad account stops forty working ones. An action lands
+at one of six scopes:
 
 | Scope | What it takes out |
 | --- | --- |
@@ -188,7 +187,7 @@ Spinneret answers **who to go as**, not **what to fetch**.
 
 ---
 
-## 🧰 It is not only for crawlers
+## It is not only for crawlers
 
 | What you actually run | What Spinneret is doing |
 | --- | --- |
@@ -202,7 +201,7 @@ Plenty of people will want only the config server and the vault, and none of the
 
 ---
 
-## 📈 Performance and scaling
+## Performance and scaling
 
 Measured with the k6 scenarios in `test/load/` against the Compose stack, on one site with 100,000
 identities across 50 endpoint groups. Everything, the load generator included, ran inside one Docker VM on
@@ -228,13 +227,13 @@ scripts and refuses the excess **in the server, before any Redis command**, as `
 with a jittered retry hint both SDKs honour. At 4,500 offered on two replicas it served 2,418 cycles/s,
 shed 1,881/s, and held acquire p99 at 89 ms: throughput fell, and nothing timed out.
 
-[Status and performance](#-status-and-performance) has the two-replica history, the rest of the numbers and
+[Status and performance](#status-and-performance) has the two-replica history, the rest of the numbers and
 the one thing the harness would not let me measure. [Performance and tuning](documents/en/17-performance.md)
 has the method and the traps.
 
 ---
 
-## 🚧 What Spinneret is not
+## What Spinneret is not
 
 - **Not in the data path.** No interception, no sidecar, no TLS termination. If you need something that
   sits in the path, you want a forward proxy or a mesh.
@@ -256,7 +255,7 @@ has the method and the traps.
 
 ---
 
-## 🔤 Vocabulary
+## Vocabulary
 
 The API and the console use six nouns throughout.
 
@@ -271,7 +270,7 @@ The API and the console use six nouns throughout.
 
 ---
 
-## 🧱 Architecture
+## Architecture
 
 ### The system
 
@@ -624,7 +623,7 @@ flowchart TB
 
 ---
 
-## 🖥 The console
+## The console
 
 | | |
 | --- | --- |
@@ -640,7 +639,7 @@ Events. The same overview in Chinese: [`documents/images/overview-zh.png`](docum
 
 ---
 
-## 🧩 What is in v0.1
+## What is in v0.1
 
 Every module below is implemented.
 
@@ -661,7 +660,7 @@ Every module below is implemented.
 
 ---
 
-## ⚡️ Quick start
+## Quick start
 
 Requirements: Docker Engine with the Compose plugin, Compose 2.24 or newer, about 4 GB of free RAM, one
 free host port (8080 by default).
@@ -746,7 +745,7 @@ See [`examples/fastapi-crawler/README.md`](examples/fastapi-crawler/README.md), 
 
 ---
 
-## 🔌 Integrating a node
+## Integrating a node
 
 Every RPC is `POST /spinneret.v1.<Service>/<Method>` with `Content-Type: application/json` — Connect,
 gRPC and gRPC-Web work too. Field names are snake_case, timestamps are RFC 3339 UTC.
@@ -879,7 +878,7 @@ No SDK for your language? Plain HTTP and JSON is a first-class client — see th
 
 ---
 
-## ⚗️ Built with
+## Built with
 
 | Layer | Stack |
 | --- | --- |
@@ -906,7 +905,7 @@ Compatibility, as tested in CI and pinned in Compose:
 
 ---
 
-## 🗂 Project layout
+## Project layout
 
 ```text
 cmd/                spinneret-server, spnr (the admin CLI)
@@ -938,7 +937,7 @@ test/               e2e, load (k6) and hot-path benchmarks
 
 ---
 
-## 📊 Status and performance
+## Status and performance
 
 Spinneret is pre-1.0 and feature-complete for v0.1. The four milestones — core path, risk-control loop,
 infrastructure, console and release — are implemented, and the stack ships with Go end-to-end scenarios, a
@@ -983,7 +982,7 @@ fingerprint distribution, browser pools.
 
 ---
 
-## 🔢 Versioning and compatibility
+## Versioning and compatibility
 
 Spinneret follows SemVer with pre-1.0 semantics. Before 1.0, the node API wire format
 (`spinneret.v1.*`), the `SPINNERET_*` variables and the policy YAML may change in a minor release. Every
@@ -999,7 +998,7 @@ to the latest release and `main`, per [`SECURITY.md`](SECURITY.md).
 
 ---
 
-## 🔐 Security
+## Security
 
 Report a vulnerability privately at
 <https://github.com/TikHub/Spinneret/security/advisories/new>. Never open a public issue for a security
@@ -1012,7 +1011,7 @@ the checklist to work through before anyone else can reach the installation.
 
 ---
 
-## 📖 Documentation
+## Documentation
 
 **Start here** — [Quick start](documents/en/01-quickstart.md) ·
 [Concepts](documents/en/04-concepts.md) · [Console overview](documents/en/05-console-overview.md)
@@ -1044,7 +1043,7 @@ The complete index, in both languages, is [`documents/README.md`](documents/READ
 
 ---
 
-## 🛠 Development
+## Development
 
 Requirements: Go 1.27 or newer, Node 22 with pnpm 10, Docker for the integration test infrastructure, and
 Python 3.10 or newer for the SDK.
@@ -1088,7 +1087,7 @@ spnr config check                spnr healthcheck --url http://127.0.0.1:8080/re
 
 ---
 
-## 🤝 Contributing and support
+## Contributing and support
 
 | | |
 | --- | --- |
@@ -1102,7 +1101,7 @@ available from TikHub.
 
 ---
 
-## 📄 Licence
+## Licence
 
 Spinneret is released under the [Apache License 2.0](LICENSE). In short: you may use, modify and
 redistribute it, including commercially; you must preserve the licence and attribution notices and state
