@@ -12,7 +12,19 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **Nine documented environment variables could not be set on the Compose deployment at all.** Compose
+  delivers only the variables its `environment` block names, and `SPINNERET_CLICKHOUSE_TTL_DAYS`, the five
+  `SPINNERET_RETENTION_*`, `SPINNERET_LATE_REPORT_WINDOW`, `SPINNERET_STREAM_MAXLEN` and
+  `SPINNERET_MAX_WATCHERS` were not among them. Putting any of them in `.env` did nothing — the server
+  kept its built-in default and nothing said otherwise. Found while setting a ClickHouse TTL on a real
+  deployment, where 30 days in `.env` left the tables on 90.
+
+  They are passed through with an empty default rather than the documented one, which matters: a variable
+  that always arrived with a value would count as explicitly set, pin its setting to the environment, and
+  make Settings → System show it read-only on every Compose deployment. `TestABlankValueIsNotSet` holds
+  that invariant down.
 
 ## [0.1.1] — 2026-09-19
 

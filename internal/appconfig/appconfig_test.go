@@ -235,6 +235,32 @@ func TestLoadFromBlankValuesUseDefaults(t *testing.T) {
 	require.Equal(t, 16, c.ReportShards)
 }
 
+func TestABlankValueIsNotSet(t *testing.T) {
+	t.Parallel()
+	// Load-bearing for the Compose deployment. Compose delivers only the variables
+	// its environment block names, so every setting an operator may want to pin
+	// from .env has to be listed there — and it is listed with an empty default,
+	// which means every deployment that does not set it receives it as "".
+	//
+	// If "" counted as set, every Compose deployment would arrive with all of its
+	// retention settings pinned to the environment, and Settings → System would
+	// show them read-only for everyone, forever.
+	c, err := LoadFrom(env(with(required(),
+		"SPINNERET_RETENTION_AUDIT", "",
+		"SPINNERET_CLICKHOUSE_TTL_DAYS", "",
+		"SPINNERET_MAX_WATCHERS", "   ",
+	)))
+	require.NoError(t, err)
+
+	require.False(t, c.EnvSet("SPINNERET_RETENTION_AUDIT"))
+	require.False(t, c.EnvSet("SPINNERET_CLICKHOUSE_TTL_DAYS"))
+	require.False(t, c.EnvSet("SPINNERET_MAX_WATCHERS"), "whitespace only is also not set")
+
+	require.Equal(t, 8760*time.Hour, c.Retention.Audit, "and the default still applies")
+	require.Equal(t, 90, c.ClickHouseTTLDays)
+	require.Equal(t, 20_000, c.MaxWatchers)
+}
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

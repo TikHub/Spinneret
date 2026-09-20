@@ -42,6 +42,21 @@ x-spinneret-env: &spinneret-env
   # default is 1h; see documents/en/17-performance.md ("Redis sizing") for sizing it to the retry
   # behaviour of your nodes rather than to an hour.
   SPINNERET_REPORT_DEDUP_TTL: ${SPINNERET_REPORT_DEDUP_TTL:-1h}
+  # Passed through with no default on purpose. Compose only delivers the variables
+  # named here, so one that is absent from this block cannot be set from .env at
+  # all — it silently keeps the built-in default however the operator spells it in
+  # the file. Empty is what the server reads as "not set", which is also what lets
+  # Settings → System manage these: a variable that always arrived with a value
+  # would pin its setting to the environment and show it read-only forever.
+  SPINNERET_CLICKHOUSE_TTL_DAYS: ${SPINNERET_CLICKHOUSE_TTL_DAYS:-}
+  SPINNERET_RETENTION_RISK_EVENTS: ${SPINNERET_RETENTION_RISK_EVENTS:-}
+  SPINNERET_RETENTION_MINUTE_STATS: ${SPINNERET_RETENTION_MINUTE_STATS:-}
+  SPINNERET_RETENTION_HOUR_STATS: ${SPINNERET_RETENTION_HOUR_STATS:-}
+  SPINNERET_RETENTION_STATE_EVENTS: ${SPINNERET_RETENTION_STATE_EVENTS:-}
+  SPINNERET_RETENTION_AUDIT: ${SPINNERET_RETENTION_AUDIT:-}
+  SPINNERET_LATE_REPORT_WINDOW: ${SPINNERET_LATE_REPORT_WINDOW:-}
+  SPINNERET_STREAM_MAXLEN: ${SPINNERET_STREAM_MAXLEN:-}
+  SPINNERET_MAX_WATCHERS: ${SPINNERET_MAX_WATCHERS:-}
   # Concurrent acquire scripts the whole fleet may have in flight at Redis. Each API replica admits
   # this budget divided by the number of live API replicas it sees, so the default stack (2 replicas)
   # runs at 32 each. 0 turns admission control off — which is the documented incident lever, so it
