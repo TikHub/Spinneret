@@ -1,6 +1,6 @@
 <h1 align="center">Spinneret</h1>
 
-<p align="center">Credential and proxy scheduling for distributed workers</p>
+<p align="center">High-performance credential and proxy scheduling for distributed workers</p>
 
 <p align="center">
   <a href="./README.md">English</a> ·
@@ -14,26 +14,19 @@
   <a href="https://github.com/TikHub/Spinneret/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
 </p>
 
-Spinneret manages the cookies, tokens, API keys, account sessions and proxies that several worker nodes
-share. A node asks for a credential before a request and reports the result after it; the server handles
-concurrency, quotas, cooldowns and expiry in one place.
+Spinneret manages the cookies, tokens, API keys, account sessions and proxies that many nodes share — and
+the configuration those nodes run on. A node asks for a credential before a request and reports what
+happened after it. Concurrency, quotas, cooldowns and expiry live in the server, not in every worker.
 
-It was written for a distributed crawler. Past a certain number of nodes, credential rotation and state
-tend to end up spread across projects: the same session is handed to two workers, a cookie that stopped
-working days ago is still in rotation, a proxy failure is recorded against whichever account happened to
-be using it. Spinneret is that logic as one service, rather than something every crawler implements
-again.
+It came out of a distributed crawler, where past a few dozen nodes nobody can answer "which of these still
+works". One instance sustains **4,499 acquire→report cycles per second** at acquire p99 **1.97 ms**,
+against a pool of 100,000 identities.
 
-**Your nodes still send their own requests.** Spinneret forwards no traffic, and it does not log in,
-sign, solve captchas, or obtain or refresh credentials. It manages the resources you give it.
+**Your nodes still send their own requests.** Spinneret forwards no traffic, and it does not log in, sign,
+solve captchas or fetch credentials. It manages the resources you already have.
 
-The same server also hands those nodes their configuration and secrets, versioned, over the same token.
-Changing a rotation interval or a cooldown is a publish, not a redeploy of every worker.
-
-The server is written in Go and needs PostgreSQL and Valkey / Redis. It ships a web console, a Python SDK
-and a Go SDK. ClickHouse stores per-request history and can be left out. Nodes need no agent and no
-sidecar — a node's entire configuration is a server URL and an API token, and the HTTP API works directly
-if you would rather not use an SDK.
+Go, PostgreSQL and Valkey, with a web console and Python and Go SDKs. Nothing to install on your machines:
+a node's entire configuration is a server URL and an API token.
 
 <div align="center">
   <img src="documents/images/overview.png" width="900" alt="The Spinneret console: per-site health, throughput, outcome mix and breakers"/>

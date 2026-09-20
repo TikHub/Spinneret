@@ -1,6 +1,6 @@
 <h1 align="center">Spinneret</h1>
 
-<p align="center">分布式凭据与代理调度服务</p>
+<p align="center">高性能分布式凭据与代理调度服务</p>
 
 <p align="center">
   <a href="./README.md">English</a> ·
@@ -14,22 +14,17 @@
   <a href="https://github.com/TikHub/Spinneret/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
 </p>
 
-Spinneret 用来管理多个工作节点共用的 Cookie、Token、API Key、账号会话和代理。节点在请求前申请凭据，
-请求后上报结果；服务端统一处理并发、配额、冷却和失效状态。
+Spinneret 管理多个节点共用的 Cookie、Token、API Key、账号会话和代理，以及下发给这些节点的配置。
+节点在请求前申请凭据，请求后上报结果。并发、配额、冷却和失效由服务端统一处理，不再散落在每个 worker 里。
 
-项目最初为分布式爬虫开发。节点多了以后，凭据轮换和状态管理很容易分散在各个项目里：同一个会话被重复使用，
-已经失效的 Cookie 还在分发，代理故障被当成账号故障处理。Spinneret 把这部分逻辑单独做成一个服务，
-不需要在每个爬虫里重复实现。
+项目最初为分布式爬虫开发——节点一多，「这些凭据里哪些还能用」就没人答得上来。单实例实测
+**每秒 4,499 次完整的申请→上报闭环**，acquire p99 **1.97 毫秒**，池子里是 10 万个身份。
 
-**业务请求仍然由你的节点发送。** Spinneret 不转发流量，也不负责登录、签名、验证码处理，以及获取或刷新凭据。
-它管理的是你已经提供的资源。
+**业务请求仍然由你的节点发送。** Spinneret 不转发流量，也不负责登录、签名、验证码，更不去获取或刷新凭据。
+它管理的是你已经有的资源。
 
-同一个服务端还负责把配置和机密下发给这些节点，带版本，走同一个令牌。改一个轮换间隔或者冷却时间是一次发布，
-不是把所有 worker 重新部署一遍。
-
-服务端使用 Go 编写，依赖 PostgreSQL 和 Valkey / Redis，提供 Web 控制台、Python SDK 和 Go SDK。
-ClickHouse 用于保存请求明细，服务端可以不启用它。节点不需要安装 Agent 或 Sidecar —— 一个节点的全部配置
-就是一个服务端地址和一个 API 令牌，不想用 SDK 的话直接调 HTTP API 也一样。
+Go 编写，依赖 PostgreSQL 和 Valkey，自带 Web 控制台以及 Python、Go SDK。你的机器上不需要装任何东西：
+一个节点的全部配置就是一个服务端地址和一个 API 令牌。
 
 <div align="center">
   <img src="documents/images/overview-zh.png" width="900" alt="Spinneret 控制台：按站点的健康度、吞吐、结果分布与熔断器"/>
