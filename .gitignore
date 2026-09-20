@@ -16,6 +16,11 @@ deploy/compose/secrets/
 # The published documentation lives in documents/.
 /docs/
 
+# Deployment access: SSH keys, host inventories, anything that gets you onto a
+# server. Never in the repository, public or not — a key here is a key in every
+# clone, every fork and every backup of them.
+/Deploy_SSH/
+
 # IDE
 .idea/
 .vscode/
