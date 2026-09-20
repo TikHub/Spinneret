@@ -3,6 +3,7 @@ package systemapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"testing"
 	"time"
@@ -54,7 +55,7 @@ func newHandler(t *testing.T) (*Handler, *recorder) {
 		AlertEvents:       2160 * time.Hour,
 		ClickHouseTTLDays: 90,
 	}})
-	return New(nil, store, rec, slog.New(slog.DiscardHandler)), rec
+	return New(nil, store, nil, rec, slog.New(slog.DiscardHandler)), rec
 }
 
 func ctxAs(p *authz.Principal) context.Context {
@@ -164,7 +165,7 @@ func TestAPinnedSettingIsReportedAndRefused(t *testing.T) {
 		Defaults: settings.Defaults{Audit: 48 * time.Hour, AlertEvents: 2160 * time.Hour, ClickHouseTTLDays: 90},
 		FromEnv:  map[string]bool{settings.KeyAudit: true},
 	})
-	h := New(nil, store, rec, slog.New(slog.DiscardHandler))
+	h := New(nil, store, nil, rec, slog.New(slog.DiscardHandler))
 
 	res, err := h.ListSettings(ctxAs(platformAdmin), connect.NewRequest(&spinneretv1.ListSettingsRequest{}))
 	require.NoError(t, err)
@@ -187,6 +188,69 @@ func requireCode(t *testing.T, err error, want connect.Code) {
 	e, ok := apperr.As(err)
 	require.Truef(t, ok, "not an apperr: %v", err)
 	require.Equal(t, want, e.Code)
+}
+
+func TestChangingTheClickHouseRetentionAltersTheTables(t *testing.T) {
+	// Storing the number is not applying it. ClickHouse holds the TTL on the tables
+	// and is the only thing that enforces it, so a setting that only writes a row
+	// displays a retention the deployment does not have — and the disk keeps
+	// growing at the old rate until it is full. That is what this shipped as.
+	var applied []int
+	store := settings.New(&fakeQ{}, settings.Config{Defaults: settings.Defaults{
+		AlertEvents: 2160 * time.Hour, ClickHouseTTLDays: 90,
+	}})
+	h := New(nil, store, func(_ context.Context, days int) error {
+		applied = append(applied, days)
+		return nil
+	}, &recorder{}, slog.New(slog.DiscardHandler))
+
+	_, err := h.UpdateSettings(ctxAs(platformAdmin), connect.NewRequest(&spinneretv1.UpdateSettingsRequest{
+		Values: map[string]string{settings.KeyClickHouse: "30"},
+	}))
+	require.NoError(t, err)
+	require.Equal(t, []int{30}, applied)
+
+	// Clearing it applies whatever it fell back to, not nothing.
+	_, err = h.UpdateSettings(ctxAs(platformAdmin), connect.NewRequest(&spinneretv1.UpdateSettingsRequest{
+		Values: map[string]string{settings.KeyClickHouse: ""},
+	}))
+	require.NoError(t, err)
+	require.Equal(t, []int{30, 90}, applied)
+
+	// An update that does not mention it does not touch the tables.
+	_, err = h.UpdateSettings(ctxAs(platformAdmin), connect.NewRequest(&spinneretv1.UpdateSettingsRequest{
+		Values: map[string]string{settings.KeyAudit: "30d"},
+	}))
+	require.NoError(t, err)
+	require.Equal(t, []int{30, 90}, applied)
+}
+
+func TestAFailedAlterIsReportedRatherThanSilentlyStored(t *testing.T) {
+	// The row is already written when the ALTER fails, so the caller has to hear
+	// about it: the alternative is a console that says 30 days over tables that
+	// still hold 90.
+	store := settings.New(&fakeQ{}, settings.Config{Defaults: settings.Defaults{
+		AlertEvents: 2160 * time.Hour, ClickHouseTTLDays: 90,
+	}})
+	h := New(nil, store, func(context.Context, int) error {
+		return errors.New("clickhouse is unreachable")
+	}, &recorder{}, slog.New(slog.DiscardHandler))
+
+	_, err := h.UpdateSettings(ctxAs(platformAdmin), connect.NewRequest(&spinneretv1.UpdateSettingsRequest{
+		Values: map[string]string{settings.KeyClickHouse: "30"},
+	}))
+	requireCode(t, err, connect.CodeInternal)
+	require.ErrorContains(t, err, "apply the ClickHouse retention")
+}
+
+func TestClickHouseDisabledStoresWithoutApplying(t *testing.T) {
+	// A deployment without ClickHouse has nothing holding a TTL; the setting still
+	// records what it should be for whenever one is connected.
+	h, _ := newHandler(t) // constructed with a nil apply callback
+	_, err := h.UpdateSettings(ctxAs(platformAdmin), connect.NewRequest(&spinneretv1.UpdateSettingsRequest{
+		Values: map[string]string{settings.KeyClickHouse: "30"},
+	}))
+	require.NoError(t, err)
 }
 
 func find(t *testing.T, list []*spinneretv1.Setting, key string) *spinneretv1.Setting {

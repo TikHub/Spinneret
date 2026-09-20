@@ -60,6 +60,35 @@ type infra struct {
 	chConn chdriver.Conn // nil when ClickHouse is disabled
 	cipher *vault.Cipher
 	pepper []byte
+	// settings is built before the ClickHouse schema is migrated, because the
+	// retention that migration applies is one of the settings it holds.
+	settings *settings.Store
+}
+
+// newSettingsStore builds the deployment settings store. The environment's
+// values are the defaults the database may override, except where the variable
+// was set explicitly — then it pins the setting and the console shows it
+// read-only.
+func newSettingsStore(pool *pgxpool.Pool, cfg appconfig.Config) *settings.Store {
+	return settings.New(db.New(pool), settings.Config{
+		Defaults: settings.Defaults{
+			RiskEvents:        cfg.Retention.RiskEvents,
+			MinuteStats:       cfg.Retention.MinuteStats,
+			HourStats:         cfg.Retention.HourStats,
+			StateEvents:       cfg.Retention.StateEvents,
+			Audit:             cfg.Retention.Audit,
+			AlertEvents:       defaultAlertEventsRetention,
+			ClickHouseTTLDays: cfg.ClickHouseTTLDays,
+		},
+		FromEnv: map[string]bool{
+			settings.KeyRiskEvents:  cfg.EnvSet("SPINNERET_RETENTION_RISK_EVENTS"),
+			settings.KeyMinuteStats: cfg.EnvSet("SPINNERET_RETENTION_MINUTE_STATS"),
+			settings.KeyHourStats:   cfg.EnvSet("SPINNERET_RETENTION_HOUR_STATS"),
+			settings.KeyStateEvents: cfg.EnvSet("SPINNERET_RETENTION_STATE_EVENTS"),
+			settings.KeyAudit:       cfg.EnvSet("SPINNERET_RETENTION_AUDIT"),
+			settings.KeyClickHouse:  cfg.EnvSet("SPINNERET_CLICKHOUSE_TTL_DAYS"),
+		},
+	})
 }
 
 // components holds every domain service of one instance. All services are
@@ -102,6 +131,7 @@ type components struct {
 	updates    *updatecheck.Checker
 	analytics  *analytics.Service
 	settings   *settings.Store
+	chConn     chdriver.Conn // nil when ClickHouse is disabled
 	partitions *partitionMaintainer
 
 	unsubscribeResolver func()
@@ -214,31 +244,26 @@ func buildComponents(cfg appconfig.Config, in *infra, metrics *observability.Met
 
 	c.updates = updatecheck.New(updatecheck.Config{URL: cfg.UpdateCheckURL, Current: version.String()})
 
-	// The environment's values are the defaults the database may override, except
-	// where the environment set the variable explicitly — then it pins the
-	// setting and the console shows it read-only.
-	c.settings = settings.New(db.New(pool), settings.Config{
-		Defaults: settings.Defaults{
-			RiskEvents:        cfg.Retention.RiskEvents,
-			MinuteStats:       cfg.Retention.MinuteStats,
-			HourStats:         cfg.Retention.HourStats,
-			StateEvents:       cfg.Retention.StateEvents,
-			Audit:             cfg.Retention.Audit,
-			AlertEvents:       defaultAlertEventsRetention,
-			ClickHouseTTLDays: cfg.ClickHouseTTLDays,
-		},
-		FromEnv: map[string]bool{
-			settings.KeyRiskEvents:  cfg.EnvSet("SPINNERET_RETENTION_RISK_EVENTS"),
-			settings.KeyMinuteStats: cfg.EnvSet("SPINNERET_RETENTION_MINUTE_STATS"),
-			settings.KeyHourStats:   cfg.EnvSet("SPINNERET_RETENTION_HOUR_STATS"),
-			settings.KeyStateEvents: cfg.EnvSet("SPINNERET_RETENTION_STATE_EVENTS"),
-			settings.KeyAudit:       cfg.EnvSet("SPINNERET_RETENTION_AUDIT"),
-			settings.KeyClickHouse:  cfg.EnvSet("SPINNERET_CLICKHOUSE_TTL_DAYS"),
-		},
-	})
+	c.settings = in.settings
+	c.chConn = in.chConn
 
 	c.partitions = newPartitionMaintainer(pool, c.settings, logger)
 	return c, nil
+}
+
+// applyClickHouseTTL carries a retention change to the ClickHouse tables. It is
+// what makes the console's ClickHouse retention setting mean anything: the store
+// records the number, the tables carry the TTL, and only ClickHouse enforces it.
+//
+// chstore.Migrate is idempotent and issues ALTER TABLE ... MODIFY TTL only when
+// the table's current TTL differs, so calling it with an unchanged value costs
+// one metadata read. Returns nil when ClickHouse is disabled: there is then
+// nothing holding a TTL, and the setting applies the next time one is connected.
+func (c *components) applyClickHouseTTL(ctx context.Context, days int) error {
+	if c.chConn == nil {
+		return nil
+	}
+	return chstore.Migrate(ctx, c.chConn, days)
 }
 
 // registerJobs adds every periodic job of a worker instance (spec §6.8) and

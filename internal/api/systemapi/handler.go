@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -23,6 +24,11 @@ import (
 type Handler struct {
 	updates  *updatecheck.Checker
 	settings *settings.Store
+	// applyTTL carries a changed ClickHouse retention to ClickHouse itself. The
+	// store only records what the retention should be; the tables carry a TTL of
+	// their own, and nothing else in the request path ever looks at it. nil when
+	// ClickHouse is disabled, when there is nothing to apply it to.
+	applyTTL func(ctx context.Context, days int) error
 	audit    audit.Recorder
 	logger   *slog.Logger
 }
@@ -30,7 +36,9 @@ type Handler struct {
 var _ spinneretv1connect.SystemServiceHandler = (*Handler)(nil)
 
 // New creates the SystemService handler. A nil checker answers "disabled".
-func New(updates *updatecheck.Checker, store *settings.Store, rec audit.Recorder, logger *slog.Logger) *Handler {
+func New(updates *updatecheck.Checker, store *settings.Store, applyTTL func(context.Context, int) error,
+	rec audit.Recorder, logger *slog.Logger,
+) *Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -40,6 +48,7 @@ func New(updates *updatecheck.Checker, store *settings.Store, rec audit.Recorder
 	return &Handler{
 		updates:  updates,
 		settings: store,
+		applyTTL: applyTTL,
 		audit:    rec,
 		logger:   logger.With(slog.String("component", "systemapi")),
 	}
@@ -100,7 +109,40 @@ func (h *Handler) UpdateSettings(ctx context.Context, req *connect.Request[spinn
 		return nil, apperr.InvalidArgument(apperr.ReasonInvalidArgument, "%s", err.Error())
 	}
 	h.record(ctx, p, values, audit.ResultOK)
+
+	// Storing the ClickHouse retention is not applying it: the tables hold a TTL
+	// of their own and ClickHouse is what enforces it. Without this the setting
+	// would display a number that changes nothing, and the disk would keep growing
+	// at the old rate until someone noticed it was full.
+	if err := h.applyClickHouseTTL(ctx, values, list); err != nil {
+		h.logger.Error("stored the ClickHouse retention but could not apply it to the tables",
+			slog.Any("error", err))
+		return nil, apperr.Internal(fmt.Errorf("apply the ClickHouse retention: %w", err))
+	}
 	return connect.NewResponse(&spinneretv1.UpdateSettingsResponse{Settings: protoSettings(list)}), nil
+}
+
+// applyClickHouseTTL alters the ClickHouse tables when this update changed their
+// retention. The value comes from the merged list rather than from the request,
+// so clearing the setting applies whatever it fell back to.
+func (h *Handler) applyClickHouseTTL(ctx context.Context, values map[string]string, list []settings.Setting) error {
+	if h.applyTTL == nil {
+		return nil // ClickHouse is disabled; nothing carries a TTL
+	}
+	if _, ok := values[settings.KeyClickHouse]; !ok {
+		return nil
+	}
+	for _, s := range list {
+		if s.Key != settings.KeyClickHouse {
+			continue
+		}
+		days, err := strconv.Atoi(s.Value)
+		if err != nil {
+			return fmt.Errorf("%s: %q is not a number", s.Key, s.Value)
+		}
+		return h.applyTTL(ctx, days)
+	}
+	return nil
 }
 
 // record audits the change. Retention decides how long evidence is kept, so the

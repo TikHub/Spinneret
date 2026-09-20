@@ -157,6 +157,9 @@ func (s *Server) openInfra(ctx context.Context) error {
 	if err := postgres.EnsurePartitions(ctx, pool, time.Now()); err != nil {
 		return fmt.Errorf("ensure partitions: %w", err)
 	}
+	// After the schema exists, because the settings live in it, and before the
+	// ClickHouse migration below, which needs the retention they hold.
+	s.infra.settings = newSettingsStore(pool, cfg)
 
 	rdb, err := redis.Open(ctx, cfg.RedisURL, cfg.RedisAddrs)
 	if err != nil {
@@ -171,7 +174,13 @@ func (s *Server) openInfra(ctx context.Context) error {
 			return fmt.Errorf("connect clickhouse: %w", err)
 		}
 		s.infra.chConn = conn
-		if err := chstore.Migrate(ctx, conn, cfg.ClickHouseTTLDays); err != nil {
+		// The effective retention, not the environment's: an operator who set it
+		// from the console expects the tables to carry it after a restart too.
+		resolved, err := s.infra.settings.Resolve(ctx)
+		if err != nil {
+			return fmt.Errorf("read deployment settings: %w", err)
+		}
+		if err := chstore.Migrate(ctx, conn, resolved.ClickHouseTTLDays); err != nil {
 			return fmt.Errorf("migrate clickhouse: %w", err)
 		}
 	} else {

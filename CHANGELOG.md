@@ -14,6 +14,17 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ### Fixed
 
+- **The console's ClickHouse retention setting now reaches ClickHouse.** It stored a number and changed
+  nothing: the tables carry a TTL of their own, ClickHouse is the only thing that enforces it, and no
+  `ALTER TABLE ... MODIFY TTL` was ever issued. A restart did not help either — startup migrated the
+  tables with the value from the environment and ignored the stored one. So the page reported 30 days
+  over tables that expired at 90, and the disk grew at the old rate until somebody looked.
+
+  Changing it now alters the tables in the same call, and a failed `ALTER` is reported instead of leaving
+  a stored number that means nothing. Startup resolves the setting before migrating, so a value set from
+  the console survives a restart. Clearing the setting applies whatever it falls back to. With ClickHouse
+  disabled the value is recorded for whenever one is connected.
+
 - **Nine documented environment variables could not be set on the Compose deployment at all.** Compose
   delivers only the variables its `environment` block names, and `SPINNERET_CLICKHOUSE_TTL_DAYS`, the five
   `SPINNERET_RETENTION_*`, `SPINNERET_LATE_REPORT_WINDOW`, `SPINNERET_STREAM_MAXLEN` and
