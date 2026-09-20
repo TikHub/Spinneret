@@ -1,39 +1,35 @@
 <h1 align="center">Spinneret</h1>
 
-<p align="center"><em>一台服务端，给整个节点集群派凭据、派出口线路、下发配置 —— 为一个大型分布式爬虫写的，而且它会算出刚刚是哪个凭据废了。</em></p>
+<p align="center">分布式凭据与代理调度服务</p>
 
-<div align="center">
+<p align="center">
+  <a href="./README.md">English</a> ·
+  <a href="./README.zh-CN.md">简体中文</a> ·
+  <a href="./documents/README.zh-CN.md">文档</a>
+</p>
 
-[English](./README.md) | [简体中文](./README.zh-CN.md)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/TikHub/Spinneret?style=flat-square" alt="License"></a>
+  <a href="https://github.com/TikHub/Spinneret/releases"><img src="https://img.shields.io/github/v/release/TikHub/Spinneret?style=flat-square" alt="Release"></a>
+  <a href="https://github.com/TikHub/Spinneret/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+</p>
 
-一个分布式集群里永远不够用的那几样东西 —— 账号、API key、会话、cookie、出口地址 —— 由 Spinneret
-统一发放，配置也从它这里下发到同一批节点。你的节点在每次请求之前向它要一个凭据和一个出口，用，
-然后把拿到的状态报回来。几秒之后，废掉的那些就不再发给任何一台机器，下一个来要的节点拿到的是别的。
-没人去改配置文件，也没人重启 worker。
+Spinneret 用来管理多个工作节点共用的 Cookie、Token、API Key、账号会话和代理。节点在请求前申请凭据，
+请求后上报结果；服务端统一处理并发、配额、冷却和失效状态。
 
-它是为一个大型分布式爬虫写的：一池账号、会话或 key，几百个 worker 进程，以及「这里面哪些还能用」
-这个问题没有一个诚实的答案。它自己根本不知道什么是爬虫。所以只要有一堆节点在抢同一小批账号、key
-或者出口，用法就是这一套。
+项目最初为分布式爬虫开发。节点多了以后，凭据轮换和状态管理很容易分散在各个项目里：同一个会话被重复使用，
+已经失效的 Cookie 还在分发，代理故障被当成账号故障处理。Spinneret 把这部分逻辑单独做成一个服务，
+不需要在每个爬虫里重复实现。
 
-一个 Go 二进制，加 PostgreSQL 和 Valkey —— 想用请求明细再加一个 ClickHouse。你的机器上不装 agent、
-不装 sidecar：一个节点的全部配置就是一个服务端地址和一个 API 令牌，SDK 只是普通的库，所以裸 HTTP
-一样好使。单实例实测：**每秒 4,499 次 acquire→report 闭环**，acquire p99 **1.97 ms**，池子里是 10 万个身份。
+**业务请求仍然由你的节点发送。** Spinneret 不转发流量，也不负责登录、签名、验证码处理，以及获取或刷新凭据。
+它管理的是你已经提供的资源。
 
-[![License](https://img.shields.io/github/license/TikHub/Spinneret?style=flat-square)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/releases/latest)
-[![Stars](https://img.shields.io/github/stars/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/stargazers)
-[![Forks](https://img.shields.io/github/forks/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/forks)
-[![Issues](https://img.shields.io/github/issues/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/issues)
-<br>
-[![CI](https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/TikHub/Spinneret/actions/workflows/ci.yml)
-[![Release build](https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/release.yml?style=flat-square&label=release%20build)](https://github.com/TikHub/Spinneret/actions/workflows/release.yml)
-[![Last commit](https://img.shields.io/github/last-commit/TikHub/Spinneret?style=flat-square&label=last%20commit)](https://github.com/TikHub/Spinneret/commits/main)
-<br>
-[![Go](https://img.shields.io/github/go-mod/go-version/TikHub/Spinneret?style=flat-square&logo=go&logoColor=white&label=go)](go.mod)
-[![Container image](https://img.shields.io/badge/ghcr.io-tikhub%2Fspinneret-2496ed?style=flat-square&logo=docker&logoColor=white)](https://github.com/TikHub/Spinneret/pkgs/container/spinneret)
-[![文档](https://img.shields.io/badge/%E6%96%87%E6%A1%A3-21%20%E9%A1%B5%20%C2%B7%20%E4%B8%AD%E6%96%87%20%2F%20EN-2f6feb?style=flat-square&logo=readthedocs&logoColor=white)](documents/README.zh-CN.md)
+同一个服务端还负责把配置和机密下发给这些节点，带版本，走同一个令牌。改一个轮换间隔或者冷却时间是一次发布，
+不是把所有 worker 重新部署一遍。
 
-</div>
+服务端使用 Go 编写，依赖 PostgreSQL 和 Valkey / Redis，提供 Web 控制台、Python SDK 和 Go SDK。
+ClickHouse 用于保存请求明细，服务端可以不启用它。节点不需要安装 Agent 或 Sidecar —— 一个节点的全部配置
+就是一个服务端地址和一个 API 令牌，不想用 SDK 的话直接调 HTTP API 也一样。
 
 <div align="center">
   <img src="documents/images/overview-zh.png" width="900" alt="Spinneret 控制台：按站点的健康度、吞吐、结果分布与熔断器"/>

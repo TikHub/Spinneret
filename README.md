@@ -1,41 +1,39 @@
 <h1 align="center">Spinneret</h1>
 
-<p align="center"><em>One server that hands out credentials, exits and configuration to a whole fleet of nodes — written for a large distributed crawler, and it works out which credential just got burned.</em></p>
+<p align="center">Credential and proxy scheduling for distributed workers</p>
 
-<div align="center">
+<p align="center">
+  <a href="./README.md">English</a> ·
+  <a href="./README.zh-CN.md">简体中文</a> ·
+  <a href="./documents/README.md">Documentation</a>
+</p>
 
-[English](./README.md) | [简体中文](./README.zh-CN.md)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/TikHub/Spinneret?style=flat-square" alt="License"></a>
+  <a href="https://github.com/TikHub/Spinneret/releases"><img src="https://img.shields.io/github/v/release/TikHub/Spinneret?style=flat-square" alt="Release"></a>
+  <a href="https://github.com/TikHub/Spinneret/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+</p>
 
-Spinneret shares the things a distributed fleet never has enough of — accounts, API keys, sessions,
-cookie jars, exit addresses — and pushes configuration down to the same nodes. Your nodes ask for a
-credential and an exit before each request, use them, and report the status they got back. Seconds later
-the burnt ones are out of rotation fleet-wide, and the next node to ask gets something else. Nobody edits
-a config file, nobody restarts a worker.
+Spinneret manages the cookies, tokens, API keys, account sessions and proxies that several worker nodes
+share. A node asks for a credential before a request and reports the result after it; the server handles
+concurrency, quotas, cooldowns and expiry in one place.
 
-It was built for a large distributed crawler: one pool of accounts, sessions or keys, a few hundred worker
-processes, and no honest answer to "which of these still works". Nothing in it knows what a crawler is, so
-any fleet queueing for the same short list of accounts, keys or exits uses it the same way.
+It was written for a distributed crawler. Past a certain number of nodes, credential rotation and state
+tend to end up spread across projects: the same session is handed to two workers, a cookie that stopped
+working days ago is still in rotation, a proxy failure is recorded against whichever account happened to
+be using it. Spinneret is that logic as one service, rather than something every crawler implements
+again.
 
-One Go binary, PostgreSQL and Valkey — plus ClickHouse if you want the request explorer. No agent and no
-sidecar on your machines: a node's entire configuration is a server URL and an API token, and the SDKs are
-ordinary libraries, so plain HTTP works just as well. Measured on one instance: **4,499 acquire→report
-cycles per second** at acquire p99 **1.97 ms**, against a pool of 100,000 identities.
+**Your nodes still send their own requests.** Spinneret forwards no traffic, and it does not log in,
+sign, solve captchas, or obtain or refresh credentials. It manages the resources you give it.
 
-[![License](https://img.shields.io/github/license/TikHub/Spinneret?style=flat-square)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/releases/latest)
-[![Stars](https://img.shields.io/github/stars/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/stargazers)
-[![Forks](https://img.shields.io/github/forks/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/forks)
-[![Issues](https://img.shields.io/github/issues/TikHub/Spinneret?style=flat-square)](https://github.com/TikHub/Spinneret/issues)
-<br>
-[![CI](https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/TikHub/Spinneret/actions/workflows/ci.yml)
-[![Release build](https://img.shields.io/github/actions/workflow/status/TikHub/Spinneret/release.yml?style=flat-square&label=release%20build)](https://github.com/TikHub/Spinneret/actions/workflows/release.yml)
-[![Last commit](https://img.shields.io/github/last-commit/TikHub/Spinneret?style=flat-square&label=last%20commit)](https://github.com/TikHub/Spinneret/commits/main)
-<br>
-[![Go](https://img.shields.io/github/go-mod/go-version/TikHub/Spinneret?style=flat-square&logo=go&logoColor=white&label=go)](go.mod)
-[![Container image](https://img.shields.io/badge/ghcr.io-tikhub%2Fspinneret-2496ed?style=flat-square&logo=docker&logoColor=white)](https://github.com/TikHub/Spinneret/pkgs/container/spinneret)
-[![Docs](https://img.shields.io/badge/docs-21%20pages%20%C2%B7%20EN%20%2F%20%E4%B8%AD%E6%96%87-2f6feb?style=flat-square&logo=readthedocs&logoColor=white)](documents/README.md)
+The same server also hands those nodes their configuration and secrets, versioned, over the same token.
+Changing a rotation interval or a cooldown is a publish, not a redeploy of every worker.
 
-</div>
+The server is written in Go and needs PostgreSQL and Valkey / Redis. It ships a web console, a Python SDK
+and a Go SDK. ClickHouse stores per-request history and can be left out. Nodes need no agent and no
+sidecar — a node's entire configuration is a server URL and an API token, and the HTTP API works directly
+if you would rather not use an SDK.
 
 <div align="center">
   <img src="documents/images/overview.png" width="900" alt="The Spinneret console: per-site health, throughput, outcome mix and breakers"/>
