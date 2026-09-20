@@ -12,6 +12,13 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.2] — 2026-09-20
+
+Two fixes, both for settings that looked like they worked and did not. No schema
+migration, no configuration to change; upgrading is a pull and a restart.
+
 ### Fixed
 
 - **The console's ClickHouse retention setting now reaches ClickHouse.** It stored a number and changed
@@ -324,6 +331,7 @@ VM; the method, the hardware and every caveat are in `documents/en/17-performanc
   refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
   fingerprint distribution and browser pools.
 
+[0.1.2]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.2
 [0.1.1]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.1
 [0.1.0]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.0
-[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.2...HEAD
