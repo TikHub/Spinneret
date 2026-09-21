@@ -244,6 +244,40 @@
     "toastValidatedWithFailures": "Dry run finished with {{failed}} rejected rows",
     "toastImported": "Imported: {{created}} created, {{updated}} updated, {{unchanged}} unchanged, {{failed}} rejected"
   },
+  "newIdentity": {
+    "open": "New",
+    "title": "New identity",
+    "description": "Create one identity from the fields of its type. The row goes through the same import path as a file, so it is normalized, deduplicated and activated by the same rules.",
+    "submit": "Create identity",
+    "sensitive": "sensitive",
+    "noFields": "This identity type declares no payload fields.",
+    "account": "Account",
+    "accountHint": "External reference (_account)",
+    "region": "Region",
+    "tags": "Tags",
+    "tagsHint": "Comma separated",
+    "created": "Identity created.",
+    "updated": "An identity with the same unique key already existed; its payload was replaced.",
+    "unchanged": "An identity with the same unique key and payload already exists; nothing changed.",
+    "rejected": "Rejected: {{reason}}",
+    "hints": {
+      "cookie_map": "A Cookie header, an object of names to values, or a browser export array.",
+      "json": "A JSON value.",
+      "secret_ref": "A namespace-relative vault path, not the secret itself."
+    },
+    "placeholders": {
+      "cookie_map": "sessionid=a1b2c3; csrf_token=1%7Cabc",
+      "json": "{\"device\": {\"id\": 7}}",
+      "number": "0",
+      "secret_ref": "signing/key"
+    },
+    "errors": {
+      "required": "Required.",
+      "notANumber": "Must be a number.",
+      "invalidJson": "Must be valid JSON.",
+      "reserved": "This field name is reserved by the import format and cannot be filled in here."
+    }
+  },
   "revert": {
     "open": "Revert actions",
     "title": "Revert automatic actions",

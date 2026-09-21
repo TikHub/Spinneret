@@ -244,6 +244,40 @@
     "toastValidatedWithFailures": "试运行完成，{{failed}} 行被拒绝",
     "toastImported": "导入完成：新增 {{created}}，更新 {{updated}}，未变化 {{unchanged}}，拒绝 {{failed}}"
   },
+  "newIdentity": {
+    "open": "新建",
+    "title": "新建身份",
+    "description": "按身份类型的字段逐项填写，创建一条身份。这一行仍走文件导入的同一条路径，因此归一化、去重与激活规则完全一致。",
+    "submit": "创建身份",
+    "sensitive": "敏感",
+    "noFields": "该身份类型没有声明任何载荷字段。",
+    "account": "账号",
+    "accountHint": "外部引用（_account）",
+    "region": "地区",
+    "tags": "标签",
+    "tagsHint": "以逗号分隔",
+    "created": "身份已创建。",
+    "updated": "已存在相同去重键的身份，载荷已替换。",
+    "unchanged": "已存在去重键与载荷都相同的身份，未做改动。",
+    "rejected": "被拒绝：{{reason}}",
+    "hints": {
+      "cookie_map": "可填 Cookie 请求头、名称到值的对象，或浏览器导出的数组。",
+      "json": "一个 JSON 值。",
+      "secret_ref": "填保管库中相对命名空间的路径，而不是密钥本身。"
+    },
+    "placeholders": {
+      "cookie_map": "sessionid=a1b2c3; csrf_token=1%7Cabc",
+      "json": "{\"device\": {\"id\": 7}}",
+      "number": "0",
+      "secret_ref": "signing/key"
+    },
+    "errors": {
+      "required": "必填。",
+      "notANumber": "必须是数字。",
+      "invalidJson": "必须是合法的 JSON。",
+      "reserved": "该字段名被导入格式保留，无法在此填写。"
+    }
+  },
   "revert": {
     "open": "撤销处置",
     "title": "撤销自动处置",

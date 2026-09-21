@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { type RowSelectionState, type SortingState, type Updater } from '@tanstack/react-table';
-import { FingerprintIcon, LayersIcon, Undo2Icon, UploadIcon } from 'lucide-react';
+import { FingerprintIcon, LayersIcon, PlusIcon, Undo2Icon, UploadIcon } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +21,7 @@ import { BulkFilterOperationDialog } from '../components/BulkFilterOperationDial
 import { BulkResultDialog } from '../components/BulkResultDialog';
 import { IdentityFilterBar } from '../components/IdentityFilterBar';
 import { ImportDialog } from '../components/ImportDialog';
+import { NewIdentityDialog } from '../components/NewIdentityDialog';
 import { OperationDialog } from '../components/OperationDialog';
 import { OperationsMenu } from '../components/OperationsMenu';
 import { RevertActionsDialog } from '../components/RevertActionsDialog';
@@ -42,6 +43,7 @@ type DialogState =
   | { kind: 'operate'; operation: IdentityOperation; ids: string[]; site?: string }
   | { kind: 'bulk'; operation: IdentityOperation }
   | { kind: 'import' }
+  | { kind: 'new' }
   | { kind: 'revert' }
   | { kind: 'result'; title: string; result: BulkResult | undefined };
 
@@ -166,6 +168,15 @@ function IdentitiesContent() {
               <UploadIcon />
               {t('import.open')}
             </PermissionButton>
+            <PermissionButton
+              permission={PERMISSIONS.identityWrite}
+              site={params.site || undefined}
+              size="sm"
+              onClick={() => open({ kind: 'new' })}
+            >
+              <PlusIcon />
+              {t('newIdentity.open')}
+            </PermissionButton>
           </>
         }
       />
@@ -246,6 +257,15 @@ function IdentitiesContent() {
           key={`import-${dialogSeq}`}
           open
           onOpenChange={(next) => !next && closeKind('import')}
+          defaultSite={params.site}
+          defaultType={params.type}
+        />
+      )}
+      {dialog?.kind === 'new' && (
+        <NewIdentityDialog
+          key={`new-${dialogSeq}`}
+          open
+          onOpenChange={(next) => !next && closeKind('new')}
           defaultSite={params.site}
           defaultType={params.type}
         />
