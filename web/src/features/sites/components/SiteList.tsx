@@ -97,7 +97,10 @@ export function SiteList({
   );
 
   return (
-    <nav aria-label={t('list.title')} className="flex min-h-0 flex-col gap-2 rounded-lg border bg-card p-2">
+    <nav
+      aria-label={t('list.title')}
+      className="flex min-h-0 flex-col gap-2 rounded-lg border bg-card p-2 lg:sticky lg:top-4 lg:max-h-[var(--sticky-panel-height)] lg:overflow-hidden"
+    >
       <div className="flex items-center justify-between px-1 pt-1">
         <h2 className="text-sm font-semibold">{t('list.title')}</h2>
         {total !== undefined && (
@@ -134,7 +137,7 @@ export function SiteList({
       ) : visible.length === 0 ? (
         <p className="px-2 py-4 text-center text-sm text-muted-foreground">{t('list.noMatch')}</p>
       ) : (
-        <ul className="grid max-h-[calc(100vh-16rem)] gap-0.5 overflow-y-auto">
+        <ul className="grid gap-0.5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
           {visible.map((site) => (
             <SiteListItem
               key={site.id}

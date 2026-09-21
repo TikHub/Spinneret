@@ -10,6 +10,30 @@
 :root {
   --radius: 0.5rem;
 
+  /*
+   * Height of the Topbar, which is `h-12`. One definition, because the sticky
+   * side panels below derive their own height from it.
+   */
+  --topbar-height: 3rem;
+  /*
+   * How tall a side panel that sticks under the topbar (`sticky top-4`) may be:
+   * the viewport, minus the topbar, minus its own 1rem offset, minus 1rem of
+   * breathing room at the bottom.
+   *
+   * This is correct by construction, which a hand-counted `calc(100vh - Nrem)`
+   * is not. Once a panel is stuck, its top is exactly `topbar + 1rem` below the
+   * viewport top whatever sits above it in the document — so the page title, the
+   * description, and whether the collapsible intro card is open stop mattering.
+   * Six such constants existed before this one (2, 10, 16, 17, 18 and 22rem) and
+   * four of them were too small, letting a panel claim between 136 and 240 px
+   * more height than the page had; the outer scroll then ran past the content.
+   *
+   * dvh, not vh: on a phone `vh` counts the area behind the browser's own
+   * toolbars, so a panel sized from it overflows by their height. Every use is
+   * `lg:`-gated today, but the unit is the safe one either way.
+   */
+  --sticky-panel-height: calc(100dvh - var(--topbar-height) - 2rem);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.208 0.042 265.755);
   --card: oklch(1 0 0);

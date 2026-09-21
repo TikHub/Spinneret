@@ -80,7 +80,7 @@ function ConfigContent() {
       />
       <PageIntro page="config" links={[{ to: '/secrets', labelKey: 'nav.secrets' }]} />
       <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <Card className="gap-0 overflow-hidden p-0 lg:sticky lg:top-4">
+        <Card className="gap-0 overflow-hidden p-0 lg:sticky lg:top-4 lg:max-h-[var(--sticky-panel-height)]">
           <div className="border-b p-2">
             <SearchInput
               value={query}
@@ -89,7 +89,7 @@ function ConfigContent() {
               className="sm:w-full"
             />
           </div>
-          <div className="max-h-[calc(100vh-18rem)] min-h-40 overflow-y-auto">
+          <div className="min-h-40 overflow-y-auto lg:min-h-0 lg:flex-1">
             <ConfigTree
               groups={tree}
               selected={selection}

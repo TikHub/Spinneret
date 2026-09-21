@@ -79,11 +79,11 @@ function SecretsList() {
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
-      <Card className="overflow-hidden lg:sticky lg:top-4">
+      <Card className="overflow-hidden lg:sticky lg:top-4 lg:max-h-[var(--sticky-panel-height)]">
         <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
           {t('folders.title')}
         </div>
-        <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+        <div className="overflow-y-auto lg:min-h-0 lg:flex-1">
           <SecretFolderTree
             folders={folders}
             total={paths.data?.paths.length ?? 0}

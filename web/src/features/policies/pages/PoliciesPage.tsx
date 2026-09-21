@@ -87,7 +87,7 @@ function PoliciesContent() {
         </TabsList>
         <TabsContent value="policies">
           <div className="grid items-start gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] 2xl:grid-cols-[20rem_minmax(0,1fr)]">
-            <div className="lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-10rem)] lg:flex-col">
+            <div className="lg:sticky lg:top-4 lg:flex lg:max-h-[var(--sticky-panel-height)] lg:flex-col">
               <PolicyList
                 selectedId={selectedId}
                 onSelect={(id) => openPolicy(id)}
