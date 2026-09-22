@@ -14,17 +14,17 @@ import (
 func TestBlockedIP(t *testing.T) {
 	t.Parallel()
 	blocked := []string{
-		"127.0.0.1",       // loopback
-		"::1",             // loopback v6
-		"0.0.0.0",         // unspecified
-		"::",              // unspecified v6
-		"10.0.0.1",        // private
-		"172.16.5.4",      // private
-		"192.168.1.1",     // private
-		"169.254.169.254", // link-local / cloud instance metadata
-		"fe80::1",         // link-local v6
-		"fc00::1",         // ULA (private v6)
-		"224.0.0.1",       // multicast
+		"127.0.0.1",        // loopback
+		"::1",              // loopback v6
+		"0.0.0.0",          // unspecified
+		"::",               // unspecified v6
+		"10.0.0.1",         // private
+		"172.16.5.4",       // private
+		"192.168.1.1",      // private
+		"169.254.169.254",  // link-local / cloud instance metadata
+		"fe80::1",          // link-local v6
+		"fc00::1",          // ULA (private v6)
+		"224.0.0.1",        // multicast
 		"::ffff:127.0.0.1", // v4-mapped loopback
 		"::ffff:10.0.0.1",  // v4-mapped private
 	}
