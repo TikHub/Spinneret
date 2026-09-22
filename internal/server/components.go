@@ -236,8 +236,8 @@ func buildComponents(cfg appconfig.Config, in *infra, metrics *observability.Met
 
 	c.config = configcenter.New(configcenter.Config{MaxWatchers: cfg.MaxWatchers}, pool, c.catalog, c.bus,
 		configSecrets{store: c.secrets}, c.breaker, c.audit, metrics, logger)
-	c.notify = notify.New(notify.Config{ReportShards: cfg.ReportShards}, pool, in.cipher, rdb, keys, c.catalog, c.bus,
-		c.audit, metrics, logger)
+	c.notify = notify.New(notify.Config{ReportShards: cfg.ReportShards, AllowPrivateTargets: cfg.NotifyAllowPrivateTargets},
+		pool, in.cipher, rdb, keys, c.catalog, c.bus, c.audit, metrics, logger)
 
 	// in.chConn is a nil interface (not a typed nil) when ClickHouse is disabled.
 	c.analytics = analytics.New(pool, in.chConn, rdb, keys, c.catalog, logger, analytics.WithReportShards(cfg.ReportShards))
