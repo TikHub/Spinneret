@@ -19,7 +19,7 @@ import (
 var fixedNow = time.Date(2026, 9, 17, 10, 0, 0, 0, time.UTC)
 
 func testSender() *sender {
-	return &sender{client: newHTTPClient(2 * time.Second), now: func() time.Time { return fixedNow }}
+	return &sender{client: newHTTPClient(2*time.Second, true), now: func() time.Time { return fixedNow }}
 }
 
 func TestSendWebhook(t *testing.T) {
@@ -100,7 +100,7 @@ func TestSendTransportErrorsHideURL(t *testing.T) {
 		}
 	}))
 	t.Cleanup(slow.Close)
-	s := &sender{client: newHTTPClient(50 * time.Millisecond), now: time.Now}
+	s := &sender{client: newHTTPClient(50*time.Millisecond, true), now: time.Now}
 	err = s.send(context.Background(), ChannelWebhook, channelConfig{URL: slow.URL + "/?token=topsecret"}, sampleMessage())
 	require.Error(t, err)
 	require.Equal(t, "request failed: timeout", errorSummary(err))

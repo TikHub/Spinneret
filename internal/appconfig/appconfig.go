@@ -77,6 +77,13 @@ type Config struct {
 	LateReportWindow time.Duration
 	StreamMaxLen     int64
 
+	// NotifyAllowPrivateTargets permits notification delivery to private,
+	// loopback, link-local (including instance metadata) and multicast
+	// addresses. Default false: such targets are refused to prevent SSRF from
+	// channel URLs. Enable only for trusted deployments that deliberately send
+	// notifications to internal hosts.
+	NotifyAllowPrivateTargets bool
+
 	// AcquireFleetInflight is the fleet-wide number of concurrent acquire
 	// scripts admission control allows; 0 turns admission control off.
 	AcquireFleetInflight int
@@ -164,6 +171,8 @@ func LoadFrom(lookup func(string) (string, bool)) (Config, error) {
 		ReportDedupTTL:   l.dur("SPINNERET_REPORT_DEDUP_TTL", time.Hour),
 		LateReportWindow: l.dur("SPINNERET_LATE_REPORT_WINDOW", 10*time.Minute),
 		StreamMaxLen:     int64(l.int("SPINNERET_STREAM_MAXLEN", 1_000_000)),
+
+		NotifyAllowPrivateTargets: l.bool("SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS", false),
 
 		AcquireFleetInflight: l.int("SPINNERET_ACQUIRE_FLEET_INFLIGHT", 64),
 		AcquireMaxInflight:   l.int("SPINNERET_ACQUIRE_MAX_INFLIGHT", 0),
@@ -366,6 +375,8 @@ func (c Config) Redacted() map[string]string {
 
 		"acquire_fleet_inflight": strconv.Itoa(c.AcquireFleetInflight),
 		"acquire_max_inflight":   strconv.Itoa(c.AcquireMaxInflight),
+
+		"notify_allow_private_targets": strconv.FormatBool(c.NotifyAllowPrivateTargets),
 	}
 }
 

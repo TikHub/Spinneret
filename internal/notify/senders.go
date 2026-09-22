@@ -64,13 +64,19 @@ func errorSummary(err error) string {
 
 // newHTTPClient returns the shared delivery client: bounded timeout, no
 // redirects (a redirect response is reported as a failure) and no cookie jar.
-func newHTTPClient(timeout time.Duration) *http.Client {
+// Unless allowPrivateTargets is set, connections to private, loopback,
+// link-local (including instance metadata) and multicast addresses are refused
+// at dial time to prevent SSRF from channel URLs.
+func newHTTPClient(timeout time.Duration, allowPrivateTargets bool) *http.Client {
 	if timeout <= 0 {
 		timeout = DefaultHTTPTimeout
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.MaxIdleConnsPerHost = 4
 	transport.ResponseHeaderTimeout = timeout
+	if !allowPrivateTargets {
+		transport.DialContext = newGuardedDialer(timeout).DialContext
+	}
 	return &http.Client{
 		Timeout:   timeout,
 		Transport: transport,
