@@ -32,6 +32,14 @@ const (
 	importLabelsKey  = "_labels"
 )
 
+// Per-row metadata limits. They bound the number of tags and labels on a
+// single import row so that one row cannot force unbounded (previously
+// O(n^2)) metadata processing regardless of the byte budget.
+const (
+	MaxTags   = 64
+	MaxLabels = 64
+)
+
 // ImportRow is one parsed import row. Payload values are not normalized;
 // pass them to CompiledType.Normalize.
 type ImportRow struct {
@@ -281,7 +289,7 @@ func jsonTags(v any, key string) ([]string, error) {
 	case nil:
 		return nil, nil
 	case string:
-		return splitList(t, ","), nil
+		return splitList(t, ",", key)
 	case []any:
 		items := make([]string, 0, len(t))
 		for _, item := range t {
@@ -291,7 +299,7 @@ func jsonTags(v any, key string) ([]string, error) {
 			}
 			items = append(items, s)
 		}
-		return cleanList(items), nil
+		return cleanList(items, key)
 	default:
 		return nil, fmt.Errorf("%s must be an array of strings or a comma-separated string", key)
 	}
@@ -304,6 +312,9 @@ func jsonLabels(v any, key string) (map[string]string, error) {
 	case map[string]any:
 		if len(t) == 0 {
 			return nil, nil
+		}
+		if len(t) > MaxLabels {
+			return nil, fmt.Errorf("%s has more than %d entries", key, MaxLabels)
 		}
 		out := make(map[string]string, len(t))
 		for k, lv := range t {
@@ -323,19 +334,52 @@ func jsonLabels(v any, key string) (map[string]string, error) {
 }
 
 // splitList splits s on sep, trims items and drops empty and duplicate ones.
-func splitList(s, sep string) []string {
-	return cleanList(strings.Split(s, sep))
+// key names the field for error messages. It rejects lists with more than
+// MaxTags distinct values. It iterates lazily and stops at the cap, so a huge
+// field is rejected after scanning only its first distinct values rather than
+// materializing every token.
+func splitList(s, sep, key string) ([]string, error) {
+	out := make([]string, 0, MaxTags)
+	seen := make(map[string]struct{}, MaxTags)
+	for item := range strings.SplitSeq(s, sep) {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if _, dup := seen[item]; dup {
+			continue
+		}
+		if len(out) >= MaxTags {
+			return nil, fmt.Errorf("%s has more than %d distinct values", key, MaxTags)
+		}
+		seen[item] = struct{}{}
+		out = append(out, item)
+	}
+	return out, nil
 }
 
-func cleanList(items []string) []string {
-	var out []string
+// cleanList trims items, drops empty and duplicate ones in O(n) time, and
+// rejects lists with more than MaxTags distinct values so that a single row's
+// tag field cannot drive quadratic (or unbounded) work.
+func cleanList(items []string, key string) ([]string, error) {
+	capHint := min(len(items), MaxTags)
+	out := make([]string, 0, capHint)
+	seen := make(map[string]struct{}, capHint)
 	for _, item := range items {
 		item = strings.TrimSpace(item)
-		if item != "" && !slices.Contains(out, item) {
-			out = append(out, item)
+		if item == "" {
+			continue
 		}
+		if _, dup := seen[item]; dup {
+			continue
+		}
+		if len(out) >= MaxTags {
+			return nil, fmt.Errorf("%s has more than %d distinct values", key, MaxTags)
+		}
+		seen[item] = struct{}{}
+		out = append(out, item)
 	}
-	return out
+	return out, nil
 }
 
 // ---------------------------------------------------------------------------
@@ -471,7 +515,11 @@ func csvRow(columns []csvColumn, record []string) (ImportRow, error) {
 		case importRegionKey:
 			row.Region = trimmed
 		case importTagsKey:
-			row.Tags = splitList(trimmed, ";")
+			tags, err := splitList(trimmed, ";", importTagsKey)
+			if err != nil {
+				return ImportRow{}, err
+			}
+			row.Tags = tags
 		case importLabelsKey:
 			labels, err := csvLabels(trimmed)
 			if err != nil {
@@ -515,6 +563,9 @@ func csvLabels(s string) (map[string]string, error) {
 		k = strings.TrimSpace(k)
 		if !ok || k == "" {
 			return nil, errors.New("_labels must be k=v pairs separated by ';'")
+		}
+		if _, exists := out[k]; !exists && len(out) >= MaxLabels {
+			return nil, fmt.Errorf("_labels has more than %d entries", MaxLabels)
 		}
 		out[k] = strings.TrimSpace(v)
 	}
