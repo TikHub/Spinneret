@@ -20,11 +20,31 @@ npm require. One release, two spellings, decided by where the string lives.
   block names, so the documented escape hatch did not exist on the default deployment. Only the Compose
   files changed, so the 0.1.3 image is unaffected: `git pull` in the deployment directory is enough.
 
-- `.env.example` no longer claims an empty `SPINNERET_UPDATE_CHECK_URL` disables the update check. It does
-  not — a blank value reads as unset and falls back to the built-in feed — and this stack does not pass
-  the variable through either. Disabling the check from the environment is still not possible; that is
-  tracked separately rather than fixed here, because making a blank value meaningful would disable the
-  check on every deployment that leaves the variable alone.
+- **A restarting Valkey no longer takes the server down with it.** An instance answers `LOADING` to every
+  command while it reads its AOF back after a restart, and the server treated that as a fatal startup
+  error. It exited, the supervisor restarted it, and that loop did eventually succeed — but the backoff
+  grows while the instance needs a fixed time to load, so the larger the dataset the further recovery
+  lags behind it. Startup now re-pings for up to two minutes while the reply is `LOADING`, and still
+  fails at once on anything else: a wrong password does not become right by waiting.
+
+  The Compose health check hid this. `valkey-cli ping` exits 0 even when the reply is an error, so the
+  container reported healthy while it was still refusing work and `depends_on: service_healthy` let the
+  server start into it. It now matches `PONG`.
+
+- **Disabling the update check is possible again.** The checker reads an empty URL as "make no outbound
+  call" and `.env.example` offered exactly that, but a blank value reads as unset and falls back to the
+  built-in feed, so the documented configuration was unreachable. The variable was also missing from the
+  Compose environment block, so the check could not be pointed at a mirror either. Both are passed
+  through now, and the switch is a separate `SPINNERET_UPDATE_CHECK_ENABLED` — it has to be, because
+  Compose delivers an empty string for every variable an operator has not set, so a blank-means-off rule
+  would disable the check on every deployment that left it alone.
+
+- **The deployment can say which proxies may set `X-Forwarded-For`.** Caddy overwrites the header for an
+  untrusted peer, which is right when the published port is the edge. Behind something that terminates
+  the connection first — a Cloudflare Tunnel, an nginx on the host, a cloud load balancer — Caddy's peer
+  is the Docker bridge gateway, and it replaced the real client address with `172.18.0.1` in every audit
+  entry and risk event. `CADDY_TRUSTED_PROXIES` now carries the trusted networks, defaulting to loopback
+  only: no request in this topology comes from loopback, so out of the box nothing is trusted.
 
 ## [0.1.3] — 2026-09-22
 
