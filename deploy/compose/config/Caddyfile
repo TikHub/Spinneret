@@ -1,6 +1,26 @@
 {
 	admin off
 	auto_https off
+
+	# Who may set X-Forwarded-For. Caddy overwrites the header for an untrusted
+	# peer, which is right when this port is the edge: otherwise any client could
+	# name its own address and every audit entry, risk event and rate limit would
+	# believe it.
+	#
+	# It is wrong as soon as something else terminates the connection first — a
+	# Cloudflare Tunnel, an nginx on the host, a cloud load balancer. Caddy then
+	# sees that hop, not the client, and replaces the real address with it. Set
+	# CADDY_TRUSTED_PROXIES in .env to the networks those hops come from; on the
+	# Compose stack a host-local tunnel arrives from the Docker bridge, so
+	# "172.16.0.0/12 10.0.0.0/8 192.168.0.0/16 127.0.0.1/32" is the usual answer.
+	#
+	# The default trusts loopback only, which no request in this topology comes
+	# from (published ports arrive from the bridge gateway), so out of the box
+	# nothing is trusted. Only widen it when the port is unreachable except
+	# through a proxy you control — see documents/en/16-operations.md.
+	servers {
+		trusted_proxies static {$CADDY_TRUSTED_PROXIES:127.0.0.1/32}
+	}
 }
 
 :8080 {

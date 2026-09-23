@@ -219,6 +219,9 @@ services:
     # --watch reloads the Caddyfile in place when it is edited, so tuning the
     # load balancer does not need "docker compose restart lb".
     command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile", "--watch"]
+    environment:
+      # Networks allowed to set X-Forwarded-For; see the Caddyfile for when to widen it.
+      CADDY_TRUSTED_PROXIES: ${CADDY_TRUSTED_PROXIES:-127.0.0.1/32}
     ports:
       - "${SPINNERET_PORT:-8080}:8080"
     volumes:
