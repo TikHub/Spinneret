@@ -227,6 +227,14 @@ func newEnv(t *testing.T, cfg Config) *env {
 }
 
 // start runs the service loop and waits until its bus subscriptions work.
+//
+// Both channels are probed. Run subscribes to the config channel and then to
+// the runtime channel, so proving only the first leaves a window in which a
+// runtime event is published to nobody: the bus dispatches synchronously to
+// whoever is subscribed at that instant, which means such an event is dropped
+// rather than delayed. A test whose event falls in that window then waits out
+// its whole watch timeout, which is how this surfaced — as a 30 s failure of
+// TestWatchRuntimeItems on CI, never on a developer machine.
 func (e *env) start(t *testing.T) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -236,17 +244,29 @@ func (e *env) start(t *testing.T) {
 		cancel()
 		require.NoError(t, <-done)
 	})
-	probe := itemKey{ns: "probe", group: "g", key: "k"}
-	require.Eventually(t, func() bool {
+	e.waitSubscribed(t, events.ChannelConfig,
+		ConfigEventData{NS: "probe", Group: "g", Key: "k"})
+	e.waitSubscribed(t, events.ChannelRuntime,
+		RuntimeEventData{NS: "probe", Kind: RuntimeBreakers})
+}
+
+// waitSubscribed publishes data on channel until the hub reacts to it, which
+// only happens once the service's handler for that channel is registered. The
+// probe payloads name a namespace no test uses, so the invalidation they cause
+// cannot affect one.
+func (e *env) waitSubscribed(t *testing.T, channel string, data any) {
+	t.Helper()
+	encoded, err := json.Marshal(data)
+	require.NoError(t, err)
+	require.Eventuallyf(t, func() bool {
 		e.svc.hub.mu.Lock()
 		before := e.svc.hub.seq
 		e.svc.hub.mu.Unlock()
-		data, _ := json.Marshal(ConfigEventData{NS: probe.ns, Group: probe.group, Key: probe.key})
-		_ = e.bus.Publish(context.Background(), events.ChannelConfig, events.Event{Type: "probe", Data: data})
+		_ = e.bus.Publish(context.Background(), channel, events.Event{Type: "probe", Data: encoded})
 		e.svc.hub.mu.Lock()
 		defer e.svc.hub.mu.Unlock()
 		return e.svc.hub.seq > before
-	}, 5*time.Second, 5*time.Millisecond)
+	}, 5*time.Second, 5*time.Millisecond, "service never subscribed to %s", channel)
 }
 
 func (e *env) exec(t *testing.T, sql string, args ...any) {
