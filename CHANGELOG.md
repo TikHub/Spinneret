@@ -12,7 +12,19 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **The notification SSRF opt-out could not be set on a Compose deployment.** 0.1.3 turns the delivery
+  guard on for everyone and names `SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS` as the way back in, but the
+  variable was missing from the Compose environment block — and Compose delivers only the variables that
+  block names, so the documented escape hatch did not exist on the default deployment. Only the Compose
+  files changed, so the 0.1.3 image is unaffected: `git pull` in the deployment directory is enough.
+
+- `.env.example` no longer claims an empty `SPINNERET_UPDATE_CHECK_URL` disables the update check. It does
+  not — a blank value reads as unset and falls back to the built-in feed — and this stack does not pass
+  the variable through either. Disabling the check from the environment is still not possible; that is
+  tracked separately rather than fixed here, because making a blank value meaningful would disable the
+  check on every deployment that leaves the variable alone.
 
 ## [0.1.3] — 2026-09-22
 
