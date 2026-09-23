@@ -124,9 +124,16 @@ type Config struct {
 	RecordCooldownEvents bool
 	MaxWatchers          int
 	UIEnabled            bool
-	// UpdateCheckURL is the release feed the console's update check reads. The
-	// empty string disables the check, so a deployment that must make no
-	// outbound call at all can say so.
+	// UpdateCheckURL is the release feed the console's update check reads. It
+	// is empty when the check is off, which is how a deployment that must make
+	// no outbound call at all is configured.
+	//
+	// Turning it off is SPINNERET_UPDATE_CHECK_ENABLED=false rather than an
+	// empty SPINNERET_UPDATE_CHECK_URL: a blank value everywhere else in this
+	// config means "not set, use the default", and the Compose stack delivers
+	// exactly that for every variable an operator has not filled in. Were blank
+	// to mean "off" here, every Compose deployment would silently lose the
+	// check.
 	UpdateCheckURL       string
 	AllowedOrigins       []string
 	ShutdownTimeout      time.Duration
@@ -220,6 +227,11 @@ func LoadFrom(lookup func(string) (string, bool)) (Config, error) {
 	}
 	if c.InstanceID == "" {
 		c.InstanceID = defaultInstanceID()
+	}
+	// The checker reads "no URL" as "do not call out", so the switch is applied
+	// here and nothing downstream needs to know there are two variables.
+	if !l.bool("SPINNERET_UPDATE_CHECK_ENABLED", true) {
+		c.UpdateCheckURL = ""
 	}
 	c.envSet = l.seen
 	if err := errors.Join(l.errs...); err != nil {

@@ -485,3 +485,40 @@ func TestLoadAcquireAdmission(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateCheckSwitch(t *testing.T) {
+	t.Parallel()
+	// Off is the switch, and it wins over whatever URL is configured.
+	off, err := LoadFrom(env(with(required(),
+		"SPINNERET_UPDATE_CHECK_ENABLED", "false",
+		"SPINNERET_UPDATE_CHECK_URL", "https://mirror.example.com/latest",
+	)))
+	require.NoError(t, err)
+	require.Empty(t, off.UpdateCheckURL, "the checker reads an empty URL as disabled")
+
+	// A mirror is reachable without touching the switch.
+	mirror, err := LoadFrom(env(with(required(),
+		"SPINNERET_UPDATE_CHECK_URL", "https://mirror.example.com/latest",
+	)))
+	require.NoError(t, err)
+	require.Equal(t, "https://mirror.example.com/latest", mirror.UpdateCheckURL)
+
+	// The default is on, with the built-in feed.
+	def, err := LoadFrom(env(required()))
+	require.NoError(t, err)
+	require.Equal(t, updatecheck.DefaultURL, def.UpdateCheckURL)
+}
+
+func TestBlankUpdateCheckVariablesKeepTheBuiltInFeed(t *testing.T) {
+	t.Parallel()
+	// Both variables are passed through by Compose with an empty default, so
+	// every deployment that leaves them alone receives "". Blank must therefore
+	// mean "not set" for both — were it to mean "off", the Compose stack would
+	// silently disable the update check for everyone.
+	c, err := LoadFrom(env(with(required(),
+		"SPINNERET_UPDATE_CHECK_ENABLED", "",
+		"SPINNERET_UPDATE_CHECK_URL", "",
+	)))
+	require.NoError(t, err)
+	require.Equal(t, updatecheck.DefaultURL, c.UpdateCheckURL)
+}

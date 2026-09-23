@@ -72,6 +72,11 @@ x-spinneret-env: &spinneret-env
   # documented way back in for a single-tenant deployment that notifies an internal host, so it has
   # to be passed through here or the setting cannot be made at all.
   SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS: ${SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS:-}
+  # Point the console's update check at a mirror of the release feed. Empty keeps the built-in
+  # one; the check is turned off with SPINNERET_UPDATE_CHECK_ENABLED, not by blanking this,
+  # because blank is what every unset variable delivers here and would disable it for everyone.
+  SPINNERET_UPDATE_CHECK_URL: ${SPINNERET_UPDATE_CHECK_URL:-}
+  SPINNERET_UPDATE_CHECK_ENABLED: ${SPINNERET_UPDATE_CHECK_ENABLED:-}
 
 services:
   postgres:
