@@ -128,9 +128,9 @@ func TestOpenUnreachable(t *testing.T) {
 	require.Error(t, err)
 }
 
-// loadingErr is what a Redis or Valkey instance replies to every command while
+// errLoading is what a Redis or Valkey instance replies to every command while
 // it reads its dataset back from disk.
-var loadingErr = errors.New("LOADING Valkey is loading the dataset in memory")
+var errLoading = errors.New("LOADING Valkey is loading the dataset in memory")
 
 func TestWaitReadyRetriesWhileLoading(t *testing.T) {
 	t.Parallel()
@@ -138,7 +138,7 @@ func TestWaitReadyRetriesWhileLoading(t *testing.T) {
 	err := waitReady(context.Background(), func(context.Context) error {
 		calls++
 		if calls < 4 {
-			return loadingErr
+			return errLoading
 		}
 		return nil
 	}, time.Minute, time.Millisecond)
@@ -166,9 +166,9 @@ func TestWaitReadyGivesUpAfterTheBound(t *testing.T) {
 	start := time.Now()
 	err := waitReady(context.Background(), func(context.Context) error {
 		calls++
-		return loadingErr
+		return errLoading
 	}, 30*time.Millisecond, time.Millisecond)
-	require.ErrorIs(t, err, loadingErr)
+	require.ErrorIs(t, err, errLoading)
 	require.Contains(t, err.Error(), "still loading its dataset")
 	require.Greater(t, calls, 1, "should have retried before giving up")
 	require.Less(t, time.Since(start), 5*time.Second, "must not wait past the bound")
@@ -178,13 +178,13 @@ func TestWaitReadyStopsWhenTheContextEnds(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	err := waitReady(ctx, func(context.Context) error { return loadingErr }, time.Minute, time.Millisecond)
+	err := waitReady(ctx, func(context.Context) error { return errLoading }, time.Minute, time.Millisecond)
 	require.ErrorIs(t, err, context.Canceled)
 }
 
 func TestIsLoading(t *testing.T) {
 	t.Parallel()
-	require.True(t, isLoading(loadingErr))
+	require.True(t, isLoading(errLoading))
 	require.False(t, isLoading(errors.New("ERR unknown command")))
 	require.False(t, isLoading(errors.New("WRONGPASS invalid username-password pair")))
 	// Not a prefix match: only the server's own reply counts.
