@@ -12,7 +12,60 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
-Nothing yet.
+### Security
+
+- **Webhook delivery could reach internal services and cloud instance metadata.** Notification channels
+  (webhook, Feishu, DingTalk, WeCom, Telegram) validated only that the URL was `http(s)` and then dialled
+  with the default transport. Nothing stopped a channel from targeting `169.254.169.254` or a service on
+  the private network, and because `TestChannel` answers synchronously and the chat providers echo part
+  of the response body, the answer came back to whoever configured it. Creating a channel needs
+  `notify:write`, held by tenant `admin`/`owner` — in a multi-tenant deployment those are customers, not
+  infrastructure operators, so this crossed a trust boundary.
+
+  Delivery now refuses non-public targets in the dialer's `Control` hook, which runs *after* DNS
+  resolution and therefore also defeats DNS rebinding: a hostname that resolves to a public address when
+  the channel is saved and a private one when it is used is still blocked. Redirects were already
+  disabled. Set `SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS=true` for a trusted single-tenant deployment that
+  deliberately notifies internal hosts.
+
+  The blocked set is wider than Go's own classification. `netip.Addr.IsPrivate` is RFC 1918 and RFC 4193
+  only, so shared address space would still have gone through — and that is where Alibaba Cloud keeps
+  instance metadata, at `100.100.100.200`, rather than in the `169.254.0.0/16` every other provider uses.
+  Carrier-grade NAT, `0.0.0.0/8`, `192.0.0.0/24`, `198.18.0.0/15` and `240.0.0.0/4` are refused too, as are
+  the IPv6 forms that carry an IPv4 address inside an otherwise ordinary global-unicast address: NAT64
+  (`64:ff9b::a00:1`) and 6to4 (`2002:0a00:0001::`) both looked public while delivering to `10.0.0.1`.
+
+  Thanks to [@xuemian168](https://github.com/xuemian168) ([#19](https://github.com/TikHub/Spinneret/pull/19)).
+
+- **One identity-import row could pin a CPU for hours.** A row's `_tags` field was de-duplicated with an
+  `O(n²)` linear scan and nothing capped the token count, so only the 32 MiB stream budget bounded the
+  work: 50 000 distinct tags already cost 1.6 s, and the growth is quadratic — a full-budget field runs for
+  hours on the parsing goroutine while the rest of the fleet shares that CPU. Import needs
+  `identity:write` on the target site, which the node and worker tokens carry, making it the most widely
+  distributed credential that could trigger it.
+
+  Tags and labels are now capped at 64 per row — the limit `UpdateIdentityRequest` has always enforced, so
+  this closes an inconsistency rather than tightening the API — de-duplicated in `O(n)`, and the scan
+  stops at the cap instead of materializing every token.
+
+  Thanks to [@xuemian168](https://github.com/xuemian168) ([#18](https://github.com/TikHub/Spinneret/pull/18)).
+
+### Added
+
+- **Adding one identity no longer means hand-writing JSON.** The import dialog takes JSON Lines or CSV, the
+  payload editor is a raw JSON editor, and there is no `CreateIdentity` RPC — so a single cookie had to be
+  escaped into JSON by hand. The identities page now has a **New** button whose form is built from the
+  selected type's fields: a textarea for `cookie_map` and `json`, a switch for `bool`, an input for the
+  rest, plus the `_account`, `_region` and `_tags` metadata. It submits one JSONL row through
+  `ImportIdentities`, so normalization, deduplication and activation stay the rules a file import already
+  follows. A `cookie_map` field takes a pasted `Cookie` header as-is and decodes a browser export array.
+
+### Changed
+
+- The console moved to React 19 and Vite 8. Vite 8 cuts the production build from roughly 7.5 s to under
+  a second. No API or configuration change.
+- Dependency updates: `@types/node`, `prettier`, `docker/setup-buildx-action`, `prometheus/client_model`,
+  `protovalidate`, and the Python SDK's `hatchling`, `respx` and `pytest-asyncio` development pins.
 
 ## [0.1.2] — 2026-09-20
 
