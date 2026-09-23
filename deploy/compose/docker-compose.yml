@@ -68,6 +68,10 @@ x-spinneret-env: &spinneret-env
   # Empty means "use the server's built-in connectivity-check URL"; set it in .env to point the
   # proxy health checker at a reachable endpoint (e.g. http://mocktarget:9090/healthz).
   SPINNERET_PROXY_CHECK_URL: ${SPINNERET_PROXY_CHECK_URL:-}
+  # Notification delivery refuses private, loopback, link-local and reserved targets. This is the
+  # documented way back in for a single-tenant deployment that notifies an internal host, so it has
+  # to be passed through here or the setting cannot be made at all.
+  SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS: ${SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS:-}
 
 services:
   postgres:
