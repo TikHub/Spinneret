@@ -37,7 +37,11 @@ services:
     command: ["valkey-server", "--save", "", "--appendonly", "no", "--maxclients", "20000"]
     ports: ["46379:6379"]
     healthcheck:
-      test: ["CMD", "valkey-cli", "ping"]
+      # `valkey-cli ping` exits 0 even when the reply is an error, and while Valkey
+      # reads its AOF back after a restart every command answers LOADING. Without
+      # matching PONG the container reports healthy while it still refuses work, and
+      # `depends_on: service_healthy` lets the server start into a LOADING instance.
+      test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
       interval: 2s
       timeout: 3s
       retries: 30

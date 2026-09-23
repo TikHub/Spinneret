@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -125,4 +126,67 @@ func TestOpenUnreachable(t *testing.T) {
 	defer cancel()
 	_, err := Open(ctx, "redis://127.0.0.1:1?dial_timeout=500ms", nil)
 	require.Error(t, err)
+}
+
+// loadingErr is what a Redis or Valkey instance replies to every command while
+// it reads its dataset back from disk.
+var loadingErr = errors.New("LOADING Valkey is loading the dataset in memory")
+
+func TestWaitReadyRetriesWhileLoading(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	err := waitReady(context.Background(), func(context.Context) error {
+		calls++
+		if calls < 4 {
+			return loadingErr
+		}
+		return nil
+	}, time.Minute, time.Millisecond)
+	require.NoError(t, err)
+	require.Equal(t, 4, calls, "should have pinged until the server finished loading")
+}
+
+func TestWaitReadyFailsFastOnOtherErrors(t *testing.T) {
+	t.Parallel()
+	// A wrong password does not become right by waiting, so it must not be
+	// retried: doing so would turn a misconfiguration into a slow startup.
+	calls := 0
+	authErr := errors.New("WRONGPASS invalid username-password pair")
+	err := waitReady(context.Background(), func(context.Context) error {
+		calls++
+		return authErr
+	}, time.Minute, time.Millisecond)
+	require.ErrorIs(t, err, authErr)
+	require.Equal(t, 1, calls)
+}
+
+func TestWaitReadyGivesUpAfterTheBound(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	start := time.Now()
+	err := waitReady(context.Background(), func(context.Context) error {
+		calls++
+		return loadingErr
+	}, 30*time.Millisecond, time.Millisecond)
+	require.ErrorIs(t, err, loadingErr)
+	require.Contains(t, err.Error(), "still loading its dataset")
+	require.Greater(t, calls, 1, "should have retried before giving up")
+	require.Less(t, time.Since(start), 5*time.Second, "must not wait past the bound")
+}
+
+func TestWaitReadyStopsWhenTheContextEnds(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := waitReady(ctx, func(context.Context) error { return loadingErr }, time.Minute, time.Millisecond)
+	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestIsLoading(t *testing.T) {
+	t.Parallel()
+	require.True(t, isLoading(loadingErr))
+	require.False(t, isLoading(errors.New("ERR unknown command")))
+	require.False(t, isLoading(errors.New("WRONGPASS invalid username-password pair")))
+	// Not a prefix match: only the server's own reply counts.
+	require.False(t, isLoading(errors.New("dial tcp: LOADING")))
 }

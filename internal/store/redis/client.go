@@ -23,7 +23,23 @@ const (
 	defaultConnWriteTimeout = 10 * time.Second
 )
 
-// Open creates a rueidis client and verifies connectivity with PING.
+// LoadingWait bounds how long Open waits for a server that answers LOADING,
+// which a Redis or Valkey instance does for every command while it reads its
+// AOF or RDB back from disk after a restart.
+//
+// Treating that as fatal makes the process exit and be restarted, which does
+// eventually succeed but wastes the wait: the supervisor's backoff grows while
+// the server needs a fixed time to load, so recovery lags further behind the
+// larger the dataset is. Waiting in place costs nothing and keeps the log in
+// one piece. The bound only caps a single attempt — a supervisor still retries
+// after it, so a dataset slower than this is not stuck, only slower to report.
+const LoadingWait = 2 * time.Minute
+
+// loadingPoll is how often Open re-pings a loading server.
+const loadingPoll = 500 * time.Millisecond
+
+// Open creates a rueidis client and verifies connectivity with PING, waiting
+// out a server that is still loading its dataset (see LoadingWait).
 //
 // url is a redis:// or rediss:// URL (credentials, TLS and database number are
 // taken from it). When clusterAddrs is non-empty the client connects to those
@@ -38,11 +54,50 @@ func Open(ctx context.Context, url string, clusterAddrs []string) (rueidis.Clien
 	if err != nil {
 		return nil, fmt.Errorf("redis: connect: %w", err)
 	}
-	if err := client.Do(ctx, client.B().Ping().Build()).Error(); err != nil {
+	ping := func(ctx context.Context) error {
+		return client.Do(ctx, client.B().Ping().Build()).Error()
+	}
+	if err := waitReady(ctx, ping, LoadingWait, loadingPoll); err != nil {
 		client.Close()
-		return nil, fmt.Errorf("redis: ping: %w", err)
+		return nil, err
 	}
 	return client, nil
+}
+
+// waitReady pings until the server answers, retrying only while it reports
+// that it is still loading. Every other error is returned on the first try:
+// a wrong password or an unreachable host does not become right by waiting.
+func waitReady(ctx context.Context, ping func(context.Context) error, wait, poll time.Duration) error {
+	started := time.Now()
+	for {
+		err := ping(ctx)
+		if err == nil {
+			return nil
+		}
+		if !isLoading(err) {
+			return fmt.Errorf("redis: ping: %w", err)
+		}
+		if waited := time.Since(started); waited >= wait {
+			return fmt.Errorf("redis: ping: still loading its dataset after %s: %w", waited.Round(time.Second), err)
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("redis: ping: %w", ctx.Err())
+		case <-time.After(poll):
+		}
+	}
+}
+
+// isLoading reports whether err is the server's "loading the dataset" reply.
+// rueidis defines that as the LOADING prefix of the error string and exposes
+// the same string through Error(), so the fallback tests exactly what its own
+// IsLoading does — spelled out because a *rueidis.RedisError has unexported
+// fields and cannot be constructed by a test.
+func isLoading(err error) bool {
+	if redisErr, ok := rueidis.IsRedisErr(err); ok {
+		return redisErr.IsLoading()
+	}
+	return strings.HasPrefix(err.Error(), "LOADING")
 }
 
 // clientOption builds the rueidis options for Open without dialing.
