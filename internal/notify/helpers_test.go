@@ -99,6 +99,9 @@ func newEnv(t *testing.T, cfg Config) *env {
 	if cfg.RetryDelay == 0 {
 		cfg.RetryDelay = 5 * time.Millisecond
 	}
+	// Test channels are httptest servers on loopback; allow them. The SSRF
+	// guard's own behaviour is covered by TestDeliveryGuardBlocksInternalTargets.
+	cfg.AllowPrivateTargets = true
 	e.svc = New(cfg, pool, vaulttest.NewCipher(t), rdb, keys, e.cat, e.bus, e.audit, e.metrics, slog.New(slog.DiscardHandler))
 
 	e.tenantID = e.seedTenant("acme")

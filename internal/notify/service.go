@@ -57,6 +57,12 @@ type Config struct {
 	// ChannelCacheTTL is how long enabled channels of a tenant are cached for
 	// alert matching (default 10s).
 	ChannelCacheTTL time.Duration
+	// AllowPrivateTargets permits delivery to private, loopback, link-local
+	// (including instance metadata) and multicast addresses. It defaults to
+	// false: such targets are refused at dial time to prevent SSRF from channel
+	// URLs. Enable it only for trusted single-tenant deployments that
+	// deliberately send notifications to internal hosts.
+	AllowPrivateTargets bool
 }
 
 func (c Config) withDefaults() Config {
@@ -156,7 +162,7 @@ func New(cfg Config, pool *pgxpool.Pool, cipher *vault.Cipher, rdb rueidis.Clien
 		channels: newChannelCache(cfg.ChannelCacheTTL),
 		failing:  newFailingChannels(),
 	}
-	s.sender = &sender{client: newHTTPClient(cfg.HTTPTimeout), now: func() time.Time { return s.now() }}
+	s.sender = &sender{client: newHTTPClient(cfg.HTTPTimeout, cfg.AllowPrivateTargets), now: func() time.Time { return s.now() }}
 	return s
 }
 

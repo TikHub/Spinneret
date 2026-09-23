@@ -83,7 +83,7 @@ func newFixture(t *testing.T) *fixture {
 	f.shop = addSite(f.prod, "shop", 1)
 	f.forum = addSite(f.prod, "forum", 2)
 
-	f.svc = notify.New(notify.Config{RetryDelay: time.Millisecond}, pool, vaulttest.NewCipher(t), rdb, keys, cat,
+	f.svc = notify.New(notify.Config{RetryDelay: time.Millisecond, AllowPrivateTargets: true}, pool, vaulttest.NewCipher(t), rdb, keys, cat,
 		events.NewMemoryBus(), f.audit, nil, slog.New(slog.DiscardHandler))
 	f.h = New(f.svc, cat, nil)
 	return f
