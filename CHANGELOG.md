@@ -12,6 +12,16 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.3] — 2026-09-22
+
+Two security fixes, both reachable only by an authenticated caller but both
+across a trust boundary a multi-tenant deployment relies on. No schema
+migration and no configuration to change; upgrading is a pull and a restart.
+A deployment that deliberately sends notifications to internal hosts now has
+to say so with `SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS=true`.
+
 ### Security
 
 - **Webhook delivery could reach internal services and cloud instance metadata.** Notification channels
@@ -384,7 +394,8 @@ VM; the method, the hardware and every caveat are in `documents/en/17-performanc
   refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
   fingerprint distribution and browser pools.
 
+[0.1.3]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.3
 [0.1.2]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.2
 [0.1.1]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.1
 [0.1.0]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.0
-[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.3...HEAD
