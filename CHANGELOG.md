@@ -12,6 +12,16 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.4] — 2026-09-23
+
+Four fixes found by running 0.1.3 rather than by reading it: an upgrade that
+crash-looped for six seconds, a security opt-out that could not be set, an
+update check that could not be turned off, and a proxy-trust setting that had
+been living in one machine's working tree instead of the repository. No schema
+migration and no configuration to change; upgrading is a pull and a restart.
+
 ### Fixed
 
 - **The notification SSRF opt-out could not be set on a Compose deployment.** 0.1.3 turns the delivery
@@ -426,8 +436,9 @@ VM; the method, the hardware and every caveat are in `documents/en/17-performanc
   refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
   fingerprint distribution and browser pools.
 
+[0.1.4]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.4
 [0.1.3]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.3
 [0.1.2]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.2
 [0.1.1]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.1
 [0.1.0]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.0
-[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.4...HEAD
