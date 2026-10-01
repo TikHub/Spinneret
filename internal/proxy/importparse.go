@@ -180,10 +180,14 @@ func (r *importRow) set(key, value string) error {
 	case keyTags:
 		r.Tags, r.TagsSet = splitTags(value), true
 	case keyMaxConcurrency:
-		n, err := strconv.Atoi(strings.TrimSpace(value))
+		v, err := strconv.ParseInt(strings.TrimSpace(value), 10, 32)
+		if errors.Is(err, strconv.ErrRange) {
+			return fmt.Errorf("max_concurrency must be between 1 and %d", MaxMaxConcurrency)
+		}
 		if err != nil {
 			return errors.New("max_concurrency must be an integer")
 		}
+		n := int(v)
 		r.MaxConcurrency = &n
 	case keySessionTemplate:
 		r.SessionTemplate = &value

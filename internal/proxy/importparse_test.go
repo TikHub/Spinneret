@@ -23,6 +23,7 @@ func TestParseLines(t *testing.T) {
 		"http://4.4.4.4:80 color=red",
 		"http://5.5.5.5:80 max_concurrency=many",
 		"http://6.6.6.6:80 session_template=user-{username} url=x",
+		"http://7.7.7.7:80 max_concurrency=4294967297",
 	}, "\n")
 	failures := &failureList{}
 	rows, err := parseImport(FormatLines, data, failures)
@@ -39,6 +40,8 @@ func TestParseLines(t *testing.T) {
 		{Line: 6, Message: `unknown attribute "color"`},
 		{Line: 7, Message: "max_concurrency must be an integer"},
 		{Line: 8, Message: "url must be the first field"},
+		// Outside the int32 range: the parser rejects it with the range check's own message.
+		{Line: 9, Message: fmt.Sprintf("max_concurrency must be between 1 and %d", MaxMaxConcurrency)},
 	}, failures.result())
 }
 
