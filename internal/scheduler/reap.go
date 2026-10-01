@@ -132,7 +132,7 @@ func (s *Service) reapBatch(ctx context.Context, ns *catalog.Namespace, st *cata
 	if len(vals) < 1 || (len(vals)-1)%reapLeaseFields != 0 {
 		return 0, 0, fmt.Errorf("reap: malformed reply (%d elements)", len(vals))
 	}
-	scanned = int(atoi64(vals[0]))
+	scanned = atoi(vals[0])
 	for i := 1; i+reapLeaseFields <= len(vals); i += reapLeaseFields {
 		f := vals[i : i+reapLeaseFields]
 		kind := EndExpired
