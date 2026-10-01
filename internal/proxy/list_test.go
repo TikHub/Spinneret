@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"testing"
 	"time"
@@ -160,6 +161,19 @@ func TestListProxiesHotState(t *testing.T) {
 		require.Len(t, got.Sites, 1)
 		require.Equal(t, "beta", got.Sites[0].Site)
 	})
+
+	t.Run("site counters saturate at the int32 range of the API", func(t *testing.T) {
+		env.materialize(t, env.alpha, proxies[0], "sn", "4294967297")
+		got, err := env.svc.GetProxy(ctx, adminUser(), proxies[0].ID)
+		require.NoError(t, err)
+		require.Equal(t, math.MaxInt32, got.Sites[0].Samples)
+	})
+}
+
+func TestSiteCounterClamp(t *testing.T) {
+	require.Equal(t, int32(7), clampInt32(7))
+	require.Equal(t, int32(math.MaxInt32), clampInt32(1<<32+1))
+	require.Equal(t, int32(math.MinInt32), clampInt32(-(1 << 40)))
 }
 
 func TestGetProxy(t *testing.T) {

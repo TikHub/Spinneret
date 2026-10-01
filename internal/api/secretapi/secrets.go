@@ -220,7 +220,7 @@ func (h *Handler) ListSecretAccessLogs(ctx context.Context, req *connect.Request
 			Action:    l.Action,
 			Result:    l.Result,
 			Ip:        l.IP,
-			Version:   int32(min(l.Version, math.MaxInt32)),
+			Version:   clampInt32(int64(l.Version)),
 		})
 	}
 	if page.HasMore && len(page.Logs) > 0 {

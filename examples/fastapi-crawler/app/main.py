@@ -118,7 +118,10 @@ async def _crawl(request: Request, path: str, params: Optional[Dict[str, str]]) 
     except spinneret.SpinneretError as err:
         return _spinneret_error(err)
     except UpstreamError as err:
-        return _error(502, "upstream_error", str(err))
+        # The caller gets a fixed reason; the log keeps the exception class, and
+        # Spinneret already got the error_kind with the report.
+        logger.warning("%s", err)
+        return _error(502, "upstream_error", "request to the target failed")
     return result.as_dict()
 
 

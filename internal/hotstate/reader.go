@@ -110,11 +110,11 @@ func (s *Syncer) IdentityHotState(ctx context.Context, site *catalog.Site, ident
 	}
 	_, out.Present = values["st"]
 	out.State = values["st"]
-	out.ActiveLeases = int(parseInt(values["al"], 0))
+	out.ActiveLeases = int(clampInt32(parseInt(values["al"], 0)))
 	out.SiteCooldownUntil = msToTime(parseInt(values["scd"], 0))
 	out.SiteReuseUntil = msToTime(parseInt(values["sru"], 0))
 	out.ExclusiveUntil = msToTime(parseInt(values["xl"], 0))
-	out.GlobalSamples = int(parseInt(values["gn"], 0))
+	out.GlobalSamples = int(clampInt32(parseInt(values["gn"], 0)))
 
 	global := globalHealth(groups)
 	out.GlobalScore = decayScore(parseFloat(values["gs"], global.Baseline), parseInt(values["gts"], nowMs),
@@ -129,8 +129,8 @@ func (s *Syncer) IdentityHotState(ctx context.Context, site *catalog.Site, ident
 		case err == nil:
 			e := parseHealth(packed, h.Baseline, nowMs)
 			eh.Score = decayScore(e.Score, e.ScoreTS, nowMs, h.Baseline, h.Tau.Std())
-			eh.Samples = int(e.Samples)
-			eh.ConsecutiveFailures = int(e.NFail)
+			eh.Samples = int(clampInt32(e.Samples))
+			eh.ConsecutiveFailures = int(clampInt32(e.NFail))
 			eh.CooldownUntil = msToTime(e.Cooldown)
 			eh.ReuseUntil = msToTime(e.Reuse)
 			eh.LastUsedAt = msToTime(e.LastUsed)

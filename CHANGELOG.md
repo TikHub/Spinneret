@@ -12,7 +12,19 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **The example crawler no longer answers exception details.** A target request that fails without a
+  response is still a `502 upstream_error`, but its `reason` is now the fixed text `request to the
+  target failed` instead of ending in the httpx exception class. The node logs the class at `WARNING`,
+  and the report to Spinneret carries the `error_kind` as before. Only `examples/fastapi-crawler` changed.
+
+### Fixed
+
+- **A proxy's per-site sample count no longer wraps in the API.** The count grows by one per observation
+  and has no cap, while the API carries it as a 32-bit integer, so past 2,147,483,647 observations the
+  console showed a negative or tiny number. It now saturates at that maximum, as the identity counters
+  already did. The other hot-state counters the server reads back from Valkey saturate the same way.
 
 ## [0.1.4] — 2026-09-23
 

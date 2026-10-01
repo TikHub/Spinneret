@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 	"testing"
@@ -429,11 +430,28 @@ func TestAcquireUnknownTypeAndCanceledContext(t *testing.T) {
 	require.Equal(t, "0", f.idField(2, "al"))
 }
 
+func TestAtoiSaturatesAt32Bits(t *testing.T) {
+	for in, want := range map[string]int{
+		"50":                    50,
+		"2147483647":            math.MaxInt32,
+		"4294967297":            math.MaxInt32, // int(int64) on a 32-bit int: 1
+		"-4294967297":           math.MinInt32,
+		"100000000000000000000": math.MaxInt32,
+		"":                      0,
+		"x":                     0,
+	} {
+		require.Equal(t, want, atoi(in), in)
+	}
+}
+
 func TestParseAcquireRejectsMalformedReplies(t *testing.T) {
+	// A lease count that a 32-bit int would wrap to 1, followed by one lease.
+	wrapped := append([]string{"OK", "0", "4294967297"}, make([]string, acquireLeaseFields)...)
 	for _, vals := range [][]string{
 		{"OK"},
 		{"WHAT", "0", "0"},
 		{"OK", "0", "1", "lse"},
+		wrapped,
 	} {
 		_, err := parseAcquire(vals)
 		require.Error(t, err)

@@ -324,6 +324,16 @@ func atoi64(s string) int64 {
 	return n
 }
 
+// atoi parses a reply element that fits in 32 bits by construction: a lease
+// count, a reaper batch count, a payload or type version (PostgreSQL integer
+// columns) or a rebind counter. Parsing with bit size 32 keeps the conversion
+// to int lossless on every GOARCH; an out-of-range value saturates instead of
+// wrapping.
+func atoi(s string) int {
+	n, _ := strconv.ParseInt(s, 10, 32)
+	return int(n)
+}
+
 // parseAcquire decodes the acquire.lua reply.
 func parseAcquire(vals []string) (acquireOutcome, error) {
 	if len(vals) < 3 {
@@ -338,7 +348,7 @@ func parseAcquire(vals []string) (acquireOutcome, error) {
 	default:
 		return acquireOutcome{}, fmt.Errorf("acquire: unexpected status %q", out.Status)
 	}
-	n := int(atoi64(vals[2]))
+	n := atoi(vals[2])
 	if n < 0 || len(vals) != 3+n*acquireLeaseFields {
 		return acquireOutcome{}, fmt.Errorf("acquire: malformed reply (%d leases, %d elements)", n, len(vals))
 	}
@@ -353,8 +363,8 @@ func parseAcquire(vals []string) (acquireOutcome, error) {
 			ID:             f[0],
 			IdentityID:     f[1],
 			TypeName:       f[2],
-			PayloadVersion: int(atoi64(f[3])),
-			TypeVersion:    int(atoi64(f[4])),
+			PayloadVersion: atoi(f[3]),
+			TypeVersion:    atoi(f[4]),
 			ExpiresMs:      atoi64(f[5]),
 			Probe:          f[6] == "1",
 			Sticky:         f[7] == "1",
@@ -364,7 +374,7 @@ func parseAcquire(vals []string) (acquireOutcome, error) {
 			ProxyID:        f[10],
 			State:          f[11],
 			IdentityKey:    atoi64(f[12]),
-			RebindsToday:   int(atoi64(f[13])),
+			RebindsToday:   atoi(f[13]),
 		}
 	}
 	return out, nil

@@ -83,6 +83,17 @@ func TestIdentityHotState(t *testing.T) {
 		require.Equal(t, pid, hot.BoundProxyID)
 	})
 
+	t.Run("counters saturate at the int32 range", func(t *testing.T) {
+		f.do(f.rdb.B().Hset().Key(f.keys.Health(site.Key, g.Key)).FieldValue().
+			FieldValue(key(hk), "30.00|"+ms(scoreTS)+"|4294967297|4294967298|"+ms(f.now)+"|"+ms(cd)+"|0|"+ms(f.now)).Build())
+		f.do(f.rdb.B().Hset().Key(f.keys.Identity(site.Key, hk)).FieldValue().FieldValue("gn", "4294967297").Build())
+		hot, err := f.syncer.IdentityHotState(f.ctx, site, id)
+		require.NoError(t, err)
+		require.Equal(t, math.MaxInt32, hot.GlobalSamples)
+		require.Equal(t, math.MaxInt32, hot.Groups[0].Samples)
+		require.Equal(t, math.MaxInt32, hot.Groups[0].ConsecutiveFailures)
+	})
+
 	t.Run("errors", func(t *testing.T) {
 		_, err := f.syncer.IdentityHotState(f.ctx, site, idgen.New(idgen.Identity))
 		require.True(t, apperr.IsNotFound(err))
