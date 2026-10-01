@@ -122,7 +122,8 @@ func msToTimePtr(ms int64) *time.Time {
 }
 
 // clampInt32 converts v to int32, saturating at the int32 bounds (the
-// PostgreSQL integer columns of hot_state_snapshots).
+// PostgreSQL integer columns of hot_state_snapshots and the int32 counters of
+// the API); int(clampInt32(v)) therefore never wraps, even where int is 32 bits.
 func clampInt32(v int64) int32 {
 	switch {
 	case v > math.MaxInt32:

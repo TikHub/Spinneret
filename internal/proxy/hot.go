@@ -153,9 +153,9 @@ func decodeSiteState(vals []rueidis.RedisMessage, now time.Time) (SiteState, boo
 		out.Score = DecayScore(score, parseInt(sts, now.UnixMilli()), now.UnixMilli())
 	}
 	sn, _ := str(4)
-	out.Samples = int(parseInt(sn, 0))
+	out.Samples = int(clampInt32(parseInt(sn, 0)))
 	al, _ := str(5)
-	out.ActiveLeases = int(parseInt(al, 0))
+	out.ActiveLeases = int(clampInt32(parseInt(al, 0)))
 	cd, _ := str(6)
 	if ms := parseInt(cd, 0); ms > 0 {
 		t := time.UnixMilli(ms).UTC()
@@ -193,6 +193,18 @@ func parseFloat(s string, def float64) float64 {
 		return def
 	}
 	return f
+}
+
+// clampInt32 converts v to int32, saturating at the int32 bounds: the API
+// carries the site counters as int32, and int is 32 bits on 32-bit platforms.
+func clampInt32(v int64) int32 {
+	switch {
+	case v > math.MaxInt32:
+		return math.MaxInt32
+	case v < math.MinInt32:
+		return math.MinInt32
+	}
+	return int32(v)
 }
 
 // writeCooldown sets cd (site) or gcd (global) of the given proxies on sites.
