@@ -6,7 +6,7 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
 	buf.build/go/protovalidate v1.4.0
 	connectrpc.com/connect v1.21.0
-	connectrpc.com/otelconnect v0.9.0
+	connectrpc.com/otelconnect v0.10.0
 	connectrpc.com/validate v0.7.0
 	github.com/ClickHouse/clickhouse-go/v2 v2.48.0
 	github.com/cespare/xxhash/v2 v2.3.0
