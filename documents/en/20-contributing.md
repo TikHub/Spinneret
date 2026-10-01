@@ -37,7 +37,7 @@ console-only change needs Node and a running server.
 | --- | --- | --- | --- |
 | Go | 1.27.1 or newer (`go.mod`) | server, CLI, Go SDK, every Go test | <https://go.dev/dl/> |
 | Docker + Compose v2 | any current release | test infrastructure, the stack, the end-to-end and load suites | Docker Desktop or Docker Engine |
-| Node.js | 22.13 or newer (`web/package.json` → `engines`) | the console | <https://nodejs.org/> or a version manager |
+| Node.js | 22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer (`web/package.json` → `engines`) | the console | <https://nodejs.org/> or a version manager |
 | pnpm | 10.27.0 (`web/package.json` → `packageManager`) | the console | `corepack enable` picks up the pinned version |
 | buf | v1.73.0 (pinned by CI) | regenerating protobuf code | `go install github.com/bufbuild/buf/cmd/buf@v1.73.0` |
 | protoc-gen-go | latest | generated Go messages | `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest` |

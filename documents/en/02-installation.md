@@ -1076,7 +1076,7 @@ is no script, and the tuning the Compose stack does for you becomes yours. Here 
 | Valkey or Redis | Valkey 8 / Redis 7+ | Persistent (`appendonly yes`, `appendfsync everysec`), RDB save points off, `auto-aof-rewrite-percentage 300`, `auto-aof-rewrite-min-size 1gb`, **`maxmemory-policy noeviction`** and no `maxmemory`. Those five are not optional preferences — see [valkey](#valkey) |
 | ClickHouse | 25.8, optional | Only if you want raw request events. Cap its caches as `deploy/compose/config/clickhouse-limits.xml` does |
 | Go | 1.27.1 or newer | To build |
-| Node | 22.13 or newer | To build the console |
+| Node | 22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer | To build the console |
 | pnpm | 10.27.0 | `corepack enable` installs the pinned version from `web/package.json` |
 
 ### Build
