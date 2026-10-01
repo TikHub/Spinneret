@@ -114,6 +114,8 @@ def test_target_failure_is_reported_with_error_kind(router: respx.MockRouter, ap
     res = app_client.get("/crawl/search", params={"q": "x"})
     assert res.status_code == 502
     assert res.json()["error"] == "upstream_error"
+    # Neither the exception class nor its message reaches the caller.
+    assert res.json()["reason"] == "request to the target failed"
     app_client.__exit__(None, None, None)
     report = sent_reports(router)[0]
     assert report["http_status"] == 0
