@@ -1,9 +1,15 @@
-import { flexRender, getCoreRowModel, useReactTable, type VisibilityState } from '@tanstack/react-table';
+import { flexRender, useTable, type ColumnVisibilityState } from '@tanstack/react-table';
 import { ChevronRightIcon, LoaderCircleIcon, RefreshCwIcon, TriangleAlertIcon } from 'lucide-react';
 import { Fragment, useMemo, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ColumnVisibilityMenu, PaginationControls, type DataTablePagination } from '@/components/data-table';
+import {
+  ColumnVisibilityMenu,
+  dataTableFeatures,
+  PaginationControls,
+  type DataTableFeatures,
+  type DataTablePagination,
+} from '@/components/data-table';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { Button } from '@/components/ui/button';
@@ -38,18 +44,17 @@ export function RiskEventsTable({
 }: RiskEventsTableProps) {
   const { t } = useTranslation('risk-events');
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  const [visibility, setVisibility] = useState<VisibilityState>(RISK_HIDDEN_COLUMNS);
+  const [visibility, setVisibility] = useState<ColumnVisibilityState>(RISK_HIDDEN_COLUMNS);
   const columns = useMemo(() => riskColumns(t), [t]);
   const rows = useMemo(() => [...(events ?? [])], [events]);
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable<RiskEvent>({
+  const table = useTable<DataTableFeatures, RiskEvent>({
+    features: dataTableFeatures,
     data: rows,
     columns,
     getRowId: (event) => event.id,
     state: { columnVisibility: visibility },
     onColumnVisibilityChange: setVisibility,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   const toggle = (id: string) =>

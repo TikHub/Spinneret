@@ -1,15 +1,14 @@
 import {
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
+  type ColumnVisibilityState,
   type ExpandedState,
   type Header,
   type OnChangeFn,
   type Row,
+  type RowData,
   type RowSelectionState,
   type SortingState,
-  type VisibilityState,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
@@ -42,6 +41,7 @@ import { cn } from '@/lib/utils';
 
 import { ColumnVisibilityMenu } from './ColumnVisibilityMenu';
 import { detailRowId, EXPAND_COLUMN_ID, expanderColumn, toDisplayRows } from './expansion';
+import { dataTableFeatures, type DataTableFeatures } from './features';
 import { PaginationControls } from './PaginationControls';
 import { type DataTableColumn, type DataTablePagination } from './types';
 
@@ -52,7 +52,7 @@ const SELECT_COLUMN_ID = '__select';
 /** Estimated height of an expanded detail row before it is measured (virtualized tables). */
 const DEFAULT_EXPANDED_ROW_HEIGHT = 160;
 
-export interface DataTableProps<TData> {
+export interface DataTableProps<TData extends RowData> {
   columns: readonly DataTableColumn<TData>[];
   data: readonly TData[] | undefined;
   /** Stable row id (recommended: entity ID); required for selection across refetches. */
@@ -78,12 +78,12 @@ export interface DataTableProps<TData> {
 
   /** Show the column visibility menu (default true). */
   enableColumnVisibility?: boolean;
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
-  initialColumnVisibility?: VisibilityState;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
+  initialColumnVisibility?: ColumnVisibilityState;
 
   /** Adds a checkbox column. */
-  enableRowSelection?: boolean | ((row: Row<TData>) => boolean);
+  enableRowSelection?: boolean | ((row: Row<DataTableFeatures, TData>) => boolean);
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
   /** Bulk action slot rendered while rows are selected. */
@@ -93,9 +93,9 @@ export interface DataTableProps<TData> {
    * Row detail panel: adds an expander column and renders the returned content
    * in a full-width row below each expanded row.
    */
-  renderExpandedRow?: (row: TData, tableRow: Row<TData>) => ReactNode;
+  renderExpandedRow?: (row: TData, tableRow: Row<DataTableFeatures, TData>) => ReactNode;
   /** Rows that get an expander (default: every row when renderExpandedRow is set). */
-  getRowCanExpand?: (row: Row<TData>) => boolean;
+  getRowCanExpand?: (row: Row<DataTableFeatures, TData>) => boolean;
   /** Controlled expansion state keyed by row id (pass getRowId to keep it across refetches). */
   expanded?: ExpandedState;
   onExpandedChange?: OnChangeFn<ExpandedState>;
@@ -119,7 +119,11 @@ export interface DataTableProps<TData> {
   skeletonRows?: number;
 }
 
-function SortIndicator<TData>({ header }: { header: Header<TData, unknown> }) {
+function SortIndicator<TData extends RowData>({
+  header,
+}: {
+  header: Header<DataTableFeatures, TData, unknown>;
+}) {
   const sorted = header.column.getIsSorted();
   if (sorted === 'asc') return <ArrowUpIcon className="size-3.5" />;
   if (sorted === 'desc') return <ArrowDownIcon className="size-3.5" />;
@@ -162,7 +166,7 @@ function alignClass(align: 'left' | 'center' | 'right' | undefined): string | un
  * column visibility, row selection with a bulk action slot, virtualization
  * for large pages, cursor pagination and loading/empty/error states.
  */
-export function DataTable<TData>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   getRowId,
@@ -202,7 +206,7 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const { t } = useTranslation();
   const [sortingState, setSortingState] = useState<SortingState>(initialSorting);
-  const [visibilityState, setVisibilityState] = useState<VisibilityState>(initialColumnVisibility);
+  const [visibilityState, setVisibilityState] = useState<ColumnVisibilityState>(initialColumnVisibility);
   const [selectionState, setSelectionState] = useState<RowSelectionState>({});
   const [expandedState, setExpandedState] = useState<ExpandedState>(initialExpanded);
   const tableId = useId();
@@ -230,7 +234,7 @@ export function DataTable<TData>({
       id: SELECT_COLUMN_ID,
       enableSorting: false,
       enableHiding: false,
-      size: 32,
+      // getIsSomePageRowsSelected() is also true when every row is selected: test "all" first.
       header: ({ table }) => (
         <Checkbox
           checked={
@@ -257,8 +261,8 @@ export function DataTable<TData>({
     return [selectColumn, ...leading, ...columns];
   }, [columns, enableRowSelection, expandable, tableId, t]);
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable<TData>({
+  const table = useTable<DataTableFeatures, TData>({
+    features: dataTableFeatures,
     data: rows,
     columns: allColumns,
     getRowId,
@@ -271,9 +275,8 @@ export function DataTable<TData>({
     getRowCanExpand: expandable ? (getRowCanExpand ?? (() => true)) : () => false,
     autoResetExpanded: false,
     enableRowSelection,
+    // With manualSorting the server sorts and the sorted row model keeps the arrival order.
     manualSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
   });
 
   const tableRows = table.getRowModel().rows;
@@ -294,6 +297,7 @@ export function DataTable<TData>({
       displayRows[index]?.kind === 'detail' ? DEFAULT_EXPANDED_ROW_HEIGHT : estimateRowHeight,
     [displayRows, estimateRowHeight],
   );
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: shouldVirtualize ? displayRows.length : 0,
     getScrollElement: () => scrollRef.current,

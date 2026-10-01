@@ -1,5 +1,6 @@
 export { AUTO_VIRTUALIZE_THRESHOLD, DataTable, type DataTableProps } from './DataTable';
 export { ColumnVisibilityMenu } from './ColumnVisibilityMenu';
+export { dataTableFeatures, type DataTableColumnMeta, type DataTableFeatures } from './features';
 export { PaginationControls } from './PaginationControls';
 export {
   DEFAULT_PAGE_SIZE,

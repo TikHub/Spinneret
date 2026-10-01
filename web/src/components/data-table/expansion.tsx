@@ -1,21 +1,23 @@
-import { type Row } from '@tanstack/react-table';
+import { type Row, type RowData } from '@tanstack/react-table';
 import { ChevronRightIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+import { type DataTableFeatures } from './features';
 import { type DataTableColumn } from './types';
 
 /** Column id of the expander column added by DataTable when rows can expand. */
 export const EXPAND_COLUMN_ID = '__expand';
 
 /** One rendered table row: a data row or the detail row of an expanded data row. */
-export type DisplayRow<TData> = { kind: 'row'; key: string; row: Row<TData> } | DetailDisplayRow<TData>;
+export type DisplayRow<TData extends RowData> =
+  { kind: 'row'; key: string; row: Row<DataTableFeatures, TData> } | DetailDisplayRow<TData>;
 
-interface DetailDisplayRow<TData> {
+interface DetailDisplayRow<TData extends RowData> {
   kind: 'detail';
   key: string;
-  row: Row<TData>;
+  row: Row<DataTableFeatures, TData>;
 }
 
 /** DOM id of the detail row of a data row (target of the expander's aria-controls). */
@@ -24,7 +26,10 @@ export function detailRowId(tableId: string, rowId: string): string {
 }
 
 /** Data rows interleaved with the detail rows of expanded rows, in display order. */
-export function toDisplayRows<TData>(rows: readonly Row<TData>[], expandable: boolean): DisplayRow<TData>[] {
+export function toDisplayRows<TData extends RowData>(
+  rows: readonly Row<DataTableFeatures, TData>[],
+  expandable: boolean,
+): DisplayRow<TData>[] {
   const out: DisplayRow<TData>[] = [];
   for (const row of rows) {
     out.push({ kind: 'row', key: row.id, row });
@@ -43,12 +48,14 @@ export interface ExpanderLabels {
 }
 
 /** Expander column: a toggle button on every row that can expand. */
-export function expanderColumn<TData>(tableId: string, labels: ExpanderLabels): DataTableColumn<TData> {
+export function expanderColumn<TData extends RowData>(
+  tableId: string,
+  labels: ExpanderLabels,
+): DataTableColumn<TData> {
   return {
     id: EXPAND_COLUMN_ID,
     enableSorting: false,
     enableHiding: false,
-    size: 32,
     header: () => <span className="sr-only">{labels.header}</span>,
     cell: ({ row }) => {
       if (!row.getCanExpand()) return null;

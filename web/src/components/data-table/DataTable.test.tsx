@@ -197,3 +197,120 @@ describe('DataTable row activation', () => {
     expect(onRowClick).not.toHaveBeenCalled();
   });
 });
+
+describe('DataTable client sorting', () => {
+  // More than ten rows: the automatic sort function is chosen from sampled row values.
+  const names = [
+    'node-10',
+    'Node-3',
+    'node-1',
+    'node-12',
+    'node-2',
+    'Node-11',
+    'node-4',
+    'node-9',
+    'node-5',
+    'node-8',
+    'node-7',
+    'node-6',
+  ];
+  const rows: Entry[] = names.map((name, i) => ({ id: `r${i}`, name }));
+
+  function nameColumn(): string[] {
+    return screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => within(row).getAllByRole('cell')[0]?.textContent ?? '');
+  }
+
+  it('sorts strings naturally and case-insensitively', () => {
+    renderTable({ data: rows });
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('aria-sort', 'ascending');
+    expect(nameColumn()).toEqual([
+      'node-1',
+      'node-2',
+      'Node-3',
+      'node-4',
+      'node-5',
+      'node-6',
+      'node-7',
+      'node-8',
+      'node-9',
+      'node-10',
+      'Node-11',
+      'node-12',
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+    expect(nameColumn()[0]).toBe('node-12');
+  });
+
+  it('keeps the server order with manualSorting', () => {
+    const onSortingChange = vi.fn();
+    renderTable({ data: rows, manualSorting: true, onSortingChange, sorting: [{ id: 'name', desc: false }] });
+    expect(nameColumn()).toEqual(names);
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+    expect(onSortingChange).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DataTable row selection', () => {
+  function selectAll() {
+    return screen.getByRole('checkbox', { name: 'Select all rows' });
+  }
+
+  it('shows an indeterminate header while some rows are selected and checked once all are', () => {
+    renderTable({
+      enableRowSelection: true,
+      bulkActions: (selected) => <span>bulk: {selected.map((row) => row.id).join(',')}</span>,
+    });
+    const rowBoxes = screen.getAllByRole('checkbox', { name: 'Select row' });
+    expect(selectAll()).toHaveAttribute('aria-checked', 'false');
+
+    fireEvent.click(rowBoxes[0]!);
+    expect(selectAll()).toHaveAttribute('aria-checked', 'mixed');
+    expect(screen.getByText('bulk: a')).toBeInTheDocument();
+
+    fireEvent.click(rowBoxes[1]!);
+    fireEvent.click(rowBoxes[2]!);
+    expect(selectAll()).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('bulk: a,b,c')).toBeInTheDocument();
+
+    fireEvent.click(selectAll());
+    expect(selectAll()).toHaveAttribute('aria-checked', 'false');
+    expect(screen.queryByText(/^bulk:/)).not.toBeInTheDocument();
+  });
+
+  it('selects every selectable row from the header and skips rows that cannot be selected', () => {
+    renderTable({ enableRowSelection: (row) => row.original.id !== 'b', bulkActions: () => null });
+    fireEvent.click(selectAll());
+    const rowBoxes = screen.getAllByRole('checkbox', { name: 'Select row' });
+    expect(rowBoxes.map((box) => box.getAttribute('aria-checked'))).toEqual(['true', 'false', 'true']);
+    expect(rowBoxes[1]).toBeDisabled();
+    expect(selectAll()).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(selectAll()).toHaveAttribute('aria-checked', 'false');
+  });
+});
+
+describe('DataTable column visibility', () => {
+  it('hides and shows columns from the menu, omitting columns that cannot be hidden', async () => {
+    renderTable({
+      enableColumnVisibility: true,
+      initialColumnVisibility: { id: false },
+      columns: [{ ...COLUMNS[0]!, enableHiding: false }, COLUMNS[1]!],
+    });
+    expect(screen.getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Name']);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show or hide columns' }));
+    const items = await screen.findAllByRole('menuitemcheckbox');
+    expect(items.map((item) => item.textContent)).toEqual(['ID']);
+    expect(items[0]).toHaveAttribute('aria-checked', 'false');
+
+    // The menu stays open (and hides the rest of the page from the accessibility tree) while toggling.
+    await userEvent.click(items[0]!);
+    expect(screen.getByRole('menuitemcheckbox', { name: 'ID' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Name', 'ID']);
+  });
+});
