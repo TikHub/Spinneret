@@ -38,7 +38,7 @@ console-only change needs Node and a running server.
 | Go | 1.27.1 or newer (`go.mod`) | server, CLI, Go SDK, every Go test | <https://go.dev/dl/> |
 | Docker + Compose v2 | any current release | test infrastructure, the stack, the end-to-end and load suites | Docker Desktop or Docker Engine |
 | Node.js | 22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer (`web/package.json` → `engines`) | the console | <https://nodejs.org/> or a version manager |
-| pnpm | 10.27.0 (`web/package.json` → `packageManager`) | the console | `corepack enable` picks up the pinned version |
+| pnpm | 10.27.0 (`web/package.json` → `packageManager`) | the console | `corepack enable` picks up the pinned version; on Node 26 and newer run `npm install -g corepack` first |
 | buf | v1.73.0 (pinned by CI) | regenerating protobuf code | `go install github.com/bufbuild/buf/cmd/buf@v1.73.0` |
 | protoc-gen-go | latest | generated Go messages | `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest` |
 | protoc-gen-connect-go | latest | generated Connect handlers and clients | `go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest` |
@@ -67,6 +67,7 @@ go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
 export PATH="$(go env GOPATH)/bin:$PATH"
 
 # Console
+command -v corepack >/dev/null || npm install -g corepack   # Node 26 and newer no longer bundle it
 corepack enable
 cd web && pnpm install --frozen-lockfile && cd ..
 

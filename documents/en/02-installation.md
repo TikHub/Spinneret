@@ -1077,7 +1077,7 @@ is no script, and the tuning the Compose stack does for you becomes yours. Here 
 | ClickHouse | 25.8, optional | Only if you want raw request events. Cap its caches as `deploy/compose/config/clickhouse-limits.xml` does |
 | Go | 1.27.1 or newer | To build |
 | Node | 22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer | To build the console |
-| pnpm | 10.27.0 | `corepack enable` installs the pinned version from `web/package.json` |
+| pnpm | 10.27.0 | `corepack enable` installs the pinned version from `web/package.json`; Node 26 and newer no longer ship Corepack, so run `npm install -g corepack` first |
 
 ### Build
 

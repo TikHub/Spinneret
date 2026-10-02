@@ -995,7 +995,7 @@ rm -rf /opt/spinneret
 | ClickHouse | 25.8，可选 | 只在你想要原始请求事件时才需要。缓存上限照 `deploy/compose/config/clickhouse-limits.xml` 设 |
 | Go | 1.27.1 或更高 | 用来构建 |
 | Node | 22.x 需 22.22.2 及以上，24.x 需 24.15 及以上，或 26 及以上 | 用来构建控制台 |
-| pnpm | 10.27.0 | `corepack enable` 会按 `web/package.json` 里钉住的版本安装 |
+| pnpm | 10.27.0 | `corepack enable` 会按 `web/package.json` 里钉住的版本安装；Node 26 及更高版本不再自带 Corepack，需先执行 `npm install -g corepack` |
 
 ### 构建
 
