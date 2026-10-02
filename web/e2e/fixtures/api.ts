@@ -1,6 +1,15 @@
-import { request, type APIRequestContext } from '@playwright/test';
+import { request, type APIRequestContext, type APIResponse } from '@playwright/test';
 
 import { ADMIN_PASSWORD, ADMIN_USER, BASE_URL, NAMESPACE } from './env';
+
+/** Code of a Connect error body (e.g. "not_found"), or undefined when the body is not one. */
+function errorCode(body: string): string | undefined {
+  try {
+    return (JSON.parse(body) as { code?: string }).code;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Minimal Connect (JSON) client used for test setup and cleanup. The console
@@ -44,7 +53,26 @@ export class Api {
 
   /** Calls one Connect RPC and returns the decoded response. */
   async call<T = Record<string, unknown>>(method: string, body: unknown = {}): Promise<T> {
-    const res = await this.ctx.post(`/spinneret.v1.${method}`, {
+    const res = await this.post(method, body);
+    const text = await res.text();
+    if (!res.ok()) throw new Error(`${method} failed: ${res.status()} ${text}`);
+    return (text ? JSON.parse(text) : {}) as T;
+  }
+
+  /**
+   * Calls a lookup RPC and returns undefined when the server answers not_found.
+   * Every other error is thrown, unlike tryCall.
+   */
+  async find<T = Record<string, unknown>>(method: string, body: unknown = {}): Promise<T | undefined> {
+    const res = await this.post(method, body);
+    const text = await res.text();
+    if (res.status() === 404 && errorCode(text) === 'not_found') return undefined;
+    if (!res.ok()) throw new Error(`${method} failed: ${res.status()} ${text}`);
+    return (text ? JSON.parse(text) : {}) as T;
+  }
+
+  private post(method: string, body: unknown): Promise<APIResponse> {
+    return this.ctx.post(`/spinneret.v1.${method}`, {
       headers: {
         'content-type': 'application/json',
         'x-spinneret-csrf': '1',
@@ -52,9 +80,6 @@ export class Api {
       },
       data: body as Record<string, unknown>,
     });
-    const text = await res.text();
-    if (!res.ok()) throw new Error(`${method} failed: ${res.status()} ${text}`);
-    return (text ? JSON.parse(text) : {}) as T;
   }
 
   /** Calls an RPC and returns undefined instead of throwing on a server error. */
@@ -68,14 +93,36 @@ export class Api {
 
   // --- sites -------------------------------------------------------------
 
-  async createSite(name: string, opts: { displayName?: string; clients?: string[] } = {}): Promise<string> {
+  async createSite(
+    name: string,
+    opts: { displayName?: string; description?: string; clients?: string[] } = {},
+  ): Promise<string> {
     const res = await this.call<{ site: { id: string } }>('SiteAdminService/CreateSite', {
       namespace: NAMESPACE,
       name,
       display_name: opts.displayName ?? name,
+      description: opts.description ?? '',
       clients: opts.clients ?? ['web'],
     });
     return res.site.id;
+  }
+
+  /** Returns a site of the namespace, or undefined when there is none of that name. */
+  async getSite(name: string): Promise<{ id: string; clients: string[] } | undefined> {
+    const res = await this.find<{ site: { id: string; clients?: string[] } }>('SiteAdminService/GetSite', {
+      namespace: NAMESPACE,
+      name,
+    });
+    return res && { id: res.site.id, clients: res.site.clients ?? [] };
+  }
+
+  /** Names of the endpoint groups of one client of a site. */
+  async endpointGroupNames(site: string, client = 'web'): Promise<string[]> {
+    const res = await this.call<{ endpoint_groups?: { name: string }[] }>(
+      'SiteAdminService/ListEndpointGroups',
+      { namespace: NAMESPACE, site, client, page_size: 500 },
+    );
+    return (res.endpoint_groups ?? []).map((group) => group.name);
   }
 
   /** Deletes a site and everything below it; missing sites are ignored. */
@@ -110,15 +157,36 @@ export class Api {
     return res.identity_type.name;
   }
 
-  /** Imports JSONL identities of an existing type; returns the number of created rows. */
+  /** True when the site has an identity type of that name. */
+  async hasIdentityType(site: string, name: string): Promise<boolean> {
+    const res = await this.call<{ identity_types?: { name: string }[] }>(
+      'IdentityAdminService/ListIdentityTypes',
+      { namespace: NAMESPACE, site, search: name, page_size: 500 },
+    );
+    return (res.identity_types ?? []).some((type) => type.name === name);
+  }
+
+  /**
+   * Imports JSONL identities of an existing type (upsert: rows already stored
+   * with the same payload stay unchanged) and returns the number of created
+   * rows. A rejected row fails the call.
+   */
   async importIdentities(site: string, type: string, rows: Record<string, unknown>[]): Promise<number> {
-    const res = await this.call<{ created?: number }>('IdentityAdminService/ImportIdentities', {
-      namespace: NAMESPACE,
-      site,
-      type,
-      format: 'jsonl',
-      data: rows.map((row) => JSON.stringify(row)).join('\n'),
-    });
+    const res = await this.call<{ created?: number; failed?: { line: number; message: string }[] }>(
+      'IdentityAdminService/ImportIdentities',
+      {
+        namespace: NAMESPACE,
+        site,
+        type,
+        format: 'jsonl',
+        data: rows.map((row) => JSON.stringify(row)).join('\n'),
+      },
+    );
+    if (res.failed?.length) {
+      throw new Error(
+        `import of ${type} identities into ${site} rejected rows: ${JSON.stringify(res.failed)}`,
+      );
+    }
     return Number(res.created ?? 0);
   }
 
@@ -210,19 +278,53 @@ export class Api {
 
   /**
    * Runs `count` acquire/report cycles against a site so the dashboards have
-   * fresh traffic. Every fifth request is reported as rate limited, which gives
-   * the charts a non-zero risk ratio.
+   * fresh traffic, taking the endpoint groups in turn. Every fifth request is
+   * reported as rate limited, which gives the charts a non-zero risk ratio.
+   * Returns the number of cycles that went through, and throws when none did.
    */
-  async seedTraffic(token: string, site: string, count: number): Promise<number> {
+  async seedTraffic(
+    token: string,
+    site: string,
+    count: number,
+    endpointGroups: readonly string[] = ['_default'],
+  ): Promise<number> {
     let done = 0;
+    let lastError: unknown;
     for (let i = 0; i < count; i += 1) {
+      const group = endpointGroups[i % endpointGroups.length] ?? '_default';
       try {
-        await this.acquireAndReport(token, site, { httpStatus: i % 5 === 4 ? 429 : 200 });
+        await this.acquireAndReport(token, site, {
+          endpointGroup: group,
+          httpStatus: i % 5 === 4 ? 429 : 200,
+          uri: group === '_default' ? undefined : `/api/${group}?q=e2e`,
+        });
         done += 1;
-      } catch {
+      } catch (err) {
         // A busy site can refuse a lease (reuse interval); the rest still counts.
+        lastError = err;
       }
     }
+    if (count > 0 && done === 0) {
+      throw new Error(`no acquire/report cycle reached site ${site}: ${String(lastError)}`);
+    }
     return done;
+  }
+
+  // --- dashboards ----------------------------------------------------------
+
+  /**
+   * True once the request explorer's store (ClickHouse) returns an event of the
+   * site that finished at or after `since`. Reports are processed asynchronously,
+   * so an accepted report shows up there a little later.
+   */
+  async hasRequestEvents(site: string, since: Date): Promise<boolean> {
+    const res = await this.call<{ events?: unknown[] }>('DashboardService/QueryRequestEvents', {
+      namespace: NAMESPACE,
+      site,
+      // Event times are the reports' finish times, taken from this machine's clock.
+      time_range: { start: since.toISOString(), end: new Date(Date.now() + 60_000).toISOString() },
+      page_size: 1,
+    });
+    return (res.events?.length ?? 0) > 0;
   }
 }

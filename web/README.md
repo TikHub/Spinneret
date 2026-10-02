@@ -154,8 +154,10 @@ make e2e-web ARGS='--headed'       # watch it
 ```
 
 It installs the matching Chromium build and takes the credentials from
-`deploy/compose/.env`. `e2e/README.md` lists the journeys and the conventions
-(accessible locators only, unique resources per spec, zero console errors).
+`deploy/compose/.env`. The stack needs its first administrator (`init-admin`)
+and nothing else: the suite seeds the data it reads. `e2e/README.md` lists the
+prerequisites, the journeys and the conventions (accessible locators only,
+unique resources per spec, zero console errors).
 `e2e/screenshots.spec.ts` refreshes the console screenshots in `documents/images/`.
 
 While working on a page, point the suite at the dev server instead:

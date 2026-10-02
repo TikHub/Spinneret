@@ -368,7 +368,7 @@ sqlc 产物里有十五份不会被重新生成，于是本地自检通过，而
 | 示例节点 | `make example-test` | `examples/fastapi-crawler/.venv` | 数秒 |
 | Compose 端到端 | `make e2e` | Docker | 数分钟，首次还要加镜像构建时间 |
 | 故障切换演练 | `make e2e-failover` | 运行中的栈 | 约 2 分钟 |
-| 控制台端到端 | `make e2e-web` | 运行中的栈、Chromium | 十分钟量级（31 个用例、15 个文件、串行） |
+| 控制台端到端 | `make e2e-web` | 运行中的栈、Chromium | 十分钟量级（34 个用例、16 个文件、串行） |
 | k6 压测 | `make load` 或 `test/load/run.sh` | 运行中的栈与种子数据 | 取决于场景的 `DURATION` |
 | Redis 微基准 | `go test -tags perf …` | 一个可连的 Valkey | 完整 `-bench .` 需要数十分钟 |
 
@@ -421,15 +421,19 @@ Playwright 用例驱动真实控制台，针对一个运行中的部署：
 
 ```bash
 make up                            # 栈必须处于运行状态
+docker compose -f deploy/compose/docker-compose.yml --profile init run --rm init-admin   # 每套栈执行一次
 make e2e-web                       # 先安装匹配的 Chromium，再跑套件
 make e2e-web ARGS='-g "sites"'     # 只跑一条
 make e2e-web ARGS='--headed'       # 可视化观察
 ```
 
-`make e2e-web` 从 `deploy/compose/.env` 读取管理员凭据；把 `SPINNERET_UI_URL` 指向别处就能测别的部署，
-包括 5173 端口上的 Vite 开发服务器。套件串行执行（`workers: 1`），因为各 spec 共用一个命名空间；每个
-spec 都创建唯一命名的资源并在结束时删除，所以可以反复对同一个长期部署运行。每个 spec 覆盖什么，见
-`web/e2e/README.md`。其中 `screenshots.spec.ts` 负责生成 `documents/images/` 下的截图。
+`make e2e-web` 用 `deploy/compose/.env` 里的管理员凭据登录，也就是新栈上 `init-admin` 创建的那个账号；
+把 `SPINNERET_UI_URL` 指向别处就能测别的部署，包括 5173 端口上的 Vite 开发服务器。套件串行执行
+（`workers: 1`），因为各 spec 共用一个命名空间；每个 spec 都创建唯一命名的资源并在结束时删除，所以
+可以反复对同一个长期部署运行。唯一的例外是站点 `smoke`：任何 spec 运行之前，`web/e2e/seed.setup.ts`
+会在它不存在时连同身份一起创建，并给它发送新的流量，仪表盘、规则调试器和截图都读它。不需要手工准备
+任何数据。前置条件和每个 spec 覆盖什么，见 `web/e2e/README.md`。其中 `screenshots.spec.ts` 负责生成
+`documents/images/` 下的截图。
 
 ### Python SDK
 

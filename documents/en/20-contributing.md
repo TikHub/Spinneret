@@ -383,7 +383,7 @@ the deployment.
 | Example node | `make example-test` | `examples/fastapi-crawler/.venv` | seconds |
 | Compose end-to-end | `make e2e` | Docker | several minutes, plus the first image build |
 | Failover drill | `make e2e-failover` | the running stack | about 2 minutes |
-| Console journeys | `make e2e-web` | the running stack, Chromium | on the order of 10 minutes (31 tests, 15 files, serial) |
+| Console journeys | `make e2e-web` | the running stack, Chromium | on the order of 10 minutes (34 tests, 16 files, serial) |
 | k6 load | `make load` or `test/load/run.sh` | the running stack and seeded data | as long as the scenario's `DURATION` |
 | Redis micro-benchmarks | `go test -tags perf …` | a reachable Valkey | tens of minutes for a full `-bench .` |
 
@@ -442,17 +442,21 @@ The Playwright journeys drive the real console against a running deployment:
 
 ```bash
 make up                            # the stack must be running
+docker compose -f deploy/compose/docker-compose.yml --profile init run --rm init-admin   # once per stack
 make e2e-web                       # installs the matching Chromium, then runs the suite
 make e2e-web ARGS='-g "sites"'     # one journey
 make e2e-web ARGS='--headed'       # watch it
 ```
 
-`make e2e-web` reads the administrator credentials from `deploy/compose/.env`; override
-`SPINNERET_UI_URL` to point at another deployment, including the Vite dev server on port 5173. The
-suite runs serially (`workers: 1`) because its specs share one namespace, and every spec creates
-uniquely named resources and deletes them again, so it can run repeatedly against a long-lived
-deployment. `web/e2e/README.md` lists what each spec covers. One of them, `screenshots.spec.ts`,
-writes the images under `documents/images/`.
+`make e2e-web` signs in with the administrator credentials in `deploy/compose/.env`, the account
+`init-admin` creates on a fresh stack; override `SPINNERET_UI_URL` to point at another deployment,
+including the Vite dev server on port 5173. The suite runs serially (`workers: 1`) because its specs
+share one namespace, and every spec creates uniquely named resources and deletes them again, so it
+can run repeatedly against a long-lived deployment. The one exception is the site `smoke`: before
+any spec runs, `web/e2e/seed.setup.ts` creates it with identities when it is missing and sends it
+fresh traffic, which the dashboards, the rule debugger and the screenshots read. Nothing has to be
+seeded by hand. `web/e2e/README.md` lists the prerequisites and what each spec covers. One of the
+specs, `screenshots.spec.ts`, writes the images under `documents/images/`.
 
 ### Python SDK
 

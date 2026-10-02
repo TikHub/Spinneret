@@ -16,7 +16,10 @@ export const STORAGE_STATE = 'e2e/.auth/admin.json';
 /** Prefix of every resource the suite creates, so leftovers are recognisable. */
 export const PREFIX = 'e2e';
 
-/** Site seeded outside the suite that already carries traffic (used for screenshots). */
+/**
+ * Site the suite shares instead of creating per spec. seed.setup.ts creates it
+ * when it is missing and sends it fresh traffic before every run.
+ */
 export const SEEDED_SITE = process.env.SPINNERET_E2E_SEEDED_SITE ?? 'smoke';
 
 let counter = 0;
