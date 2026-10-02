@@ -582,10 +582,12 @@ Properties of the build itself:
 - **No network egress at runtime** except to PostgreSQL, Redis/Valkey, ClickHouse, your proxies,
   the proxy health-check URL, and your notification channels.
 
-What is **not** in CI today, and is therefore yours to add if you need it: dependency
-vulnerability scanning (`govulncheck`, Dependabot), container image scanning, SBOM generation and
-artefact signing. The repository root does carry a `SECURITY.md` — the policy summarised in
-[Reporting a vulnerability](#reporting-a-vulnerability) — and an Apache-2.0 `LICENSE`.
+What is **not** in CI today, and is therefore yours to add if you need it: `govulncheck`,
+container image scanning, SBOM generation and artefact signing. Dependabot is configured in
+`.github/dependabot.yml` and opens weekly update pull requests for the Go module, the console,
+the Python SDK and the GitHub Actions. The repository root does carry a `SECURITY.md` — the
+policy summarised in [Reporting a vulnerability](#reporting-a-vulnerability) — and an
+Apache-2.0 `LICENSE`.
 
 ---
 

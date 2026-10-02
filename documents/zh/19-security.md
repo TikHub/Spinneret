@@ -526,9 +526,9 @@ ClickHouse 侧的限制设成你的硬件扛得住的值 —— Compose 栈自�
 - **运行时不产生额外出网流量**，除了 PostgreSQL、Redis/Valkey、ClickHouse、你的代理、代理健康检查 URL
   和你的通知渠道。
 
-目前 CI 里**没有**、需要你自己补上的：依赖漏洞扫描（`govulncheck`、Dependabot）、容器镜像扫描、SBOM 生成
-与产物签名。仓库根目录已经有 `SECURITY.md`（内容就是[漏洞报告](#漏洞报告)一节所述的流程）和 Apache-2.0
-的 `LICENSE`。
+目前 CI 里**没有**、需要你自己补上的：`govulncheck`、容器镜像扫描、SBOM 生成与产物签名。Dependabot 已在
+`.github/dependabot.yml` 中配置，每周为 Go 模块、控制台、Python SDK 和 GitHub Actions 发起更新 PR。
+仓库根目录已经有 `SECURITY.md`（内容就是[漏洞报告](#漏洞报告)一节所述的流程）和 Apache-2.0 的 `LICENSE`。
 
 ---
 
