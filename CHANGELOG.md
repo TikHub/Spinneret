@@ -14,12 +14,13 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ### Fixed
 
-- **The Python SDK's install instructions installed someone else's package.** The SDK has never been
+- **The Python SDK's install instructions pointed at someone else's package.** The SDK has never been
   published to PyPI, and the `spinneret` project there is an unrelated web spider from 2013, so the
   README's `pip install spinneret` fetched that instead. The SDK's README and the SDK manual now install
   from GitHub at a release tag,
-  `pip install "spinneret @ git+https://github.com/TikHub/Spinneret@<tag>#subdirectory=sdk/python"`, or
-  from a checkout with `pip install ./sdk/python`. A node that runs today got the SDK some other way and
+  `pip install "spinneret @ git+https://github.com/TikHub/Spinneret@<tag>#subdirectory=sdk/python"`
+  (or from the tag's source archive where there is no `git`, as in a `python:*-slim` image), or from a
+  checkout with `pip install ./sdk/python`. A node that runs today got the SDK some other way and
   needs no change. If you mirror the SDK to a private index, install from it with `--index-url` rather
   than `--extra-index-url`: pip takes the highest `spinneret` version any of its indexes offers, and the
   name on PyPI is not this project's.

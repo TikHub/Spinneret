@@ -69,8 +69,8 @@ Source: `sdk/python`. Versioned with each release (`spinneret.__version__`). Req
 ### Installation
 
 The SDK is not published on PyPI, and the `spinneret` project there is an unrelated package:
-`pip install spinneret` installs that, not this SDK. Install it from GitHub at a release tag,
-normally the release your server runs:
+`pip install spinneret` fetches that, not this SDK. Install it from GitHub at a release tag,
+normally the one your server runs; replace `v0.1.5` below with that tag:
 
 ```bash
 pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
@@ -79,8 +79,15 @@ pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirec
 pip install "spinneret[crypto] @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
 ```
 
-Either string also works as a line in `requirements.txt`. From a checkout of the repository, run
-from its root:
+The `git+` form needs `git` where pip runs. Without it, in a `python:*-slim` image for example,
+install the tag's source archive instead:
+
+```bash
+pip install "spinneret @ https://github.com/TikHub/Spinneret/archive/refs/tags/v0.1.5.tar.gz#subdirectory=sdk/python"
+```
+
+Without the shell quotes, each of these requirements also works as a line in `requirements.txt`.
+From a checkout of the repository, run from its root:
 
 ```bash
 pip install ./sdk/python                # the SDK

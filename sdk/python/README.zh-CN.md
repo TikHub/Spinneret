@@ -17,8 +17,9 @@
 
 ## 安装
 
-SDK 没有发布到 PyPI，PyPI 上的 `spinneret` 是一个毫不相干的项目：`pip install spinneret` 装上的是它，
-而不是本 SDK。请从 GitHub 按发布标签安装，通常就用你的服务端所运行的那个版本：
+SDK 没有发布到 PyPI，PyPI 上的 `spinneret` 是一个毫不相干的项目：`pip install spinneret` 拉取的是它，
+而不是本 SDK。请从 GitHub 按发布标签安装，通常就用你的服务端所运行的那个版本，把下面的 `v0.1.5`
+换成它：
 
 ```bash
 pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
@@ -27,7 +28,14 @@ pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirec
 pip install "spinneret[crypto] @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
 ```
 
-这两种写法也可以原样作为 `requirements.txt` 里的一行。从仓库检出目录安装时，在仓库根目录执行：
+`git+` 形式需要 pip 所在的环境里有 `git`；没有时（比如 `python:*-slim` 镜像）改装该标签的源码归档：
+
+```bash
+pip install "spinneret @ https://github.com/TikHub/Spinneret/archive/refs/tags/v0.1.5.tar.gz#subdirectory=sdk/python"
+```
+
+去掉外层的 shell 引号后，上面每一条依赖都可以作为 `requirements.txt` 里的一行。从仓库检出目录安装时，
+在仓库根目录执行：
 
 ```bash
 pip install ./sdk/python                # SDK
