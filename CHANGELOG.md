@@ -12,6 +12,18 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.5] — 2026-10-01
+
+Dependency upgrades across the console, the server and the Python SDK, a
+proxy sample count that wrapped in the API, and an example crawler that no
+longer echoes exception details. No schema migration and no configuration to
+change; upgrading is a pull and a restart. Two things deserve a look first: a
+deployment that exports traces finds its RPC span attributes renamed, and a Go
+node that also imports otelconnect may need code and dashboard changes after
+upgrading the SDK.
+
 ### Changed
 
 - **The example crawler no longer answers exception details.** A target request that fails without a
@@ -486,9 +498,10 @@ VM; the method, the hardware and every caveat are in `documents/en/17-performanc
   refresher webhooks, proxy provider adapters, NATS JetStream, OIDC and TOTP, mTLS, staged config rollouts,
   fingerprint distribution and browser pools.
 
+[0.1.5]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.5
 [0.1.4]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.4
 [0.1.3]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.3
 [0.1.2]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.2
 [0.1.1]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.1
 [0.1.0]: https://github.com/TikHub/Spinneret/releases/tag/v0.1.0
-[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/TikHub/Spinneret/compare/v0.1.5...HEAD
