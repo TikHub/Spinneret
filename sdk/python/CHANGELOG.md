@@ -1,13 +1,13 @@
 # Changelog
 
-This file records the Spinneret Python SDK up to 0.1.0. The format follows
+This file records the Spinneret Python SDK's first release, 0.1.0. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-From 0.1.1 on, the SDK is released together with the rest of Spinneret under the same version, and
-its changes are recorded in the repository's
+The SDK is released together with the rest of Spinneret, under the same version and tag. From 0.1.1
+on, its changes are recorded in the repository's
 [CHANGELOG.md](https://github.com/TikHub/Spinneret/blob/main/CHANGELOG.md) alongside the rest of
-each release.
+each release, and this file is no longer updated.
 
 ## [0.1.0] - 2026-09-18
 
