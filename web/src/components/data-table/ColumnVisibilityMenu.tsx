@@ -1,4 +1,4 @@
-import { type Table } from '@tanstack/react-table';
+import { type RowData, type Table } from '@tanstack/react-table';
 import { Columns3Icon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,12 +12,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export interface ColumnVisibilityMenuProps<TData> {
-  table: Table<TData>;
+import { type DataTableFeatures } from './features';
+
+export interface ColumnVisibilityMenuProps<TData extends RowData> {
+  table: Table<DataTableFeatures, TData>;
 }
 
 /** Dropdown with a checkbox per hideable column. */
-export function ColumnVisibilityMenu<TData>({ table }: ColumnVisibilityMenuProps<TData>) {
+export function ColumnVisibilityMenu<TData extends RowData>({ table }: ColumnVisibilityMenuProps<TData>) {
   const { t } = useTranslation();
   const columns = table.getAllLeafColumns().filter((column) => column.getCanHide());
   if (columns.length === 0) return null;
