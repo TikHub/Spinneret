@@ -505,7 +505,7 @@ run-to-run drift of identical code is about ±8 %.
 | `make test-race` | `go test -race -count=1 ./...` |
 | `make cover` | coverage over `./internal/...` into `coverage.out`, printing the total |
 | `make vet` | `go vet ./...` |
-| `make lint` | `golangci-lint run --build-tags e2e ./...`, as CI runs it |
+| `make lint` | `golangci-lint config verify`, then `golangci-lint run --build-tags e2e ./...`, as CI runs it |
 | `make fmt` | `gofmt -w` over every tracked `.go` file outside `gen/` |
 | `make infra-up` / `make infra-down` | the PostgreSQL + Valkey + ClickHouse test stack, up (waiting for health) or down with its volumes |
 | `make web-install` | `pnpm install --frozen-lockfile` in `web/` |
@@ -541,12 +541,13 @@ Runs with PostgreSQL 17, Valkey 8 and ClickHouse 25.8 as service containers, wit
 | --- | --- |
 | Generated code is up to date | installs `buf@v1.73.0`, `sqlc@v1.31.1`, `protoc-gen-go@latest`, `protoc-gen-connect-go@latest`, runs `buf lint && buf generate`, runs `sqlc generate` for every `sqlc.yaml` outside `web/`, then `git diff --exit-code -- gen internal` |
 | Vet | `go vet ./...` |
-| Lint | golangci-lint v2.13.2 with `--build-tags e2e --timeout 10m` |
+| Lint | golangci-lint v2.13.2 through `golangci-lint-action`, which runs `golangci-lint config verify` and then `golangci-lint run --build-tags e2e --timeout 10m` |
 | Test | `go test -race -count=1 -skip 'TestStart.*Container' ./...` |
 
 The skipped tests are the three that exercise the testcontainers fallback in `internal/testutil`;
 CI provides the services directly, so they have nothing to start. Note that the lint step includes
-the `e2e` build tag, so `test/e2e` is linted too; `make lint` passes the same tag.
+the `e2e` build tag, so `test/e2e` is linted too; `make lint` runs the same configuration check and
+passes the same tag.
 
 ### `web`
 

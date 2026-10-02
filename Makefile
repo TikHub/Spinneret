@@ -82,9 +82,11 @@ cover:
 vet:
 	go vet ./...
 
-# CI's lint: the e2e build tag puts test/e2e in scope; the 10m timeout CI also
-# passes is already in .golangci.yml.
+# CI's lint (golangci-lint-action): it checks .golangci.yml against the schema,
+# then lints with the e2e build tag so test/e2e is in scope; the 10m timeout CI
+# also passes is already in .golangci.yml.
 lint:
+	golangci-lint config verify
 	golangci-lint run --build-tags e2e ./...
 
 fmt:

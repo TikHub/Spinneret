@@ -479,7 +479,7 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 | `make test-race` | `go test -race -count=1 ./...` |
 | `make cover` | 对 `./internal/...` 生成 `coverage.out` 并打印总覆盖率 |
 | `make vet` | `go vet ./...` |
-| `make lint` | `golangci-lint run --build-tags e2e ./...`，与 CI 的跑法相同 |
+| `make lint` | 先 `golangci-lint config verify`，再 `golangci-lint run --build-tags e2e ./...`，与 CI 的跑法相同 |
 | `make fmt` | 对 `gen/` 以外所有纳入版本控制的 `.go` 文件执行 `gofmt -w` |
 | `make infra-up` / `make infra-down` | 启动（并等待健康）或连同数据卷销毁 PostgreSQL + Valkey + ClickHouse 测试栈 |
 | `make web-install` | 在 `web/` 下执行 `pnpm install --frozen-lockfile` |
@@ -514,12 +514,12 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 | --- | --- |
 | 检查生成代码是否最新 | 安装 `buf@v1.73.0`、`sqlc@v1.31.1`、`protoc-gen-go@latest`、`protoc-gen-connect-go@latest`，执行 `buf lint && buf generate`，对 `web/` 以外的每个 `sqlc.yaml` 执行 `sqlc generate`，最后 `git diff --exit-code -- gen internal` |
 | Vet | `go vet ./...` |
-| Lint | golangci-lint v2.13.2，参数 `--build-tags e2e --timeout 10m` |
+| Lint | 通过 `golangci-lint-action` 运行 golangci-lint v2.13.2：先 `golangci-lint config verify`，再 `golangci-lint run --build-tags e2e --timeout 10m` |
 | Test | `go test -race -count=1 -skip 'TestStart.*Container' ./...` |
 
 被跳过的是 `internal/testutil` 里那三个验证 testcontainers 回退路径的测试；CI 已经直接提供了服务，它们
-无事可做。注意 lint 步骤带上了 `e2e` 构建标签，所以 `test/e2e` 也在检查范围内；`make lint` 带的是同一个
-标签。
+无事可做。注意 lint 步骤带上了 `e2e` 构建标签，所以 `test/e2e` 也在检查范围内；`make lint` 做同样的配置
+校验，带的也是同一个标签。
 
 ### `web`
 
