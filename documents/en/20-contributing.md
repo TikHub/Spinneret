@@ -378,7 +378,7 @@ the deployment.
 | Go, unit + integration | `make infra-up` then `make test` | the infra stack | 30 s |
 | Go, race detector | `make test-race` | the infra stack | 45 s |
 | Go, coverage | `make cover` | the infra stack | like `make test`, plus the report |
-| Console unit | `cd web && pnpm test` | Node and pnpm | 10 s (93 test files) |
+| Console unit | `cd web && pnpm test` | Node and pnpm | 10 s (98 test files) |
 | Python SDK | `make python-test` | the SDK venv, activated | 5 s (375 tests) |
 | Example node | `make example-test` | `examples/fastapi-crawler/.venv` | seconds |
 | Compose end-to-end | `make e2e` | Docker | several minutes, plus the first image build |
@@ -555,8 +555,10 @@ the `e2e` build tag, so `test/e2e` is linted too — run it that way locally.
 
 In `web/`, with Node 22 and pnpm: `pnpm install --frozen-lockfile`, then `pnpm typecheck`,
 `pnpm lint`, `pnpm format:check`, `pnpm test` and `pnpm build`, so Prettier drift fails the job just
-as a lint error does. `make web-test` runs the same four checks in the same order, which makes
-`make web-test && (cd web && pnpm build)` the local equivalent of this job.
+as a lint error does. `make web-install`, `make web-test` and `make web` run the same six steps in
+the same order, so `make web-install web-test web` is the local equivalent of this job. Skip the
+install step and a `package.json` change that the lockfile does not match passes locally against the
+`node_modules` you already have, then fails here at the first step.
 
 ### `python-sdk`
 
@@ -599,7 +601,7 @@ for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f
 make vet
 golangci-lint run --build-tags e2e ./...
 make test-race
-make web-test && (cd web && pnpm build)
+make web-install web-test web
 (cd sdk/python && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest -q)
 ```
 

@@ -363,7 +363,7 @@ sqlc 产物里有十五份不会被重新生成，于是本地自检通过，而
 | Go，单元 + 集成 | 先 `make infra-up`，再 `make test` | 基础设施栈 | 30 秒 |
 | Go，竞态检测 | `make test-race` | 基础设施栈 | 45 秒 |
 | Go，覆盖率 | `make cover` | 基础设施栈 | 与 `make test` 相当，外加生成报告 |
-| 控制台单元测试 | `cd web && pnpm test` | Node 与 pnpm | 10 秒（93 个测试文件） |
+| 控制台单元测试 | `cd web && pnpm test` | Node 与 pnpm | 10 秒（98 个测试文件） |
 | Python SDK | `make python-test` | 已激活 SDK 的 venv | 5 秒（375 个用例） |
 | 示例节点 | `make example-test` | `examples/fastapi-crawler/.venv` | 数秒 |
 | Compose 端到端 | `make e2e` | Docker | 数分钟，首次还要加镜像构建时间 |
@@ -527,8 +527,9 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 
 在 `web/` 下，使用 Node 22 与 pnpm：`pnpm install --frozen-lockfile`，然后 `pnpm typecheck`、
 `pnpm lint`、`pnpm format:check`、`pnpm test`、`pnpm build`，所以 Prettier 的格式漂移和 lint 错误一样
-会让这个 job 失败。`make web-test` 按同样的顺序跑同样的四项检查，因此
-`make web-test && (cd web && pnpm build)` 就是这个 job 在本地的等价操作。
+会让这个 job 失败。`make web-install`、`make web-test` 和 `make web` 按同样的顺序跑同样的六步，因此
+`make web-install web-test web` 就是这个 job 在本地的等价操作。省掉安装这一步的话，`package.json`
+改了而锁文件没跟上，本地会用你已有的 `node_modules` 照样通过，到了这里却在第一步就失败。
 
 ### `python-sdk`
 
@@ -566,7 +567,7 @@ for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f
 make vet
 golangci-lint run --build-tags e2e ./...
 make test-race
-make web-test && (cd web && pnpm build)
+make web-install web-test web
 (cd sdk/python && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest -q)
 ```
 
