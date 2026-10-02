@@ -9,7 +9,11 @@ test.describe('access', () => {
     try {
       await gotoPage(page, '/access/tokens', 'API tokens');
 
-      await page.getByRole('button', { name: 'Create token' }).click();
+      // The toolbar's button: an empty list repeats it as its call to action.
+      await page
+        .getByRole('toolbar', { name: 'Token list controls' })
+        .getByRole('button', { name: 'Create token' })
+        .click();
       const form = dialog(page);
       await expect(form.getByRole('heading', { name: 'Create API token' })).toBeVisible();
       await form.getByLabel(/^Name/).fill(name);

@@ -10,7 +10,11 @@ test.describe('notifications', () => {
       await gotoPage(page, '/notifications', 'Notifications');
 
       // --- create a webhook channel -------------------------------------------
-      await page.getByRole('button', { name: 'New channel' }).click();
+      // The toolbar's button: an empty list repeats it as its call to action.
+      await page
+        .getByRole('toolbar', { name: 'Channel list controls' })
+        .getByRole('button', { name: 'New channel' })
+        .click();
       const form = dialog(page);
       await expect(form.getByRole('heading', { name: 'New notification channel' })).toBeVisible();
       await form.getByLabel(/^Name/).fill(name);

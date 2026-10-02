@@ -103,8 +103,10 @@ function TokensContent({ namespace }: { namespace: string }) {
       <PageHeader
         title={t('tokens.title')}
         description={t('tokens.description', { namespace })}
+        // Named, so that its create button can be told apart from the copy an
+        // empty list shows as its call to action.
         actions={
-          <>
+          <div role="toolbar" aria-label={t('tokens.toolbar')} className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -114,7 +116,7 @@ function TokensContent({ namespace }: { namespace: string }) {
               <RefreshCwIcon className={query.isFetching ? 'animate-spin' : undefined} />
             </Button>
             {createButton}
-          </>
+          </div>
         }
       />
       <PageIntro

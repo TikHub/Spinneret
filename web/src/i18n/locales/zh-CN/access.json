@@ -4,6 +4,7 @@
     "description": "令牌用于命名空间 {{namespace}} 中的爬虫节点和自动化任务认证。令牌明文创建后不会再次显示。",
     "noNamespace": "请选择一个命名空间以管理其 API 令牌。",
     "create": "创建令牌",
+    "toolbar": "令牌列表控制",
     "includeRevoked": "显示已吊销",
     "empty": "暂无 API 令牌",
     "emptyDescription": "为爬虫节点、Cookie 刷新任务或 CI 流水线创建令牌。",
