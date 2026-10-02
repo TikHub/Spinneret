@@ -35,13 +35,15 @@ export default defineConfig({
   },
   projects: [
     {
+      // Runs before every spec, also when a run is narrowed with -g: signs in
+      // (auth.setup.ts) and seeds the shared site (seed.setup.ts).
       name: 'setup',
-      testMatch: /auth\.setup\.ts/,
+      testMatch: /\.setup\.ts$/,
       use: { ...devices['Desktop Chrome'], viewport: VIEWPORT },
     },
     {
       name: 'chromium',
-      testIgnore: /auth\.setup\.ts/,
+      testIgnore: /\.setup\.ts$/,
       dependencies: ['setup'],
       // The device preset carries its own viewport; the screenshots in
       // documents/images are taken at 1440x900, so it is restated here.

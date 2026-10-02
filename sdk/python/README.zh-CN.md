@@ -17,9 +17,30 @@
 
 ## 安装
 
+SDK 没有发布到 PyPI，PyPI 上的 `spinneret` 是一个毫不相干的项目：`pip install spinneret` 拉取的是它，
+而不是本 SDK。请从 GitHub 按发布标签安装，通常就用你的服务端所运行的那个版本，把下面的 `v0.1.5`
+换成它：
+
 ```bash
-pip install spinneret                # SDK
-pip install 'spinneret[crypto]'      # 额外支持加密缓存含密钥引用的配置
+pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+
+# 额外支持加密缓存含密钥引用的配置
+pip install "spinneret[crypto] @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+```
+
+`git+` 形式需要 pip 所在的环境里有 `git`；没有时（比如 `python:*-slim` 镜像）改装该标签的源码归档：
+
+```bash
+pip install "spinneret @ https://github.com/TikHub/Spinneret/archive/refs/tags/v0.1.5.tar.gz#subdirectory=sdk/python"
+```
+
+去掉外层的 shell 引号后，上面每一条依赖都可以作为 `requirements.txt` 里的一行。从仓库检出目录安装时，
+在仓库根目录执行：
+
+```bash
+pip install ./sdk/python                # SDK
+pip install './sdk/python[crypto]'      # 额外支持加密缓存含密钥引用的配置
+pip install -e './sdk/python[dev]'      # 可编辑安装，附带测试与 lint 工具，用于开发 SDK 本身
 ```
 
 若 Spinneret 下发 SOCKS 代理，需要 `pip install 'httpx[socks]'`。
@@ -158,8 +179,8 @@ with client.config_watcher(
   例如 `treat_as_secret=lambda item: item.group == "signing"`。它只能追加含密钥的配置，不能豁免服务端已标记的配置；
   判定函数抛异常时视为含密钥。
 - 开启 `cache_secrets=True` 后，含密钥的配置使用 AES-256-GCM 加密落盘，密钥由节点令牌经 HKDF-SHA256 派生（每个文件独立的盐和随机数）。
-  标准库没有 AES-GCM，因此需要安装 `cryptography`（`spinneret[crypto]`）；未安装时 `cache_secrets=True`
-  会抛出 `ConfigurationError`。令牌轮换后无法解密旧令牌加密的快照。
+  标准库没有 AES-GCM，因此需要安装 `cryptography`（[`crypto` extra](#安装) 会装上它）；未安装时
+  `cache_secrets=True` 会抛出 `ConfigurationError`。令牌轮换后无法解密旧令牌加密的快照。
 - `snapshots=False` 关闭快照，`cache_dir=` 指定目录。
 
 单次读取：`get_config(group, key)`、`batch_get_config(items)`、`watch_config(items)`

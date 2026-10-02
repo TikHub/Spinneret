@@ -20,9 +20,31 @@ Requires Python 3.10+, `httpx>=0.27` and `pydantic>=2.6`.
 
 ## Installation
 
+The SDK is not published on PyPI, and the `spinneret` project there is an unrelated package:
+`pip install spinneret` fetches that, not this SDK. Install it from GitHub at a release tag,
+normally the one your server runs; replace `v0.1.5` below with that tag:
+
 ```bash
-pip install spinneret                # SDK
-pip install 'spinneret[crypto]'      # + encrypted snapshots of configs that reference secrets
+pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+
+# + encrypted snapshots of configs that reference secrets
+pip install "spinneret[crypto] @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+```
+
+The `git+` form needs `git` where pip runs. Without it, in a `python:*-slim` image for example,
+install the tag's source archive instead:
+
+```bash
+pip install "spinneret @ https://github.com/TikHub/Spinneret/archive/refs/tags/v0.1.5.tar.gz#subdirectory=sdk/python"
+```
+
+Without the shell quotes, each of these requirements also works as a line in `requirements.txt`.
+From a checkout of the repository, run from its root:
+
+```bash
+pip install ./sdk/python                # SDK
+pip install './sdk/python[crypto]'      # + encrypted snapshots of configs that reference secrets
+pip install -e './sdk/python[dev]'      # editable, with the test and lint tools, to work on the SDK
 ```
 
 SOCKS proxies returned by Spinneret need `pip install 'httpx[socks]'`.
@@ -180,8 +202,9 @@ with client.config_watcher(
   counts as true.
 - With `cache_secrets=True` secret items are written encrypted with AES-256-GCM using a key
   derived from the API token with HKDF-SHA256 (fresh salt and nonce per file). The standard library has no AES-GCM, so this requires the `cryptography` package
-  (`spinneret[crypto]`); without it `cache_secrets=True` raises `ConfigurationError`. Snapshots
-  encrypted with a previous token cannot be read after token rotation.
+  (the [`crypto` extra](#installation) installs it); without it `cache_secrets=True` raises
+  `ConfigurationError`. Snapshots encrypted with a previous token cannot be read after token
+  rotation.
 - `snapshots=False` disables the cache; `cache_dir=` overrides the directory.
 
 One-off reads: `get_config(group, key)`, `batch_get_config(items)`, `watch_config(items)`

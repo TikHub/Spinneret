@@ -51,7 +51,7 @@
 | 客户端 | 位置 | 传输 | 适用场景 |
 | --- | --- | --- | --- |
 | Python SDK | `sdk/python` | Connect over HTTP + JSON | Python 3.10+ 节点，同步或 asyncio |
-| Go SDK | `sdk/go/spinneret` | Connect JSON（默认）或 gRPC | Go 1.27+ 节点 |
+| Go SDK | `sdk/go/spinneret` | Connect JSON（默认）或 gRPC | Go 1.27.1+ 节点 |
 | 纯 HTTP + JSON | — | Connect over HTTP + JSON | 其他任何语言 |
 
 两个 SDK 覆盖的正是四个节点服务 —— `LeaseService`、`ReportService`、`ConfigService` 和
@@ -62,19 +62,40 @@
 
 ## Python SDK
 
-源码：`sdk/python`。版本 0.1.0。要求 Python 3.10+、`httpx>=0.27` 和 `pydantic>=2.6`。
+源码：`sdk/python`。版本号随每次发布更新（`spinneret.__version__`）。要求 Python 3.10+、`httpx>=0.27` 和
+`pydantic>=2.6`。
 
 ### 安装
 
-从仓库检出目录安装：
+SDK 没有发布到 PyPI，PyPI 上的 `spinneret` 是一个毫不相干的项目：`pip install spinneret` 拉取的是它，
+而不是本 SDK。请从 GitHub 按发布标签安装，通常就用你的服务端所运行的那个版本，把下面的 `v0.1.5`
+换成它：
+
+```bash
+pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+
+# 追加：对引用密钥的配置项做加密快照
+pip install "spinneret[crypto] @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+```
+
+`git+` 形式需要 pip 所在的环境里有 `git`；没有时（比如 `python:*-slim` 镜像）改装该标签的源码归档：
+
+```bash
+pip install "spinneret @ https://github.com/TikHub/Spinneret/archive/refs/tags/v0.1.5.tar.gz#subdirectory=sdk/python"
+```
+
+去掉外层的 shell 引号后，上面每一条依赖都可以作为 `requirements.txt` 里的一行。从仓库检出目录安装时，
+在仓库根目录执行：
 
 ```bash
 pip install ./sdk/python                # SDK 本体
 pip install './sdk/python[crypto]'      # 追加：对引用密钥的配置项做加密快照
+pip install -e './sdk/python[dev]'      # 可编辑安装，附带测试与 lint 工具，用于开发 SDK 本身
 ```
 
-发行包名为 `spinneret`，因此发布到任意索引源后可直接 `pip install spinneret`。若 Spinneret 下发
-SOCKS 代理，还需要 `pip install 'httpx[socks]'`。
+虽然没有发布到 PyPI，发行包名依然是 `spinneret`，所以如果你把它镜像到私有索引源，请只从该索引源安装
+（`--index-url`）：使用 `--extra-index-url` 时，pip 会在所有索引源里取版本最高的 `spinneret`，而 PyPI
+上这个名字并不属于本项目。若 Spinneret 下发 SOCKS 代理，还需要 `pip install 'httpx[socks]'`。
 
 ### 连接配置
 
@@ -96,7 +117,7 @@ client = spinneret.Client("https://spinneret.internal", "spn_xxx", node="crawler
 
 URL 或令牌缺失、非法时，构造函数立即抛出 `ConfigurationError`；构造过程不访问服务端。每次调用都会带上
 `Authorization: Bearer <token>`、`X-Spinneret-Node`、`Connect-Protocol-Version: 1` 和
-`User-Agent: spinneret-python/0.1.0 httpx/<version>`。
+`User-Agent: spinneret-python/<SDK 版本> httpx/<httpx 版本>`。
 
 `AsyncClient` 参数完全相同，方法改为 await，另有 `aclose()`。
 
@@ -340,7 +361,7 @@ with client.config_watcher(
   `treat_as_secret=lambda item: item.group == "signing"`。它只能增加密钥项，不能豁免服务端已标记的项；
   判定函数抛异常时视为 true。
 - `cache_secrets=True` 会用 AES-256-GCM 加密写入密钥项，密钥由 API 令牌经 HKDF-SHA256 派生（每个文件
-  使用新的 salt 和 nonce）。这需要 `cryptography` 包（`spinneret[crypto]`）；缺少它时
+  使用新的 salt 和 nonce）。这需要 `cryptography` 包，[`crypto` extra](#安装) 会装上它；缺少它时
   `cache_secrets=True` 会抛 `ConfigurationError`。令牌轮换后，用旧令牌加密的快照无法读取。
 - `snapshots=False` 关闭缓存；`cache_dir=` 覆盖目录。
 
@@ -464,8 +485,11 @@ mypy src
 
 ## Go SDK
 
-源码：`sdk/go/spinneret`。版本 0.1.0。要求 Go 1.27+。运行期依赖只有 `connectrpc.com/connect` 和
-`google.golang.org/protobuf`。
+源码：`sdk/go/spinneret`。版本 0.1.0。要求 Go 1.27.1+。导入它时，除本模块外只会编译三个模块：
+`connectrpc.com/connect`、`google.golang.org/protobuf`，以及生成的消息里 `buf.validate` 注解所在的
+`buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go`。但这个模块就是服务端的模块，它 `go.mod`
+里的全部依赖都会进入你的模块图，最小版本选择会把你与服务端共有的依赖提升到不低于服务端所要求的版本：
+0.1.5 正是这样把导入了 `connectrpc.com/otelconnect` 的节点带到 v0.10.0 的。
 
 ### 安装
 

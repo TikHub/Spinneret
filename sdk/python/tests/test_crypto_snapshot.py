@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import stat
 from pathlib import Path
 
@@ -79,6 +80,10 @@ def test_cipher_requires_cryptography(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(sp.ConfigurationError, match="cryptography") as info:
         SnapshotCipher(TOKEN)
     assert info.value.reason == "crypto_unavailable"
+    # "spinneret" on PyPI is an unrelated project, so the hint must not install
+    # the SDK by that name: it names the package that is actually missing.
+    assert "pip install cryptography" in info.value.message
+    assert re.search(r"install\s+['\"]?spinneret", info.value.message) is None
     with pytest.raises(sp.ConfigurationError):
         SnapshotStore(Path("/unused"), host="h", namespace="", token=TOKEN, cache_secrets=True)
     # Without cache_secrets the store works without cryptography.

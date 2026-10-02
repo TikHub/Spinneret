@@ -2,7 +2,7 @@
 
 HKDF (RFC 5869) is implemented with :mod:`hmac`/:mod:`hashlib`. The standard
 library has no AES-GCM, so encryption requires the optional ``cryptography``
-package (``pip install 'spinneret[crypto]'``).
+package (``pip install cryptography``, or the SDK's ``crypto`` extra).
 """
 
 from __future__ import annotations
@@ -98,7 +98,7 @@ class SnapshotCipher:
         if aesgcm is None:
             raise ConfigurationError(
                 "cache_secrets=True requires the 'cryptography' package "
-                "(pip install 'spinneret[crypto]')",
+                "(pip install cryptography, or install the SDK with its 'crypto' extra)",
                 reason="crypto_unavailable",
             )
         self._aesgcm = aesgcm

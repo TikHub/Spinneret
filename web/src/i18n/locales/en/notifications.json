@@ -85,6 +85,7 @@
   },
   "channels": {
     "create": "New channel",
+    "toolbar": "Channel list controls",
     "empty": "No notification channels",
     "emptyDescription": "Add a webhook, Feishu, DingTalk, WeCom or Telegram channel to receive alerts.",
     "autoRefresh": "Refreshes every 5 s",

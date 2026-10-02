@@ -85,6 +85,7 @@
   },
   "channels": {
     "create": "新建渠道",
+    "toolbar": "渠道列表控制",
     "empty": "暂无通知渠道",
     "emptyDescription": "添加 Webhook、飞书、钉钉、企业微信或 Telegram 渠道以接收告警。",
     "autoRefresh": "每 5 秒自动刷新",

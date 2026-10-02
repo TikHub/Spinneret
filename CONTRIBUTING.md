@@ -27,8 +27,11 @@ make web-test          # console unit tests, typecheck, lint, format
 make e2e               # the Compose end-to-end suite
 ```
 
-`make help` lists everything. Run at least `make test` and `make lint` before you push; CI runs
-all of it and will not merge a change that does not pass.
+`make help` lists everything. Run at least `make test` and `make lint` before you push. CI runs the
+equivalent of all of it except `make e2e`, and two of its checks are stricter than the targets
+above: it regenerates every `sqlc.yaml`, not only the root one, and it lints with
+`--build-tags e2e`. The guide's [Before you push](documents/en/20-contributing.md#before-you-push)
+list runs both the way CI does. CI will not merge a change that does not pass.
 
 ## House rules
 
@@ -85,7 +88,10 @@ make web-test          # 控制台单测、类型检查、lint、格式化
 make e2e               # Compose 端到端测试
 ```
 
-`make help` 会列出全部目标。推送前至少跑 `make test` 和 `make lint`；CI 会跑全部，不通过不合并。
+`make help` 会列出全部目标。推送前至少跑 `make test` 和 `make lint`。除 `make e2e` 外，上面每一项
+CI 都会跑等价的检查，其中两项比上面的目标更严：它会重新生成每一份 `sqlc.yaml`，而不只是根目录那份，
+lint 时也带上 `--build-tags e2e`。指南里的[推送之前](documents/zh/20-contributing.md#推送之前)按 CI
+的方式跑这两项。不通过不合并。
 
 ## 项目约定
 

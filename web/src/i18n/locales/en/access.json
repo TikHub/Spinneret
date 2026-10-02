@@ -4,6 +4,7 @@
     "description": "Tokens authenticate crawler nodes and automation in namespace {{namespace}}. A token string is shown once, at creation, and never again.",
     "noNamespace": "Select a namespace to manage its API tokens.",
     "create": "Create token",
+    "toolbar": "Token list controls",
     "includeRevoked": "Show revoked",
     "empty": "No API tokens",
     "emptyDescription": "Create a token for a crawler node, a cookie refresher or a CI pipeline.",

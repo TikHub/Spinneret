@@ -112,27 +112,64 @@ test.describe('shell', () => {
     await expect(page.getByRole('heading', { name: 'Change password' })).toBeVisible();
   });
 
-  test('the About dialog names the maintainer and links the source and the manual', async ({ page }) => {
+  test('the About dialog states the copyright, the licence, the maintainer and the source', async ({
+    page,
+  }) => {
     await gotoPage(page, '/', 'Overview');
     await page.getByRole('button', { name: 'About' }).click();
 
     const about = dialog(page);
     await expect(about.getByRole('heading', { name: 'Spinneret' })).toBeVisible();
-    // The server fills this in through GetMe; any build reports something.
-    await expect(about.getByText('Server build')).toBeVisible();
-    await expect(about.getByRole('link', { name: 'Apache-2.0' })).toBeVisible();
-    await expect(about.getByRole('link', { name: 'TikHub' })).toBeVisible();
+    await expect(about.getByText(/^© \d{4} TikHub$/)).toBeVisible();
+    await expect(about.getByRole('link', { name: 'Apache-2.0' })).toHaveAttribute(
+      'href',
+      'https://github.com/TikHub/Spinneret/blob/main/LICENSE',
+    );
+    // Exact: the source link's text contains the organisation name as well.
+    await expect(about.getByRole('link', { name: 'TikHub', exact: true })).toHaveAttribute(
+      'href',
+      'https://github.com/TikHub',
+    );
 
-    const source = about.getByRole('link', { name: 'Source code' });
+    const source = about.getByRole('link', { name: 'github.com/TikHub/Spinneret' });
     await expect(source).toHaveAttribute('href', 'https://github.com/TikHub/Spinneret');
     await expect(source).toHaveAttribute('target', '_blank');
-    await expect(about.getByRole('link', { name: 'Documentation' })).toHaveAttribute(
-      'href',
-      'https://github.com/TikHub/Spinneret/tree/main/documents/en',
-    );
 
     await page.keyboard.press('Escape');
     await expect(about).toBeHidden();
+  });
+
+  test('Settings → System shows the running build and links the manual and the source', async ({
+    page,
+    api,
+  }) => {
+    // The page shows the build GetMe reports; every build reports one ("dev" when
+    // built from source without a release number).
+    const me = await api.call<{ server_version?: string }>('AuthService/GetMe');
+    const build = me.server_version ?? '';
+    expect(build, 'GetMe reports the server build').not.toBe('');
+
+    // Reached from the account menu, its only entry point.
+    await gotoPage(page, '/', 'Overview');
+    await page.getByTestId('user-menu').click();
+    await page.getByRole('menuitem', { name: 'System' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'System' })).toBeVisible();
+    await expect(page).toHaveURL(/\/settings\/system$/);
+
+    const main = page.getByRole('main');
+    await expect(main.getByRole('heading', { name: 'Version and updates' })).toBeVisible();
+    await expect(main.getByText(build, { exact: true })).toBeVisible();
+    // Offered but not pressed: the check reaches the public release feed, which a
+    // test run has no business doing.
+    await expect(main.getByRole('button', { name: 'Check for updates' })).toBeEnabled();
+
+    await expect(main.getByRole('link', { name: /^Documentation/ })).toHaveAttribute(
+      'href',
+      'https://github.com/TikHub/Spinneret/tree/main/documents/en',
+    );
+    const source = main.getByRole('link', { name: /^Source code/ });
+    await expect(source).toHaveAttribute('href', 'https://github.com/TikHub/Spinneret');
+    await expect(source).toHaveAttribute('target', '_blank');
   });
 
   test('renders a not-found page for an unknown route', async ({ page }) => {

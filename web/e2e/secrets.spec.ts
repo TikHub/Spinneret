@@ -15,7 +15,8 @@ test.describe('secrets', () => {
       await gotoPage(page, '/secrets', 'Secrets');
 
       // --- create -------------------------------------------------------------
-      await page.getByRole('button', { name: 'New secret' }).first().click();
+      // The filter bar's button: an empty list repeats it as its call to action.
+      await page.getByRole('search').getByRole('button', { name: 'New secret' }).click();
       const form = dialog(page);
       await expect(form.getByRole('heading', { name: 'New secret' })).toBeVisible();
       await form.getByLabel(/^Path/).fill(path);

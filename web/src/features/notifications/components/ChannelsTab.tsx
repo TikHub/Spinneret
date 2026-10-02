@@ -138,8 +138,14 @@ export function ChannelsTab() {
         emptyDescription={t('channels.emptyDescription')}
         emptyAction={createButton}
         initialColumnVisibility={{ sites: false }}
+        // Named, so that its create button can be told apart from the copy an
+        // empty list shows as its call to action.
         toolbar={
-          <div className="flex w-full flex-wrap items-center gap-2">
+          <div
+            role="toolbar"
+            aria-label={t('channels.toolbar')}
+            className="flex w-full flex-wrap items-center gap-2"
+          >
             <Select value={scope} onValueChange={(v) => setScope(v as ListScope)}>
               <SelectTrigger size="sm" className="w-56" aria-label={t('fields.scope')}>
                 <SelectValue />

@@ -44,7 +44,7 @@ console-only change needs Node and a running server.
 | protoc-gen-connect-go | latest | generated Connect handlers and clients | `go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest` |
 | sqlc | v1.31.1 (pinned by CI) | regenerating database query code | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1` |
 | golangci-lint | v2.13.2 (pinned by CI) | the Go lint gate | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2` |
-| Python | 3.9 or newer (CI tests 3.9, 3.12 and 3.13) | the Python SDK, the example node, the drill scripts | your platform's Python |
+| Python | 3.10 or newer (`sdk/python/pyproject.toml` → `requires-python`; CI tests 3.10, 3.12 and 3.13) | the Python SDK, the example node, the drill scripts | your platform's Python if it is 3.10 or newer, otherwise <https://www.python.org/downloads/> or a version manager |
 | Chromium for Playwright | matched to `@playwright/test` 1.63.0 | the console journeys | `cd web && pnpm exec playwright install chromium` |
 | k6 | — | the load suite | not installed on the host: it runs from the `grafana/k6` image through the Compose `loadtest` profile |
 
@@ -378,12 +378,12 @@ the deployment.
 | Go, unit + integration | `make infra-up` then `make test` | the infra stack | 30 s |
 | Go, race detector | `make test-race` | the infra stack | 45 s |
 | Go, coverage | `make cover` | the infra stack | like `make test`, plus the report |
-| Console unit | `cd web && pnpm test` | Node and pnpm | 10 s (93 test files) |
+| Console unit | `cd web && pnpm test` | Node and pnpm | 10 s (98 test files) |
 | Python SDK | `make python-test` | the SDK venv, activated | 5 s (375 tests) |
 | Example node | `make example-test` | `examples/fastapi-crawler/.venv` | seconds |
 | Compose end-to-end | `make e2e` | Docker | several minutes, plus the first image build |
 | Failover drill | `make e2e-failover` | the running stack | about 2 minutes |
-| Console journeys | `make e2e-web` | the running stack, Chromium | on the order of 10 minutes (31 tests, 15 files, serial) |
+| Console journeys | `make e2e-web` | the running stack, Chromium | on the order of 10 minutes (34 tests, 16 files, serial) |
 | k6 load | `make load` or `test/load/run.sh` | the running stack and seeded data | as long as the scenario's `DURATION` |
 | Redis micro-benchmarks | `go test -tags perf …` | a reachable Valkey | tens of minutes for a full `-bench .` |
 
@@ -442,17 +442,22 @@ The Playwright journeys drive the real console against a running deployment:
 
 ```bash
 make up                            # the stack must be running
+docker compose -f deploy/compose/docker-compose.yml --profile init run --rm init-admin   # once per stack
 make e2e-web                       # installs the matching Chromium, then runs the suite
 make e2e-web ARGS='-g "sites"'     # one journey
 make e2e-web ARGS='--headed'       # watch it
 ```
 
-`make e2e-web` reads the administrator credentials from `deploy/compose/.env`; override
-`SPINNERET_UI_URL` to point at another deployment, including the Vite dev server on port 5173. The
-suite runs serially (`workers: 1`) because its specs share one namespace, and every spec creates
-uniquely named resources and deletes them again, so it can run repeatedly against a long-lived
-deployment. `web/e2e/README.md` lists what each spec covers. One of them, `screenshots.spec.ts`,
-writes the images under `documents/images/`.
+`make e2e-web` signs in with the administrator credentials in `deploy/compose/.env`, the account
+`init-admin` creates on a fresh stack; override `SPINNERET_UI_URL` to point at another deployment,
+including the Vite dev server on port 5173. The suite runs serially (`workers: 1`) because its specs
+share one namespace, and every spec creates uniquely named resources and deletes them again, so it
+can run repeatedly against a long-lived deployment. The one exception is the site `smoke`: before
+any spec runs, `web/e2e/seed.setup.ts` creates it when it is missing, adds the endpoint groups,
+identity type and identities it lacks, and sends it fresh traffic, which the dashboards, the rule
+debugger and the screenshots read. Nothing has to be seeded by hand. `web/e2e/README.md` lists the
+prerequisites and what each spec covers. One of the specs, `screenshots.spec.ts`, writes the images
+under `documents/images/`.
 
 ### Python SDK
 
@@ -550,9 +555,11 @@ the `e2e` build tag, so `test/e2e` is linted too — run it that way locally.
 ### `web`
 
 In `web/`, with Node 22 and pnpm: `pnpm install --frozen-lockfile`, then `pnpm typecheck`,
-`pnpm lint`, `pnpm test` and `pnpm build`. `pnpm format:check` is not among them — `make web-test`
-runs it, and the pull-request template asks you to run `make web-test` when the console changed, so
-Prettier drift is caught by you rather than by CI.
+`pnpm lint`, `pnpm format:check`, `pnpm test` and `pnpm build`, so Prettier drift fails the job just
+as a lint error does. `make web-install`, `make web-test` and `make web` run the same six steps in
+the same order, so `make web-install web-test web` is the local equivalent of this job. Skip the
+install step and a `package.json` change that the lockfile does not match passes locally against the
+`node_modules` you already have, then fails here at the first step.
 
 ### `python-sdk`
 
@@ -595,7 +602,7 @@ for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f
 make vet
 golangci-lint run --build-tags e2e ./...
 make test-race
-make web-test && (cd web && pnpm build)
+make web-install web-test web
 (cd sdk/python && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest -q)
 ```
 

@@ -43,7 +43,7 @@ Spinneret 由一个 Go 服务端（内嵌 React 控制台）、一个 Python SDK
 | protoc-gen-connect-go | latest | 生成的 Connect handler 与 client | `go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest` |
 | sqlc | v1.31.1（CI 锁定） | 重新生成数据库查询代码 | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1` |
 | golangci-lint | v2.13.2（CI 锁定） | Go 代码检查门禁 | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2` |
-| Python | 3.9 及以上（CI 覆盖 3.9、3.12、3.13） | Python SDK、示例节点、演练脚本 | 系统自带的 Python |
+| Python | 3.10 及以上（`sdk/python/pyproject.toml` 的 `requires-python`；CI 覆盖 3.10、3.12、3.13） | Python SDK、示例节点、演练脚本 | 系统自带的 Python（须为 3.10 及以上），否则用 <https://www.python.org/downloads/> 或版本管理器 |
 | Playwright 的 Chromium | 与 `@playwright/test` 1.63.0 匹配 | 控制台端到端用例 | `cd web && pnpm exec playwright install chromium` |
 | k6 | — | 压测套件 | 不需要装在宿主机：通过 Compose 的 `loadtest` profile 使用 `grafana/k6` 镜像 |
 
@@ -363,12 +363,12 @@ sqlc 产物里有十五份不会被重新生成，于是本地自检通过，而
 | Go，单元 + 集成 | 先 `make infra-up`，再 `make test` | 基础设施栈 | 30 秒 |
 | Go，竞态检测 | `make test-race` | 基础设施栈 | 45 秒 |
 | Go，覆盖率 | `make cover` | 基础设施栈 | 与 `make test` 相当，外加生成报告 |
-| 控制台单元测试 | `cd web && pnpm test` | Node 与 pnpm | 10 秒（93 个测试文件） |
+| 控制台单元测试 | `cd web && pnpm test` | Node 与 pnpm | 10 秒（98 个测试文件） |
 | Python SDK | `make python-test` | 已激活 SDK 的 venv | 5 秒（375 个用例） |
 | 示例节点 | `make example-test` | `examples/fastapi-crawler/.venv` | 数秒 |
 | Compose 端到端 | `make e2e` | Docker | 数分钟，首次还要加镜像构建时间 |
 | 故障切换演练 | `make e2e-failover` | 运行中的栈 | 约 2 分钟 |
-| 控制台端到端 | `make e2e-web` | 运行中的栈、Chromium | 十分钟量级（31 个用例、15 个文件、串行） |
+| 控制台端到端 | `make e2e-web` | 运行中的栈、Chromium | 十分钟量级（34 个用例、16 个文件、串行） |
 | k6 压测 | `make load` 或 `test/load/run.sh` | 运行中的栈与种子数据 | 取决于场景的 `DURATION` |
 | Redis 微基准 | `go test -tags perf …` | 一个可连的 Valkey | 完整 `-bench .` 需要数十分钟 |
 
@@ -421,15 +421,19 @@ Playwright 用例驱动真实控制台，针对一个运行中的部署：
 
 ```bash
 make up                            # 栈必须处于运行状态
+docker compose -f deploy/compose/docker-compose.yml --profile init run --rm init-admin   # 每套栈执行一次
 make e2e-web                       # 先安装匹配的 Chromium，再跑套件
 make e2e-web ARGS='-g "sites"'     # 只跑一条
 make e2e-web ARGS='--headed'       # 可视化观察
 ```
 
-`make e2e-web` 从 `deploy/compose/.env` 读取管理员凭据；把 `SPINNERET_UI_URL` 指向别处就能测别的部署，
-包括 5173 端口上的 Vite 开发服务器。套件串行执行（`workers: 1`），因为各 spec 共用一个命名空间；每个
-spec 都创建唯一命名的资源并在结束时删除，所以可以反复对同一个长期部署运行。每个 spec 覆盖什么，见
-`web/e2e/README.md`。其中 `screenshots.spec.ts` 负责生成 `documents/images/` 下的截图。
+`make e2e-web` 用 `deploy/compose/.env` 里的管理员凭据登录，也就是新栈上 `init-admin` 创建的那个账号；
+把 `SPINNERET_UI_URL` 指向别处就能测别的部署，包括 5173 端口上的 Vite 开发服务器。套件串行执行
+（`workers: 1`），因为各 spec 共用一个命名空间；每个 spec 都创建唯一命名的资源并在结束时删除，所以
+可以反复对同一个长期部署运行。唯一的例外是站点 `smoke`：任何 spec 运行之前，`web/e2e/seed.setup.ts`
+会在它不存在时创建它，补齐它缺少的端点组、身份类型和身份，并给它发送新的流量，仪表盘、规则调试器和
+截图都读它。不需要手工准备任何数据。前置条件和每个 spec 覆盖什么，见 `web/e2e/README.md`。其中
+`screenshots.spec.ts` 负责生成 `documents/images/` 下的截图。
 
 ### Python SDK
 
@@ -522,9 +526,10 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 ### `web`
 
 在 `web/` 下，使用 Node 22 与 pnpm：`pnpm install --frozen-lockfile`，然后 `pnpm typecheck`、
-`pnpm lint`、`pnpm test`、`pnpm build`。其中不包含 `pnpm format:check` —— 跑它的是 `make web-test`，
-而 Pull Request 模板要求控制台有改动时执行 `make web-test`，所以 Prettier 的格式漂移要靠你自己发现，
-而不是靠 CI。
+`pnpm lint`、`pnpm format:check`、`pnpm test`、`pnpm build`，所以 Prettier 的格式漂移和 lint 错误一样
+会让这个 job 失败。`make web-install`、`make web-test` 和 `make web` 按同样的顺序跑同样的六步，因此
+`make web-install web-test web` 就是这个 job 在本地的等价操作。省掉安装这一步的话，`package.json`
+改了而锁文件没跟上，本地会用你已有的 `node_modules` 照样通过，到了这里却在第一步就失败。
 
 ### `python-sdk`
 
@@ -562,7 +567,7 @@ for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f
 make vet
 golangci-lint run --build-tags e2e ./...
 make test-race
-make web-test && (cd web && pnpm build)
+make web-install web-test web
 (cd sdk/python && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest -q)
 ```
 

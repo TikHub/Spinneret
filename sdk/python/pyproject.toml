@@ -87,10 +87,6 @@ ignore = [
 "tests/**" = ["S105", "S106", "S108"]
 "examples/**" = ["S105", "S106"]
 
-[tool.ruff.lint.pyupgrade]
-# Pydantic evaluates annotations at runtime; keep typing.Optional/Union explicit.
-keep-runtime-typing = true
-
 [tool.mypy]
 python_version = "3.10"
 strict = true

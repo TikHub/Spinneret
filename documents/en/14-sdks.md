@@ -52,7 +52,7 @@ request time. Three ways to ask for it:
 | Client | Location | Transport | Use it when |
 | --- | --- | --- | --- |
 | Python SDK | `sdk/python` | Connect over HTTP with JSON | Python 3.10+ nodes, sync or asyncio |
-| Go SDK | `sdk/go/spinneret` | Connect JSON (default) or gRPC | Go 1.27+ nodes |
+| Go SDK | `sdk/go/spinneret` | Connect JSON (default) or gRPC | Go 1.27.1+ nodes |
 | Plain HTTP + JSON | — | Connect over HTTP with JSON | Any other language |
 
 Both SDKs cover exactly the four node services — `LeaseService`, `ReportService`, `ConfigService`
@@ -63,20 +63,42 @@ administrative API; that is the console and [`spnr`](./15-cli.md).
 
 ## Python SDK
 
-Source: `sdk/python`. Version 0.1.0. Requires Python 3.10+, `httpx>=0.27` and `pydantic>=2.6`.
+Source: `sdk/python`. Versioned with each release (`spinneret.__version__`). Requires Python 3.10+,
+`httpx>=0.27` and `pydantic>=2.6`.
 
 ### Installation
 
-From a checkout of the repository:
+The SDK is not published on PyPI, and the `spinneret` project there is an unrelated package:
+`pip install spinneret` fetches that, not this SDK. Install it from GitHub at a release tag,
+normally the one your server runs; replace `v0.1.5` below with that tag:
+
+```bash
+pip install "spinneret @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+
+# + encrypted snapshots of configs that reference secrets
+pip install "spinneret[crypto] @ git+https://github.com/TikHub/Spinneret@v0.1.5#subdirectory=sdk/python"
+```
+
+The `git+` form needs `git` where pip runs. Without it, in a `python:*-slim` image for example,
+install the tag's source archive instead:
+
+```bash
+pip install "spinneret @ https://github.com/TikHub/Spinneret/archive/refs/tags/v0.1.5.tar.gz#subdirectory=sdk/python"
+```
+
+Without the shell quotes, each of these requirements also works as a line in `requirements.txt`.
+From a checkout of the repository, run from its root:
 
 ```bash
 pip install ./sdk/python                # the SDK
 pip install './sdk/python[crypto]'      # + encrypted snapshots of configs that reference secrets
+pip install -e './sdk/python[dev]'      # editable, with the test and lint tools, to work on the SDK
 ```
 
-The distribution name is `spinneret`, so `pip install spinneret` installs it from any index the
-package has been published to. SOCKS proxies handed out by Spinneret additionally need
-`pip install 'httpx[socks]'`.
+The distribution is still named `spinneret` even though it is not on PyPI, so if you mirror it to a
+private index, install from that index alone (`--index-url`): with `--extra-index-url`, pip takes the
+highest `spinneret` version any of the indexes offers, and the name on PyPI is not this project's.
+SOCKS proxies handed out by Spinneret additionally need `pip install 'httpx[socks]'`.
 
 ### Connecting
 
@@ -99,7 +121,7 @@ client = spinneret.Client("https://spinneret.internal", "spn_xxx", node="crawler
 A missing or invalid URL or token raises `ConfigurationError` at construction time; the constructor
 does not contact the server. Every call carries `Authorization: Bearer <token>`,
 `X-Spinneret-Node`, `Connect-Protocol-Version: 1` and
-`User-Agent: spinneret-python/0.1.0 httpx/<version>`.
+`User-Agent: spinneret-python/<SDK version> httpx/<httpx version>`.
 
 `AsyncClient` takes the same arguments and has the same methods, awaited, plus `aclose()`.
 
@@ -360,8 +382,9 @@ them per watcher.
   exempt one flagged by the server; a predicate that raises counts as true.
 - `cache_secrets=True` writes secret items encrypted with AES-256-GCM under a key derived from the
   API token with HKDF-SHA256 (fresh salt and nonce per file). This needs the `cryptography`
-  package (`spinneret[crypto]`); without it, `cache_secrets=True` raises `ConfigurationError`.
-  Snapshots encrypted with a previous token cannot be read after token rotation.
+  package, which the [`crypto` extra](#installation) installs; without it, `cache_secrets=True`
+  raises `ConfigurationError`. Snapshots encrypted with a previous token cannot be read after token
+  rotation.
 - `snapshots=False` disables the cache; `cache_dir=` overrides the directory.
 
 Other watcher members: `items()`, `add_listener()`, `remove_listener()`, `running`,
@@ -488,8 +511,13 @@ Tests use `respx` and `httpx.MockTransport` and never access the network.
 
 ## Go SDK
 
-Source: `sdk/go/spinneret`. Version 0.1.0. Go 1.27+. Its only runtime dependencies are
-`connectrpc.com/connect` and `google.golang.org/protobuf`.
+Source: `sdk/go/spinneret`. Version 0.1.0. Go 1.27.1+. Importing it compiles three modules
+besides this one: `connectrpc.com/connect`, `google.golang.org/protobuf`, and
+`buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go` for the `buf.validate` annotations in
+the generated messages. The module is the server's, though, so all of its `go.mod` requirements join
+your module graph, and minimal version selection lifts any dependency you share with the server to
+at least the version the server requires: that is how 0.1.5 moved nodes that import
+`connectrpc.com/otelconnect` to v0.10.0.
 
 ### Installation
 
