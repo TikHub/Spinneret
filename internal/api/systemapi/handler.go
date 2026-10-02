@@ -35,7 +35,9 @@ type Handler struct {
 
 var _ spinneretv1connect.SystemServiceHandler = (*Handler)(nil)
 
-// New creates the SystemService handler. A nil checker answers "disabled".
+// New creates the SystemService handler. updates must not be nil if
+// CheckForUpdate can be called: the disabled check is a Checker built with an
+// empty Config.URL, which answers "disabled" without any outbound call.
 func New(updates *updatecheck.Checker, store *settings.Store, applyTTL func(context.Context, int) error,
 	rec audit.Recorder, logger *slog.Logger,
 ) *Handler {
