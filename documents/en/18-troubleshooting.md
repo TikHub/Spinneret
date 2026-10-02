@@ -85,14 +85,18 @@ own health log.
 
 **What `deploy/compose/.env` can change, and what it cannot.** Only the variables that the
 `x-spinneret-env` anchor of `deploy/compose/docker-compose.yml` maps into the container can be set
-from `.env`: `SPINNERET_LOG_LEVEL`, `SPINNERET_COOKIE_SECURE`, `SPINNERET_DATABASE_MAX_CONNS`,
-`SPINNERET_REPORT_SHARDS`, `SPINNERET_REPORT_DEDUP_TTL` and `SPINNERET_PROXY_CHECK_URL` — plus
-`SPINNERET_PORT` and `SPINNERET_REPLICAS`, which Compose itself reads, and the database passwords.
-Every other `SPINNERET_*` variable named on this page (`SPINNERET_UI_ENABLED`,
-`SPINNERET_ALLOWED_ORIGINS`, `SPINNERET_MAX_WATCHERS`, `SPINNERET_STREAM_MAXLEN`, the
-`SPINNERET_RETENTION_*` set, `SPINNERET_CLICKHOUSE_TTL_DAYS`, `SPINNERET_RECORD_COOLDOWN_EVENTS`,
-`SPINNERET_ACQUIRE_FLEET_INFLIGHT`, `SPINNERET_PPROF_ADDR`, …) needs a line added to that anchor
-first; putting it in `.env` alone has no effect. `SPINNERET_TRUSTED_PROXIES` is a special case: the
+from `.env`, and the anchor itself is the list: every entry written as a `${...}` reference can be set.
+Today that is `SPINNERET_LOG_LEVEL`, `SPINNERET_COOKIE_SECURE`, `SPINNERET_DATABASE_MAX_CONNS`, the
+report settings (`SPINNERET_REPORT_SHARDS`, `SPINNERET_REPORT_DEDUP_TTL`,
+`SPINNERET_LATE_REPORT_WINDOW`), the retention and capacity settings (the `SPINNERET_RETENTION_*` set,
+`SPINNERET_CLICKHOUSE_TTL_DAYS`, `SPINNERET_STREAM_MAXLEN`, `SPINNERET_MAX_WATCHERS`,
+`SPINNERET_ACQUIRE_FLEET_INFLIGHT`, `SPINNERET_ACQUIRE_MAX_INFLIGHT`), `SPINNERET_PROXY_CHECK_URL`,
+`SPINNERET_NOTIFY_ALLOW_PRIVATE_TARGETS` and the update check (`SPINNERET_UPDATE_CHECK_URL`,
+`SPINNERET_UPDATE_CHECK_ENABLED`) — plus `SPINNERET_PORT` and `SPINNERET_REPLICAS`, which Compose
+itself reads, and the database passwords. Any other `SPINNERET_*` variable named on this page
+(`SPINNERET_UI_ENABLED`, `SPINNERET_ALLOWED_ORIGINS`, `SPINNERET_RECORD_COOLDOWN_EVENTS`,
+`SPINNERET_LOG_FORMAT`, `SPINNERET_SESSION_TTL`, `SPINNERET_PPROF_ADDR`, …) needs a line added to that
+anchor first; putting it in `.env` alone has no effect. `SPINNERET_TRUSTED_PROXIES` is a special case: the
 anchor sets it to the hardcoded literal `172.16.0.0/12,10.0.0.0/8,192.168.0.0/16`, not to a
 `${...}` reference, so it cannot be overridden from `.env` at all — widening it means editing
 `docker-compose.yml`.
