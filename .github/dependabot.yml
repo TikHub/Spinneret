@@ -18,15 +18,16 @@ updates:
     ignore:
       # The main branches of otelconnect and validate already target connect-go v2
       # (connectrpc.com/connect/v2; connectrpc/otelconnect-go#216, connectrpc/validate-go#55) and
-      # have removed the NewInterceptor constructors that internal/server/http.go calls. Both are
-      # 0.x, so their next releases count as minor updates and would land in the weekly group
-      # below and break it. Take them together with a deliberate connect-go v2 migration instead.
+      # have removed the NewInterceptor constructors that internal/server/http.go calls. Both cut
+      # every release from main, patch releases included (otelconnect's v0.7.1 and v0.7.2), so
+      # anything newer than the versions in go.mod would land in the weekly group below and break
+      # it. Take them together with a deliberate connect-go v2 migration instead.
       # The ranges hold back security updates too: an advisory fixed only inside them gets no PR,
       # and its alert stays open until that migration.
       - dependency-name: connectrpc.com/otelconnect
-        versions: [">= 0.11.0"]
+        versions: ["> 0.10.0"]
       - dependency-name: connectrpc.com/validate
-        versions: [">= 0.8.0"]
+        versions: ["> 0.7.0"]
     groups:
       go-minor-and-patch:
         update-types: [minor, patch]
