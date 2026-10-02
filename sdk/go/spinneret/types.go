@@ -4,8 +4,9 @@ import (
 	spinneretv1 "github.com/TikHub/Spinneret/gen/go/spinneret/v1"
 )
 
-// Version is the SDK version sent in the User-Agent header.
-const Version = "0.1.0"
+// Version is the SDK version sent in the User-Agent header. It is the release
+// version: each release bumps it together with the Python SDK and the console.
+const Version = "0.1.5"
 
 // Header names of the Spinneret node protocol.
 const (
