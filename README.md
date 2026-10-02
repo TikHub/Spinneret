@@ -886,7 +886,7 @@ No SDK for your language? Plain HTTP and JSON is a first-class client — see th
 | Transport | Connect, gRPC, gRPC-Web and HTTP+JSON from one set of Protobuf definitions |
 | Data | PostgreSQL (source of truth), Valkey or Redis (hot state, leases, report streams, sessions), ClickHouse (raw request events, optional) |
 | Hot path | Lua scripts executed server-side in Redis: one round trip per `Acquire` |
-| Console | React 18 and TypeScript, embedded into the binary with `go:embed` |
+| Console | React 19 and TypeScript, embedded into the binary with `go:embed` |
 | Deployment | Docker Compose behind Caddy; images at `tikhubio/spinneret` on Docker Hub for linux/amd64 and linux/arm64 |
 | Observability | Prometheus metrics, optional OTLP tracing |
 | Tooling | buf, sqlc, golangci-lint, k6, Playwright, Vitest, pytest |
@@ -1045,8 +1045,8 @@ The complete index, in both languages, is [`documents/README.md`](documents/READ
 
 ## Development
 
-Requirements: Go 1.27 or newer, Node 22 with pnpm 10, Docker for the integration test infrastructure, and
-Python 3.10 or newer for the SDK.
+Requirements: Go 1.27 or newer, Node (22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer)
+with pnpm 10, Docker for the integration test infrastructure, and Python 3.10 or newer for the SDK.
 
 ```bash
 export PATH="$(go env GOPATH)/bin:$PATH"

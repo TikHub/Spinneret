@@ -839,7 +839,7 @@ return lease.ReportResponse(resp, spinneret.ReportInput{Markers: detectMarkers(r
 | 传输 | 一套 Protobuf 定义同时产出 Connect、gRPC、gRPC-Web 和 HTTP+JSON |
 | 数据 | PostgreSQL（事实来源）、Valkey 或 Redis（热状态、租约、上报流、会话）、ClickHouse（原始请求事件，可选） |
 | 热路径 | 在 Redis 服务端执行的 Lua 脚本：每次 `Acquire` 只有一次往返 |
-| 控制台 | React 18 + TypeScript，用 `go:embed` 嵌进二进制 |
+| 控制台 | React 19 + TypeScript，用 `go:embed` 嵌进二进制 |
 | 部署 | Docker Compose + Caddy；镜像发布在 Docker Hub 的 `tikhubio/spinneret`，覆盖 linux/amd64 与 linux/arm64 |
 | 可观测性 | Prometheus 指标，可选 OTLP 链路追踪 |
 | 工具链 | buf、sqlc、golangci-lint、k6、Playwright、Vitest、pytest |
@@ -989,8 +989,8 @@ linux/amd64 与 linux/arm64——一次构建推两个 registry，所以不管�
 
 ## 开发
 
-环境要求：Go 1.27 或更新，Node 22 配 pnpm 10，用于集成测试基础设施的 Docker，以及 Python 3.10 或更新
-（给 SDK 用）。
+环境要求：Go 1.27 或更新，Node（22.x 需 22.22.2 或更新，24.x 需 24.15 或更新，或 26 及更新）配 pnpm 10，
+用于集成测试基础设施的 Docker，以及 Python 3.10 或更新（给 SDK 用）。
 
 ```bash
 export PATH="$(go env GOPATH)/bin:$PATH"
