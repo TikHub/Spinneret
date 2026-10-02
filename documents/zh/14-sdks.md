@@ -477,8 +477,11 @@ mypy src
 
 ## Go SDK
 
-源码：`sdk/go/spinneret`。版本 0.1.0。要求 Go 1.27+。运行期依赖只有 `connectrpc.com/connect` 和
-`google.golang.org/protobuf`。
+源码：`sdk/go/spinneret`。版本 0.1.0。要求 Go 1.27+。导入它时，除本模块外只会编译三个模块：
+`connectrpc.com/connect`、`google.golang.org/protobuf`，以及生成的消息里 `buf.validate` 注解所在的
+`buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go`。但这个模块就是服务端的模块，它 `go.mod`
+里的全部依赖都会进入你的模块图，最小版本选择会把你与服务端共有的依赖提升到不低于服务端所要求的版本：
+0.1.5 正是这样把导入了 `connectrpc.com/otelconnect` 的节点带到 v0.10.0 的。
 
 ### 安装
 

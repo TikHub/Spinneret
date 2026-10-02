@@ -504,8 +504,13 @@ Tests use `respx` and `httpx.MockTransport` and never access the network.
 
 ## Go SDK
 
-Source: `sdk/go/spinneret`. Version 0.1.0. Go 1.27+. Its only runtime dependencies are
-`connectrpc.com/connect` and `google.golang.org/protobuf`.
+Source: `sdk/go/spinneret`. Version 0.1.0. Go 1.27+. Importing it compiles three modules besides
+this one: `connectrpc.com/connect`, `google.golang.org/protobuf`, and
+`buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go` for the `buf.validate` annotations in
+the generated messages. The module is the server's, though, so all of its `go.mod` requirements join
+your module graph, and minimal version selection lifts any dependency you share with the server to
+at least the version the server requires: that is how 0.1.5 moved nodes that import
+`connectrpc.com/otelconnect` to v0.10.0.
 
 ### Installation
 
