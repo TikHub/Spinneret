@@ -43,7 +43,7 @@ Spinneret 由一个 Go 服务端（内嵌 React 控制台）、一个 Python SDK
 | protoc-gen-connect-go | latest | 生成的 Connect handler 与 client | `go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest` |
 | sqlc | v1.31.1（CI 锁定） | 重新生成数据库查询代码 | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1` |
 | golangci-lint | v2.13.2（CI 锁定） | Go 代码检查门禁 | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2` |
-| Python | 3.9 及以上（CI 覆盖 3.9、3.12、3.13） | Python SDK、示例节点、演练脚本 | 系统自带的 Python |
+| Python | 3.10 及以上（`sdk/python/pyproject.toml` 的 `requires-python`；CI 覆盖 3.10、3.12、3.13） | Python SDK、示例节点、演练脚本 | 系统自带的 Python（须为 3.10 及以上），否则用 <https://www.python.org/downloads/> 或版本管理器 |
 | Playwright 的 Chromium | 与 `@playwright/test` 1.63.0 匹配 | 控制台端到端用例 | `cd web && pnpm exec playwright install chromium` |
 | k6 | — | 压测套件 | 不需要装在宿主机：通过 Compose 的 `loadtest` profile 使用 `grafana/k6` 镜像 |
 
@@ -522,9 +522,9 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 ### `web`
 
 在 `web/` 下，使用 Node 22 与 pnpm：`pnpm install --frozen-lockfile`，然后 `pnpm typecheck`、
-`pnpm lint`、`pnpm test`、`pnpm build`。其中不包含 `pnpm format:check` —— 跑它的是 `make web-test`，
-而 Pull Request 模板要求控制台有改动时执行 `make web-test`，所以 Prettier 的格式漂移要靠你自己发现，
-而不是靠 CI。
+`pnpm lint`、`pnpm format:check`、`pnpm test`、`pnpm build`，所以 Prettier 的格式漂移和 lint 错误一样
+会让这个 job 失败。`make web-test` 按同样的顺序跑同样的四项检查，因此
+`make web-test && (cd web && pnpm build)` 就是这个 job 在本地的等价操作。
 
 ### `python-sdk`
 

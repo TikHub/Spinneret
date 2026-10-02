@@ -509,8 +509,8 @@ ClickHouse 侧的限制设成你的硬件扛得住的值 —— Compose 栈自�
 | 静态检查 | `go vet` | |
 | 安全 lint | 启用 `gosec` 的 `golangci-lint` | 还有 `errorlint`、`bodyclose`、`noctx`、`nilerr`、`rowserrcheck`、`sqlclosecheck` |
 | 测试 | `go test -race -count=1 -skip 'TestStart.*Container' ./...`，对接真实的 PostgreSQL、Valkey、ClickHouse 服务容器 | 被跳过的是那些自己启动容器的测试，CI 里已经由服务容器提供 |
-| Web 控制台 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`，并使用 `--frozen-lockfile` | |
-| Python SDK | 在 3.9 / 3.12 / 3.13 上跑 `pytest`、`ruff check`、`ruff format --check`；`mypy src` 只在 3.12 上跑 | |
+| Web 控制台 | `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test`、`pnpm build`，并使用 `--frozen-lockfile` | |
+| Python SDK | 在 3.10 / 3.12 / 3.13 上跑 `pytest`、`ruff check`、`ruff format --check`；`mypy src` 只在 3.12 上跑 | |
 | 容器构建 | `docker/build-push-action` 构建 `deploy/docker/Dockerfile`（不推送） | |
 | 工作流权限 | `permissions: contents: read` | 工作流无法写入仓库 |
 

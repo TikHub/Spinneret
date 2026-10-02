@@ -28,7 +28,7 @@ make e2e               # the Compose end-to-end suite
 ```
 
 `make help` lists everything. Run at least `make test` and `make lint` before you push; CI runs
-all of it and will not merge a change that does not pass.
+the equivalent of all of it except `make e2e`, and will not merge a change that does not pass.
 
 ## House rules
 
@@ -85,7 +85,8 @@ make web-test          # 控制台单测、类型检查、lint、格式化
 make e2e               # Compose 端到端测试
 ```
 
-`make help` 会列出全部目标。推送前至少跑 `make test` 和 `make lint`；CI 会跑全部，不通过不合并。
+`make help` 会列出全部目标。推送前至少跑 `make test` 和 `make lint`；除 `make e2e` 外，上面每一项
+CI 都会跑等价的检查，不通过不合并。
 
 ## 项目约定
 

@@ -44,7 +44,7 @@ console-only change needs Node and a running server.
 | protoc-gen-connect-go | latest | generated Connect handlers and clients | `go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest` |
 | sqlc | v1.31.1 (pinned by CI) | regenerating database query code | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1` |
 | golangci-lint | v2.13.2 (pinned by CI) | the Go lint gate | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2` |
-| Python | 3.9 or newer (CI tests 3.9, 3.12 and 3.13) | the Python SDK, the example node, the drill scripts | your platform's Python |
+| Python | 3.10 or newer (`sdk/python/pyproject.toml` → `requires-python`; CI tests 3.10, 3.12 and 3.13) | the Python SDK, the example node, the drill scripts | your platform's Python if it is 3.10 or newer, otherwise <https://www.python.org/downloads/> or a version manager |
 | Chromium for Playwright | matched to `@playwright/test` 1.63.0 | the console journeys | `cd web && pnpm exec playwright install chromium` |
 | k6 | — | the load suite | not installed on the host: it runs from the `grafana/k6` image through the Compose `loadtest` profile |
 
@@ -550,9 +550,9 @@ the `e2e` build tag, so `test/e2e` is linted too — run it that way locally.
 ### `web`
 
 In `web/`, with Node 22 and pnpm: `pnpm install --frozen-lockfile`, then `pnpm typecheck`,
-`pnpm lint`, `pnpm test` and `pnpm build`. `pnpm format:check` is not among them — `make web-test`
-runs it, and the pull-request template asks you to run `make web-test` when the console changed, so
-Prettier drift is caught by you rather than by CI.
+`pnpm lint`, `pnpm format:check`, `pnpm test` and `pnpm build`, so Prettier drift fails the job just
+as a lint error does. `make web-test` runs the same four checks in the same order, which makes
+`make web-test && (cd web && pnpm build)` the local equivalent of this job.
 
 ### `python-sdk`
 

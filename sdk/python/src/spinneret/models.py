@@ -5,9 +5,6 @@ The models mirror the protobuf messages of ``spinneret.v1`` in their JSON form
 ``null`` values fall back to field defaults and 64-bit integers encoded as JSON
 strings are coerced. All models are immutable; use ``model_copy(update=...)``
 to derive a modified instance.
-
-Annotations intentionally use ``typing.Optional`` (not ``X | None``) so that the
-models evaluate on Python 3.9.
 """
 
 import uuid

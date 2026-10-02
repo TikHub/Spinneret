@@ -563,8 +563,8 @@ What the repository actually does, in `.github/workflows/ci.yml` and `.golangci.
 | Static analysis | `go vet` | |
 | Security linting | `golangci-lint` with `gosec` enabled | Also `errorlint`, `bodyclose`, `noctx`, `nilerr`, `rowserrcheck`, `sqlclosecheck` |
 | Tests | `go test -race -count=1 -skip 'TestStart.*Container' ./...` against real PostgreSQL, Valkey and ClickHouse service containers | The skipped tests are the ones that start containers themselves, which CI already provides |
-| Web console | `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, with `--frozen-lockfile` | |
-| Python SDK | `pytest`, `ruff check`, `ruff format --check` on 3.9 / 3.12 / 3.13; `mypy src` on 3.12 only | |
+| Web console | `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test`, `pnpm build`, with `--frozen-lockfile` | |
+| Python SDK | `pytest`, `ruff check`, `ruff format --check` on 3.10 / 3.12 / 3.13; `mypy src` on 3.12 only | |
 | Container build | `docker/build-push-action` builds `deploy/docker/Dockerfile` (no push) | |
 | Workflow permissions | `permissions: contents: read` | The workflow cannot write to the repository |
 
