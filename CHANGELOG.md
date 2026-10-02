@@ -34,9 +34,10 @@ where the string lives.
   off.** It never did: an empty value reads as unset and selects the built-in feed. The switch is
   `SPINNERET_UPDATE_CHECK_ENABLED=false`, added in 0.1.4, and Settings → System's message for a disabled
   check, its introduction card, the `CheckForUpdate` API comment and the configuration, console and
-  operations pages now name it. The configuration reference now lists the variable, and the installation
-  page's list of the server's outbound connections, which ended in "nothing else", now includes the
-  release feed, the exit-IP lookup and the OTLP collector.
+  operations pages now name it. The configuration reference now lists the variable. The installation
+  page's list of the server's outbound connections, which ended in "nothing else", and the security
+  page's list of runtime egress now both include the release feed, the exit-IP lookup and the OTLP
+  collector.
 
 - **Go nodes sent `User-Agent: spinneret-go/0.1.0` whatever release they ran.** The Go SDK's
   `spinneret.Version` was never bumped after 0.1.0, while the Python SDK and the console moved with every

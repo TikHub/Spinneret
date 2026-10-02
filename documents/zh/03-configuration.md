@@ -536,6 +536,8 @@ Compose 文件。
 | `SPINNERET_ACQUIRE_FLEET_INFLIGHT` | `${SPINNERET_ACQUIRE_FLEET_INFLIGHT:-64}` | 可在 `.env` 里覆盖。 |
 | `SPINNERET_ACQUIRE_MAX_INFLIGHT` | `${SPINNERET_ACQUIRE_MAX_INFLIGHT:-0}` | 可在 `.env` 里覆盖。 |
 | `SPINNERET_PROXY_CHECK_URL` | `${SPINNERET_PROXY_CHECK_URL:-}` | 空值传下去等于未设置，于是内置默认值生效。 |
+| `SPINNERET_UPDATE_CHECK_URL` | `${SPINNERET_UPDATE_CHECK_URL:-}` | 空值传下去等于未设置，于是内置的发布源生效。 |
+| `SPINNERET_UPDATE_CHECK_ENABLED` | `${SPINNERET_UPDATE_CHECK_ENABLED:-}` | 可在 `.env` 里覆盖；设为 `false` 即关闭更新检查。 |
 
 本页上任何其他变量，如果你想在 Compose 部署里用，就写进你自己的一个小 override 文件，放在随包文件之后
 传入；不要去改 `docker-compose.yml`，升级会把它换掉：

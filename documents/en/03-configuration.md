@@ -577,6 +577,8 @@ editing the Compose file is not the way to change them.
 | `SPINNERET_ACQUIRE_FLEET_INFLIGHT` | `${SPINNERET_ACQUIRE_FLEET_INFLIGHT:-64}` | Overridable from `.env`. |
 | `SPINNERET_ACQUIRE_MAX_INFLIGHT` | `${SPINNERET_ACQUIRE_MAX_INFLIGHT:-0}` | Overridable from `.env`. |
 | `SPINNERET_PROXY_CHECK_URL` | `${SPINNERET_PROXY_CHECK_URL:-}` | Empty passes through as unset, so the built-in default applies. |
+| `SPINNERET_UPDATE_CHECK_URL` | `${SPINNERET_UPDATE_CHECK_URL:-}` | Empty passes through as unset, so the built-in feed applies. |
+| `SPINNERET_UPDATE_CHECK_ENABLED` | `${SPINNERET_UPDATE_CHECK_ENABLED:-}` | Overridable from `.env`; `false` turns the update check off. |
 
 Any other variable on this page you want in a Compose deployment goes into a small override file of your
 own, passed after the shipped file, rather than into edits of `docker-compose.yml` that an upgrade will

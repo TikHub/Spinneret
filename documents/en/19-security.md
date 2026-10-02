@@ -580,7 +580,10 @@ Properties of the build itself:
   manager — running as `nonroot:nonroot` with `CGO_ENABLED=0` static binaries. The console is
   embedded in the binary, so there is no web root to write to.
 - **No network egress at runtime** except to PostgreSQL, Redis/Valkey, ClickHouse, your proxies,
-  the proxy health-check URL, and your notification channels.
+  the proxy health-check URL, your notification channels, the release feed when an operator presses
+  *Check for updates* (`SPINNERET_UPDATE_CHECK_ENABLED=false` turns that off), and, only when you set
+  them, `SPINNERET_PROXY_EXIT_IP_URL` (fetched through every proxy) and the OTLP collector in
+  `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
 What is **not** in CI today, and is therefore yours to add if you need it: `govulncheck`,
 container image scanning, SBOM generation and artefact signing. Dependabot is configured in
