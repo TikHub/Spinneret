@@ -8,7 +8,8 @@ All notable changes to Spinneret are documented here. The format follows
 will not resolve a version without it — and that tag is what the container image, the GitHub release
 and the console's update check all report. Everything that carries a version *inside* a file writes it
 bare: `0.1.0` in this changelog, in `web/package.json` and in the Python SDK's metadata, as PEP 440 and
-npm require. One release, two spellings, decided by where the string lives.
+npm require, and in the Go SDK's `spinneret.Version` to match. One release, two spellings, decided by
+where the string lives.
 
 ## [Unreleased]
 
@@ -28,6 +29,21 @@ npm require. One release, two spellings, decided by where the string lives.
   `cache_secrets=True` without `cryptography` installed gave the same advice: its `ConfigurationError`
   suggested `pip install 'spinneret[crypto]'`. It now suggests `pip install cryptography`, or installing
   the SDK with its `crypto` extra.
+
+- **The console and the manual still said an empty `SPINNERET_UPDATE_CHECK_URL` turns the update check
+  off.** It never did: an empty value reads as unset and selects the built-in feed. The switch is
+  `SPINNERET_UPDATE_CHECK_ENABLED=false`, added in 0.1.4, and Settings → System's message for a disabled
+  check, its introduction card, the `CheckForUpdate` API comment and the configuration, console and
+  operations pages now name it. The configuration reference now lists the variable. The installation
+  page's list of the server's outbound connections, which ended in "nothing else", and the security
+  page's list of runtime egress now both include the release feed, the exit-IP lookup and the OTLP
+  collector.
+
+- **Go nodes sent `User-Agent: spinneret-go/0.1.0` whatever release they ran.** The Go SDK's
+  `spinneret.Version` was never bumped after 0.1.0, while the Python SDK and the console moved with every
+  release. It now carries the release version like them, and a test fails when the three disagree. A log
+  filter or proxy rule that matches `spinneret-go/0.1.0` stops matching Go nodes built from this release
+  on.
 
 ## [0.1.5] — 2026-10-01
 

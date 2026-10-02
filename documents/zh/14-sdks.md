@@ -485,11 +485,11 @@ mypy src
 
 ## Go SDK
 
-源码：`sdk/go/spinneret`。版本 0.1.0。要求 Go 1.27.1+。导入它时，除本模块外只会编译三个模块：
-`connectrpc.com/connect`、`google.golang.org/protobuf`，以及生成的消息里 `buf.validate` 注解所在的
-`buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go`。但这个模块就是服务端的模块，它 `go.mod`
-里的全部依赖都会进入你的模块图，最小版本选择会把你与服务端共有的依赖提升到不低于服务端所要求的版本：
-0.1.5 正是这样把导入了 `connectrpc.com/otelconnect` 的节点带到 v0.10.0 的。
+源码：`sdk/go/spinneret`。版本号随每次发布更新（`spinneret.Version`）。要求 Go 1.27.1+。导入它时，
+除本模块外只会编译三个模块：`connectrpc.com/connect`、`google.golang.org/protobuf`，以及生成的消息里
+`buf.validate` 注解所在的 `buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go`。但这个模块就是
+服务端的模块，它 `go.mod` 里的全部依赖都会进入你的模块图，最小版本选择会把你与服务端共有的依赖提升到
+不低于服务端所要求的版本：0.1.5 正是这样把导入了 `connectrpc.com/otelconnect` 的节点带到 v0.10.0 的。
 
 ### 安装
 
@@ -519,7 +519,7 @@ import "github.com/TikHub/Spinneret/sdk/go/spinneret"
 | `Retry` | | `*RetryPolicy`；`spinneret.NoRetry()` 关闭重试 | 重试 2 次 |
 | `Reporter` | | `client.Reporter()` 的 `ReporterOptions` | 见下文 |
 | `Logger` | | `*slog.Logger` | `slog.Default()` |
-| `UserAgent` | | 前置于 `spinneret-go/0.1.0` | |
+| `UserAgent` | | 前置于 `spinneret-go/<SDK 版本>` | |
 
 ```go
 client, err := spinneret.New(spinneret.Options{

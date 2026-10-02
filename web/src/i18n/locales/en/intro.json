@@ -193,7 +193,7 @@
         "The update check runs only when you press the button. Nothing here polls, and the request carries nothing about this deployment.",
         "Answers are cached for an hour because the release feed is rate limited by source address, so several operators clicking it costs one request.",
         "A build without a release number — one built from source — is never reported as out of date.",
-        "Set SPINNERET_UPDATE_CHECK_URL to the empty string to disable the check and make the server reach nothing at all."
+        "Set SPINNERET_UPDATE_CHECK_ENABLED=false to turn the check off; the server then makes no request for it. Leaving SPINNERET_UPDATE_CHECK_URL empty does not turn it off, because an empty value selects the built-in feed."
       ],
       "when": "Before an upgrade, or when a bug report needs the exact build a deployment is running."
     }

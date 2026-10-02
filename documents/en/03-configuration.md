@@ -542,7 +542,8 @@ node-facing RPC bodies are capped at 8 MiB, and request headers at 1 MiB.
 | --- | --- | --- | --- |
 | `SPINNERET_UI_ENABLED` | `true` | Serve the embedded console from the main listener. `false` leaves the APIs and the health endpoints only. | `false` on instances that only serve nodes, so the console is reachable on one address you can protect. |
 | `SPINNERET_ALLOWED_ORIGINS` | empty | CORS allow-list of origins, e.g. `http://localhost:5173`. Empty installs no CORS middleware at all. `*` is accepted and allows any origin. | Only to run the console's development server against this instance. Leave it empty in production. |
-| `SPINNERET_UPDATE_CHECK_URL` | `https://api.github.com/repos/TikHub/Spinneret/releases/latest` | The release feed that **Settings → System** reads when an operator presses *Check for updates*. Nothing polls it; the answer is cached for an hour, a failure for a minute. Empty disables the check, and the console then hides the button and says so. | Empty on an air-gapped deployment, or on any host that must make no outbound connection. Point it at your own mirror if you publish internal builds. |
+| `SPINNERET_UPDATE_CHECK_URL` | `https://api.github.com/repos/TikHub/Spinneret/releases/latest` | The release feed that **Settings → System** reads when an operator presses *Check for updates*. Nothing polls it; the answer is cached for an hour, a failure for a minute. Empty means unset, as for every variable, so it selects this default rather than turning the check off; `SPINNERET_UPDATE_CHECK_ENABLED` does that. | Point it at your own mirror if you publish internal builds. |
+| `SPINNERET_UPDATE_CHECK_ENABLED` | `true` | `false` turns the update check off, whatever `SPINNERET_UPDATE_CHECK_URL` says: *Check for updates* then makes no outbound request, the server answers that the check is disabled, and the console hides the button and says so. | `false` on an air-gapped deployment, or on any host that must make no outbound connection. |
 
 A `worker`-role instance serves no console regardless of `SPINNERET_UI_ENABLED`, because it serves no
 API. What the console contains and which document covers which page:
@@ -576,6 +577,8 @@ editing the Compose file is not the way to change them.
 | `SPINNERET_ACQUIRE_FLEET_INFLIGHT` | `${SPINNERET_ACQUIRE_FLEET_INFLIGHT:-64}` | Overridable from `.env`. |
 | `SPINNERET_ACQUIRE_MAX_INFLIGHT` | `${SPINNERET_ACQUIRE_MAX_INFLIGHT:-0}` | Overridable from `.env`. |
 | `SPINNERET_PROXY_CHECK_URL` | `${SPINNERET_PROXY_CHECK_URL:-}` | Empty passes through as unset, so the built-in default applies. |
+| `SPINNERET_UPDATE_CHECK_URL` | `${SPINNERET_UPDATE_CHECK_URL:-}` | Empty passes through as unset, so the built-in feed applies. |
+| `SPINNERET_UPDATE_CHECK_ENABLED` | `${SPINNERET_UPDATE_CHECK_ENABLED:-}` | Overridable from `.env`; `false` turns the update check off. |
 
 Any other variable on this page you want in a Compose deployment goes into a small override file of your
 own, passed after the shipped file, rather than into edits of `docker-compose.yml` that an upgrade will

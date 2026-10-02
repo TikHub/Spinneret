@@ -236,7 +236,7 @@ hourly maintenance pass, with no restart — and shortening one deletes the hist
 on that pass. Any signed-in user can open it; it needs
 no role binding, because knowing which build you are on is not privileged information. The check itself
 makes no outbound request until you press the button, caches its answer for an hour, and can be turned
-off with `SPINNERET_UPDATE_CHECK_URL=""` — see
+off with `SPINNERET_UPDATE_CHECK_ENABLED=false` — see
 [Configuration → The console](./03-configuration.md#the-console).
 
 ---

@@ -55,8 +55,11 @@ type Result struct {
 
 // Config configures a Checker.
 type Config struct {
-	// URL of the release feed. Empty disables the check entirely, which is how
-	// a deployment that must make no outbound call at all is configured.
+	// URL of the release feed. Empty disables the check entirely: Check then
+	// makes no outbound call. A deployment gets there with
+	// SPINNERET_UPDATE_CHECK_ENABLED=false, which appconfig turns into an empty
+	// URL; an empty SPINNERET_UPDATE_CHECK_URL reads as unset and keeps
+	// DefaultURL.
 	URL string
 	// Current is the running build, normally version.String().
 	Current string

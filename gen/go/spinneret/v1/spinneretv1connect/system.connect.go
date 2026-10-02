@@ -51,9 +51,12 @@ type SystemServiceClient interface {
 	//
 	// The call is what makes the deployment reach out: nothing here runs on a
 	// timer, and an operator who wants no outbound call at all sets
-	// SPINNERET_UPDATE_CHECK_URL to the empty string, after which this returns
-	// `disabled`. The request carries nothing about the deployment. Answers are
-	// cached for an hour because the default feed is rate limited per source
+	// SPINNERET_UPDATE_CHECK_ENABLED=false, after which this makes no outbound
+	// call and returns `disabled` with only current_version and
+	// current_is_release filled in. An empty SPINNERET_UPDATE_CHECK_URL does not
+	// turn it off: like every blank variable it reads as unset, which selects the
+	// built-in feed. The request carries nothing about the deployment. Answers
+	// are cached for an hour because the default feed is rate limited per source
 	// address.
 	CheckForUpdate(context.Context, *connect.Request[v1.CheckForUpdateRequest]) (*connect.Response[v1.CheckForUpdateResponse], error)
 	// ListSettings returns the deployment settings an operator may change while
@@ -133,9 +136,12 @@ type SystemServiceHandler interface {
 	//
 	// The call is what makes the deployment reach out: nothing here runs on a
 	// timer, and an operator who wants no outbound call at all sets
-	// SPINNERET_UPDATE_CHECK_URL to the empty string, after which this returns
-	// `disabled`. The request carries nothing about the deployment. Answers are
-	// cached for an hour because the default feed is rate limited per source
+	// SPINNERET_UPDATE_CHECK_ENABLED=false, after which this makes no outbound
+	// call and returns `disabled` with only current_version and
+	// current_is_release filled in. An empty SPINNERET_UPDATE_CHECK_URL does not
+	// turn it off: like every blank variable it reads as unset, which selects the
+	// built-in feed. The request carries nothing about the deployment. Answers
+	// are cached for an hour because the default feed is rate limited per source
 	// address.
 	CheckForUpdate(context.Context, *connect.Request[v1.CheckForUpdateRequest]) (*connect.Response[v1.CheckForUpdateResponse], error)
 	// ListSettings returns the deployment settings an operator may change while

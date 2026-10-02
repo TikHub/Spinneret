@@ -46,8 +46,10 @@ within one TTL by the reaper if the node dies holding it. `wait_ms` queues for u
 
 **Your node sends its own request.** Spinneret is never in the data path. It proxies no bytes and signs
 nothing, and there is no login flow and no captcha handling anywhere in it. The only requests it makes on
-its own account are the reachability check it runs through each egress route and the alerts it delivers —
-both to URLs you configure.
+its own account are the checks it runs through each egress route (reachability, and the exit IP if you set
+a lookup URL), the alerts it delivers, traces to an OTLP collector if you configure one, and a call to the
+release feed when an operator presses *Check for updates* — `SPINNERET_UPDATE_CHECK_ENABLED=false` turns
+that off. It never contacts a target site itself.
 
 **`Report(lease_id, …)`** carries facts, never verdicts: status code, business code, transport error kind,
 up to 32 markers your node recognised in the response, latency, size. The server classifies it, decides

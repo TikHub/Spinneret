@@ -287,37 +287,35 @@ cd web && pnpm gen
 `internal/policysvc` 等，共十六份），每一份都有自己的输出目录：根配置写 `internal/store/postgres/db`，
 `internal/auth/sqlc.yaml` 写 `internal/auth/authdb`，以此类推。
 
-**`make sqlc` 只会重新生成十六份中的一份。** `scripts/sqlc-generate.sh` 是在仓库根目录执行一条裸的
-`sqlc generate`，它只读根目录那份 `sqlc.yaml`，因此只覆盖 `internal/store/postgres/db`。CI 的做法不同：
-它遍历每一份配置。改了查询文件，或改了某条查询会读到的列所在的迁移之后，请执行 CI 用的那个循环：
+**`make sqlc` 会重新生成全部十六份。** `scripts/sqlc-generate.sh` 拿到锁之后，对 `web/` 以外的每一份
+`sqlc.yaml` 执行 `sqlc generate -f`，正好就是 CI 重新生成的那些。改了查询文件，或改了某条查询会读到的列
+所在的迁移之后，执行它即可：
 
 ```bash
-# 只生成 internal/store/postgres/db —— 根目录的 sqlc.yaml
+# 全部十六份 —— CI 重新生成的就是这些
 make sqlc           # = ./scripts/sqlc-generate.sh
 
-# 全部十六份 —— CI 的做法；只要你改过某个包的查询，就该用这条
-for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done
+# 只生成一个包：带参数时，参数会交给单独一次 `sqlc generate`
+./scripts/sqlc-generate.sh -f internal/auth/sqlc.yaml
 ```
 
 每一份 `sqlc.yaml` 都固定了自己产物的形态：`pgx/v5`、带 JSON tag、空切片而不是 nil、可空列用指针、
 `timestamptz` 映射为 `time.Time`、`jsonb` 映射为 `json.RawMessage`。区别只在包名 —— 根目录是 `db`，
 各个包是 `<领域>db`。
 
-`make generate` 执行 protobuf 那一步加 `make sqlc`，因此同样只覆盖十六份中的一份；`make all` 先生成
-再构建两个二进制。
+`make generate` 先执行 protobuf 那一步，再执行 `make sqlc`，因此 CI 重新生成的内容它都会重新生成；
+`make all` 先生成再构建两个二进制。
 
 ### 自检
 
 ```bash
-make proto
-for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done
+make generate
 (cd web && pnpm gen)
 git diff --exit-code -- gen internal web/src/gen
 ```
 
-CI 会用同样的循环，自行执行其中 `gen internal` 的那一半。拿 `make generate` 顶替是不等价的：十六份
-sqlc 产物里有十五份不会被重新生成，于是本地自检通过，而 CI 的 `git diff --exit-code -- gen internal`
-会失败。
+CI 会自行执行其中 `gen internal` 的那一半：它重新生成的 protobuf 和 sqlc 产物与 `make generate` 相同，
+只要有任何差异就失败。`web/src/gen` 那一半只能靠你自己。
 
 ---
 
@@ -341,9 +339,8 @@ sqlc 产物里有十五份不会被重新生成，于是本地自检通过，而
 2. 上下两个方向都要写。现有每条迁移都有 `-- +goose Up` 和 `-- +goose Down` 两段，`spnr migrate down`
    和测试夹具都依赖它。凡是 goose 无法按分号切分的语句 —— 函数体、`DO` 块 —— 用
    `-- +goose StatementBegin` / `-- +goose StatementEnd` 包起来，参考 `00002_partitioned.sql`。
-3. 如果改动涉及某条查询读取的表，重新生成 sqlc，并把重新生成的 `db` 和 `<领域>db` 包一起提交。请用
-   循环，而不是 `make sqlc`：
-   `for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done`。
+3. 如果改动涉及某条查询读取的表，重新生成 sqlc，并把重新生成的 `db` 和 `<领域>db` 包一起提交。
+   `make sqlc` 会把它们全部重新生成。
 4. 在本地的基础设施数据库上执行一次，然后跑 Go 测试：`internal/testutil` 的每个测试库都是从一个刚迁移
    过的模板库克隆出来的，所以有问题的迁移会立刻让大片测试失败。
 
@@ -473,16 +470,16 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 | --- | --- |
 | `make help` | 默认目标：分组列出全部任务，每个一行 |
 | `make all` | 先 `generate`，再 `build` |
-| `make generate` | `proto` 与 `sqlc` |
+| `make generate` | `proto` 与 `sqlc`：CI 重新生成的全部内容 |
 | `make proto` | `./scripts/buf-generate.sh` —— `buf lint` 加 `buf generate` |
-| `make sqlc` | `./scripts/sqlc-generate.sh` —— 在根目录执行 `sqlc generate`，因此只覆盖 `internal/store/postgres/db` |
+| `make sqlc` | `./scripts/sqlc-generate.sh` —— 与 CI 一样，对 `web/` 以外的每一份 `sqlc.yaml` 执行 `sqlc generate -f` |
 | `make build` | 构建静态的 `bin/spinneret-server` 和 `bin/spnr`，并写入版本号 |
 | `make test` | `go test -count=1 ./...` |
 | `make test-short` | `go test -short -count=1 ./...` —— 集成夹具自行跳过 |
 | `make test-race` | `go test -race -count=1 ./...` |
 | `make cover` | 对 `./internal/...` 生成 `coverage.out` 并打印总覆盖率 |
 | `make vet` | `go vet ./...` |
-| `make lint` | `golangci-lint run ./...` |
+| `make lint` | 先 `golangci-lint config verify`，再 `golangci-lint run --build-tags e2e ./...`，与 CI 的跑法相同 |
 | `make fmt` | 对 `gen/` 以外所有纳入版本控制的 `.go` 文件执行 `gofmt -w` |
 | `make infra-up` / `make infra-down` | 启动（并等待健康）或连同数据卷销毁 PostgreSQL + Valkey + ClickHouse 测试栈 |
 | `make web-install` | 在 `web/` 下执行 `pnpm install --frozen-lockfile` |
@@ -517,11 +514,12 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 | --- | --- |
 | 检查生成代码是否最新 | 安装 `buf@v1.73.0`、`sqlc@v1.31.1`、`protoc-gen-go@latest`、`protoc-gen-connect-go@latest`，执行 `buf lint && buf generate`，对 `web/` 以外的每个 `sqlc.yaml` 执行 `sqlc generate`，最后 `git diff --exit-code -- gen internal` |
 | Vet | `go vet ./...` |
-| Lint | golangci-lint v2.13.2，参数 `--build-tags e2e --timeout 10m` |
+| Lint | 通过 `golangci-lint-action` 运行 golangci-lint v2.13.2：先 `golangci-lint config verify`，再 `golangci-lint run --build-tags e2e --timeout 10m` |
 | Test | `go test -race -count=1 -skip 'TestStart.*Container' ./...` |
 
 被跳过的是 `internal/testutil` 里那三个验证 testcontainers 回退路径的测试；CI 已经直接提供了服务，它们
-无事可做。注意 lint 步骤带上了 `e2e` 构建标签，所以 `test/e2e` 也在检查范围内 —— 本地也要这样跑。
+无事可做。注意 lint 步骤带上了 `e2e` 构建标签，所以 `test/e2e` 也在检查范围内；`make lint` 做同样的配置
+校验，带的也是同一个标签。
 
 ### `web`
 
@@ -539,6 +537,8 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 ### `image`
 
 在 `go` 和 `web` 通过之后：用 buildx 构建 `deploy/docker/Dockerfile`，打标签 `spinneret:ci`，不推送。
+[推送之前](#推送之前)里没有哪一步会构建镜像；`make docker` 在本地跑的是同样的构建，改了 Dockerfile 或
+`.dockerignore` 的话，推送前值得先跑一次。
 
 发布是另一个工作流。`.github/workflows/release.yml` 由 `v*` 标签触发，用同一份 Dockerfile 构建
 amd64 与 arm64 两个架构，并推送到 `ghcr.io/tikhub/spinneret` 和 Docker Hub 的 `tikhubio/spinneret`；仓库里只有它会发布镜像。
@@ -561,11 +561,10 @@ Compose 端到端套件、故障切换演练、Playwright 用例、k6 压测场�
 ### 推送之前
 
 ```bash
-make proto
-for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done
+make generate
 (cd web && pnpm gen) && git diff --exit-code -- gen internal web/src/gen
 make vet
-golangci-lint run --build-tags e2e ./...
+make lint
 make test-race
 make web-install web-test web
 (cd sdk/python && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest -q)

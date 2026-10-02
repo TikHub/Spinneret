@@ -123,6 +123,11 @@ describe('UpdateCard', () => {
 
     expect(await screen.findByText(/turned off on this deployment/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /check for updates/i })).not.toBeInTheDocument();
+    // The message names the switch. An empty SPINNERET_UPDATE_CHECK_URL reads
+    // as unset and selects the built-in feed, so pointing at it would send the
+    // operator who reads this to a setting that turns nothing off.
+    expect(screen.getByText(/SPINNERET_UPDATE_CHECK_ENABLED=false/)).toBeInTheDocument();
+    expect(screen.queryByText(/SPINNERET_UPDATE_CHECK_URL/)).not.toBeInTheDocument();
   });
   it('does not tell a build made from source that it is on the latest release', async () => {
     // A build with no release number cannot be ordered against one: it may be
