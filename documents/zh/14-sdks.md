@@ -51,7 +51,7 @@
 | 客户端 | 位置 | 传输 | 适用场景 |
 | --- | --- | --- | --- |
 | Python SDK | `sdk/python` | Connect over HTTP + JSON | Python 3.10+ 节点，同步或 asyncio |
-| Go SDK | `sdk/go/spinneret` | Connect JSON（默认）或 gRPC | Go 1.27+ 节点 |
+| Go SDK | `sdk/go/spinneret` | Connect JSON（默认）或 gRPC | Go 1.27.1+ 节点 |
 | 纯 HTTP + JSON | — | Connect over HTTP + JSON | 其他任何语言 |
 
 两个 SDK 覆盖的正是四个节点服务 —— `LeaseService`、`ReportService`、`ConfigService` 和
@@ -485,7 +485,7 @@ mypy src
 
 ## Go SDK
 
-源码：`sdk/go/spinneret`。版本 0.1.0。要求 Go 1.27+。导入它时，除本模块外只会编译三个模块：
+源码：`sdk/go/spinneret`。版本 0.1.0。要求 Go 1.27.1+。导入它时，除本模块外只会编译三个模块：
 `connectrpc.com/connect`、`google.golang.org/protobuf`，以及生成的消息里 `buf.validate` 注解所在的
 `buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go`。但这个模块就是服务端的模块，它 `go.mod`
 里的全部依赖都会进入你的模块图，最小版本选择会把你与服务端共有的依赖提升到不低于服务端所要求的版本：

@@ -52,7 +52,7 @@ request time. Three ways to ask for it:
 | Client | Location | Transport | Use it when |
 | --- | --- | --- | --- |
 | Python SDK | `sdk/python` | Connect over HTTP with JSON | Python 3.10+ nodes, sync or asyncio |
-| Go SDK | `sdk/go/spinneret` | Connect JSON (default) or gRPC | Go 1.27+ nodes |
+| Go SDK | `sdk/go/spinneret` | Connect JSON (default) or gRPC | Go 1.27.1+ nodes |
 | Plain HTTP + JSON | — | Connect over HTTP with JSON | Any other language |
 
 Both SDKs cover exactly the four node services — `LeaseService`, `ReportService`, `ConfigService`
@@ -511,8 +511,8 @@ Tests use `respx` and `httpx.MockTransport` and never access the network.
 
 ## Go SDK
 
-Source: `sdk/go/spinneret`. Version 0.1.0. Go 1.27+. Importing it compiles three modules besides
-this one: `connectrpc.com/connect`, `google.golang.org/protobuf`, and
+Source: `sdk/go/spinneret`. Version 0.1.0. Go 1.27.1+. Importing it compiles three modules
+besides this one: `connectrpc.com/connect`, `google.golang.org/protobuf`, and
 `buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go` for the `buf.validate` annotations in
 the generated messages. The module is the server's, though, so all of its `go.mod` requirements join
 your module graph, and minimal version selection lifts any dependency you share with the server to

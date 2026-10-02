@@ -14,7 +14,7 @@
 - `ConfigWatcher`：长轮询、变更回调、版本跟踪，本地快照永不落盘密钥
 - `ClassifyError`：把 `net/http` 请求错误映射为上报用的错误类型
 
-SDK 位于主模块中：`github.com/TikHub/Spinneret/sdk/go/spinneret`（Go 1.27+）。导入它时，除本模块外
+SDK 位于主模块中：`github.com/TikHub/Spinneret/sdk/go/spinneret`（Go 1.27.1+）。导入它时，除本模块外
 只会编译三个模块：`connectrpc.com/connect`、`google.golang.org/protobuf`，以及生成的消息里
 `buf.validate` 注解所在的 `buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go`。但这个模块就是
 服务端的模块，它 `go.mod` 里的全部依赖都会进入你的模块图，最小版本选择会把你与服务端共有的依赖提升到

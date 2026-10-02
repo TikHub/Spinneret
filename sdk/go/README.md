@@ -18,7 +18,7 @@ versioned configuration and secrets to the same fleet.
 - `ClassifyError`: maps `net/http` failures to report error kinds
 
 The package lives in the main module: `github.com/TikHub/Spinneret/sdk/go/spinneret`
-(Go 1.27+). Importing it compiles three modules besides this one: `connectrpc.com/connect`,
+(Go 1.27.1+). Importing it compiles three modules besides this one: `connectrpc.com/connect`,
 `google.golang.org/protobuf`, and `buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go` for
 the `buf.validate` annotations in the generated messages. The module is the server's, though, so all
 of its `go.mod` requirements join your module graph, and minimal version selection lifts any

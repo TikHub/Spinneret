@@ -895,7 +895,7 @@ Compatibility, as tested in CI and pinned in Compose:
 
 | Component | Version |
 | --- | --- |
-| Go | 1.27 or newer |
+| Go | 1.27.1 or newer |
 | Node and pnpm | Node 22, pnpm 10 |
 | Python (SDK) | 3.10, 3.12, 3.13 |
 | PostgreSQL | 17 in Compose |
@@ -1045,7 +1045,7 @@ The complete index, in both languages, is [`documents/README.md`](documents/READ
 
 ## Development
 
-Requirements: Go 1.27 or newer, Node (22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer)
+Requirements: Go 1.27.1 or newer, Node (22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer)
 with pnpm 10, Docker for the integration test infrastructure, and Python 3.10 or newer for the SDK.
 
 ```bash
