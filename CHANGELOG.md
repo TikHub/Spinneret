@@ -19,6 +19,42 @@ npm require. One release, two spellings, decided by where the string lives.
   target failed` instead of ending in the httpx exception class. The node logs the class at `WARNING`,
   and the report to Spinneret carries the `error_kind` as before. Only `examples/fastapi-crawler` changed.
 
+- **Trace attributes follow OpenTelemetry's current RPC conventions, so saved trace queries need
+  updating.** This only concerns a deployment that sets `OTEL_EXPORTER_OTLP_ENDPOINT`. otelconnect 0.10
+  moved the server's RPC spans from the 1.21 semantic conventions to the current 1.43 ones:
+  `rpc.system=connect_rpc` becomes `rpc.system.name` with `connectrpc` (or `grpc` for gRPC and gRPC-Web
+  calls); `rpc.service` is gone and `rpc.method` holds the fully qualified method, such as
+  `spinneret.v1.LeaseService/Acquire`; and `rpc.connect_rpc.error_code` and `rpc.grpc.status_code` give
+  way to `rpc.response.status_code`, an upper-case code that reads `OK` on success, plus `error.type` on
+  a failed call. Server spans no longer record the client's address (`net.peer.*`) or an event per
+  message. Span names, kinds and status, and trace propagation, are unchanged, but dashboards and saved
+  queries that filter on the old attributes stop matching.
+
+  Go SDK users: the SDK ships in the server's Go module, so upgrading it moves a node that also imports
+  otelconnect to v0.10.0. That release removed `WithoutServerPeerAttributes` (its behaviour is now the
+  default) and `WithoutTraceEvents`, so a node that passes either no longer compiles. It also replaced
+  its metrics: `rpc.server.duration` and `rpc.client.duration`, in milliseconds, became
+  `rpc.server.call.duration` and `rpc.client.call.duration`, in seconds, and the size and per-RPC message
+  count metrics are gone.
+
+- **The console's tables run on TanStack Table v9, and small client-sorted tables now sort like large
+  ones.** In a table the browser sorts, a text column with ten rows or fewer now orders naturally and
+  case-insensitively, as larger tables already did. v8 chose the automatic sort function by sampling from
+  the eleventh row on, so a small table fell back to a plain comparison that put `Zeta` before `alpha`
+  and `node10` before `node2`. Tables the server sorts are unaffected.
+
+- **Building or testing the console from source asks for Node 22.22.2 or newer.** On the 24 line that is
+  24.15 or newer, and anything from 26 on works: `web/package.json` now declares
+  `^22.22.2 || ^24.15.0 || >=26.0.0`, because jsdom 30, the console's unit-test environment, supports
+  nothing older. pnpm only warns on an older Node. Building the image is unaffected: `node:22-alpine` is
+  already past that floor.
+
+- Dependency updates: `monaco-editor` 0.57, `@vitejs/plugin-react` 6, `jsdom` 30, `vitest` 5.0.3 and
+  `@types/react-dom` 19; patch and minor releases of `vite`, `eslint`, `typescript-eslint`, `prettier`,
+  `@tanstack/react-query`, `@tanstack/react-router`, `lucide-react` and `react-i18next`;
+  `connectrpc.com/otelconnect` 0.10; and the Python SDK's `pytest` and `ruff` development pins and its
+  `hatchling` build requirement.
+
 ### Fixed
 
 - **A proxy's per-site sample count no longer wraps in the API.** The count grows by one per observation
