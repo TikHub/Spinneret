@@ -994,8 +994,8 @@ rm -rf /opt/spinneret
 | Valkey 或 Redis | Valkey 8 / Redis 7+ | 持久化（`appendonly yes`、`appendfsync everysec`）、关掉 RDB 存盘点、`auto-aof-rewrite-percentage 300`、`auto-aof-rewrite-min-size 1gb`、**`maxmemory-policy noeviction`** 且不设 `maxmemory`。这五项不是可选的偏好 —— 见 [valkey](#valkey) |
 | ClickHouse | 25.8，可选 | 只在你想要原始请求事件时才需要。缓存上限照 `deploy/compose/config/clickhouse-limits.xml` 设 |
 | Go | 1.27.1 或更高 | 用来构建 |
-| Node | 22.13 或更高 | 用来构建控制台 |
-| pnpm | 10.27.0 | `corepack enable` 会按 `web/package.json` 里钉住的版本安装 |
+| Node | 22.x 需 22.22.2 或更高，24.x 需 24.15 或更高，或 26 及更高 | 用来构建控制台 |
+| pnpm | 10.27.0 | `corepack enable` 会按 `web/package.json` 里钉住的版本安装；Node 26 及更高版本不再自带 Corepack，需先执行 `npm install -g corepack` |
 
 ### 构建
 

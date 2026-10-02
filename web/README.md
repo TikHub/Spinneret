@@ -7,7 +7,8 @@ APIs (JSON) and one server-sent events stream. The authoritative specification i
 
 ## Requirements
 
-- Node.js 22.13+ and pnpm 10 (`corepack enable` picks the version from `package.json`)
+- Node.js 22.22.2 or newer on 22.x, 24.15 or newer on 24.x, or 26 and newer (`engines` in `package.json`)
+- pnpm 10 (`corepack enable` picks the version from `package.json`; Node 26 and newer no longer bundle Corepack, so run `npm install -g corepack` first)
 - For `pnpm gen`: the [buf](https://buf.build) CLI (`go install github.com/bufbuild/buf/cmd/buf@latest`; the script adds `$HOME/go/bin` to `PATH`)
 - A running Spinneret server for `pnpm dev` (default `http://localhost:8080`, override with `SPINNERET_API_URL`)
 

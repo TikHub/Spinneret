@@ -36,8 +36,8 @@ Spinneret 由一个 Go 服务端（内嵌 React 控制台）、一个 Python SDK
 | --- | --- | --- | --- |
 | Go | 1.27.1 及以上（`go.mod`） | 服务端、CLI、Go SDK、全部 Go 测试 | <https://go.dev/dl/> |
 | Docker + Compose v2 | 任意当前版本 | 测试基础设施、完整栈、端到端与压测套件 | Docker Desktop 或 Docker Engine |
-| Node.js | 22.13 及以上（`web/package.json` 的 `engines`） | 控制台 | <https://nodejs.org/> 或版本管理器 |
-| pnpm | 10.27.0（`web/package.json` 的 `packageManager`） | 控制台 | `corepack enable` 会自动使用锁定的版本 |
+| Node.js | 22.x 需 22.22.2 及以上，24.x 需 24.15 及以上，或 26 及以上（`web/package.json` 的 `engines`） | 控制台 | <https://nodejs.org/> 或版本管理器 |
+| pnpm | 10.27.0（`web/package.json` 的 `packageManager`） | 控制台 | `corepack enable` 会自动使用锁定的版本；Node 26 及以上需先执行 `npm install -g corepack` |
 | buf | v1.73.0（CI 锁定） | 重新生成 protobuf 代码 | `go install github.com/bufbuild/buf/cmd/buf@v1.73.0` |
 | protoc-gen-go | latest | 生成的 Go 消息类型 | `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest` |
 | protoc-gen-connect-go | latest | 生成的 Connect handler 与 client | `go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest` |
@@ -65,6 +65,7 @@ go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
 export PATH="$(go env GOPATH)/bin:$PATH"
 
 # 控制台
+command -v corepack >/dev/null || npm install -g corepack   # Node 26 及以上不再自带 Corepack
 corepack enable
 cd web && pnpm install --frozen-lockfile && cd ..
 
