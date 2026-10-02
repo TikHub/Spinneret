@@ -19,13 +19,18 @@ mocked: the browser talks to the Connect APIs of the deployment under test.
 
 Nothing has to be seeded by hand. Before any spec, the `setup` project signs in
 (`auth.setup.ts`) and prepares the one site the specs share (`seed.setup.ts`):
-when the site `smoke` is missing it creates it with the endpoint groups `search`
-and `detail`, the identity type `seed_token` and 40 identities; on every run it
-sends 30 acquire/report cycles through the node API, every fifth reported as
-HTTP 429, and waits until the request explorer returns them. The site is kept
-between runs. The overview, the heatmap, the request explorer, the rule debugger
-and the screenshots read it. The setup project also runs when `-g` narrows the
-run to one journey; the seeding takes a second or two.
+it creates the site `smoke` when it is missing and gives it whatever it lacks of
+the endpoint groups `search` and `detail`, the identity type `seed_token` and 40
+identities of that type, also when the site existed before the suite; on every
+run it sends 30 acquire/report cycles through the node API, every fifth
+reported as HTTP 429, and waits until the request explorer returns them. The
+site is kept between runs. The overview, the heatmap, the request explorer, the
+rule debugger and the screenshots read it. The setup project also runs when
+`-g` narrows the run to one journey; the seeding takes a second or two.
+
+Point `SPINNERET_E2E_SEEDED_SITE` only at a site no real node leases from: the
+seeded identities carry made-up bearer tokens, and where no rotation policy is
+bound, the built-in one leases every identity type of the site and client.
 
 ## Running
 
@@ -62,7 +67,7 @@ working on a page; it proxies the API to the stack.
 | File                     | Journey                                                                                             |
 | ------------------------ | --------------------------------------------------------------------------------------------------- |
 | `auth.setup.ts`          | signs in once through the UI and stores the session for every spec                                  |
-| `seed.setup.ts`          | creates the shared site when it is missing and sends it fresh traffic                               |
+| `seed.setup.ts`          | creates or completes the shared site and sends it fresh traffic                                     |
 | `shell.spec.ts`          | sign in and out, redirect after login, language, theme, navigation, 404, profile, About, System     |
 | `sites.spec.ts`          | create a site with clients, endpoint group, URI rules, URI tester, edit, delete, pause switch       |
 | `identity-types.spec.ts` | create a type from the YAML example, delivery preview, delete                                       |

@@ -431,9 +431,9 @@ make e2e-web ARGS='--headed'       # 可视化观察
 把 `SPINNERET_UI_URL` 指向别处就能测别的部署，包括 5173 端口上的 Vite 开发服务器。套件串行执行
 （`workers: 1`），因为各 spec 共用一个命名空间；每个 spec 都创建唯一命名的资源并在结束时删除，所以
 可以反复对同一个长期部署运行。唯一的例外是站点 `smoke`：任何 spec 运行之前，`web/e2e/seed.setup.ts`
-会在它不存在时连同身份一起创建，并给它发送新的流量，仪表盘、规则调试器和截图都读它。不需要手工准备
-任何数据。前置条件和每个 spec 覆盖什么，见 `web/e2e/README.md`。其中 `screenshots.spec.ts` 负责生成
-`documents/images/` 下的截图。
+会在它不存在时创建它，补齐它缺少的端点组、身份类型和身份，并给它发送新的流量，仪表盘、规则调试器和
+截图都读它。不需要手工准备任何数据。前置条件和每个 spec 覆盖什么，见 `web/e2e/README.md`。其中
+`screenshots.spec.ts` 负责生成 `documents/images/` 下的截图。
 
 ### Python SDK
 

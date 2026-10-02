@@ -453,10 +453,11 @@ make e2e-web ARGS='--headed'       # watch it
 including the Vite dev server on port 5173. The suite runs serially (`workers: 1`) because its specs
 share one namespace, and every spec creates uniquely named resources and deletes them again, so it
 can run repeatedly against a long-lived deployment. The one exception is the site `smoke`: before
-any spec runs, `web/e2e/seed.setup.ts` creates it with identities when it is missing and sends it
-fresh traffic, which the dashboards, the rule debugger and the screenshots read. Nothing has to be
-seeded by hand. `web/e2e/README.md` lists the prerequisites and what each spec covers. One of the
-specs, `screenshots.spec.ts`, writes the images under `documents/images/`.
+any spec runs, `web/e2e/seed.setup.ts` creates it when it is missing, adds the endpoint groups,
+identity type and identities it lacks, and sends it fresh traffic, which the dashboards, the rule
+debugger and the screenshots read. Nothing has to be seeded by hand. `web/e2e/README.md` lists the
+prerequisites and what each spec covers. One of the specs, `screenshots.spec.ts`, writes the images
+under `documents/images/`.
 
 ### Python SDK
 
