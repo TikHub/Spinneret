@@ -15,6 +15,14 @@ updates:
     commit-message:
       prefix: "chore"
       include: scope
+    ignore:
+      # otelconnect's main branch already targets connect-go v2 (connectrpc.com/connect/v2,
+      # connectrpc/otelconnect-go#216) and has removed the NewInterceptor that
+      # internal/server/http.go calls. Being 0.x, its next release counts as a minor update, so
+      # it would land in the weekly group below and break it. Take it together with a
+      # deliberate connect-go v2 migration instead.
+      - dependency-name: connectrpc.com/otelconnect
+        versions: [">= 0.11.0"]
     groups:
       go-minor-and-patch:
         update-types: [minor, patch]
