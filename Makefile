@@ -23,7 +23,7 @@ export SPINNERET_TEST_CLICKHOUSE_URL ?= clickhouse://spinneret:spinneret@localho
 help:
 	@printf 'Spinneret developer tasks\n\n'
 	@printf '  Build and generate\n'
-	@printf '    generate       regenerate protobuf (buf) and query (sqlc) code\n'
+	@printf '    generate       regenerate protobuf (buf) and query (sqlc) code, as CI does\n'
 	@printf '    build          build bin/spinneret-server and bin/spnr\n'
 	@printf '    docker         build the server container image\n\n'
 	@printf '  Test\n'
@@ -40,7 +40,7 @@ help:
 	@printf '    e2e-failover   replica failover drill under load\n'
 	@printf '    load           k6 load suite against the running stack\n\n'
 	@printf '  Quality\n'
-	@printf '    lint           golangci-lint\n'
+	@printf '    lint           golangci-lint as CI runs it, e2e-tagged code included\n'
 	@printf '    vet            go vet\n'
 	@printf '    fmt            gofmt the tracked Go files\n\n'
 	@printf '  Run\n'
@@ -51,6 +51,9 @@ help:
 
 all: generate build
 
+# What CI's generated-code check regenerates before it runs
+# `git diff --exit-code -- gen internal`: buf lint and buf generate, then every
+# sqlc.yaml outside web/.
 generate: proto sqlc
 
 proto:
@@ -79,8 +82,10 @@ cover:
 vet:
 	go vet ./...
 
+# CI's lint: the e2e build tag puts test/e2e in scope; the 10m timeout CI also
+# passes is already in .golangci.yml.
 lint:
-	golangci-lint run ./...
+	golangci-lint run --build-tags e2e ./...
 
 fmt:
 	gofmt -w $$(git ls-files '*.go' | grep -v '^gen/')

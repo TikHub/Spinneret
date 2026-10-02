@@ -19,7 +19,7 @@ environment, repository layout, code generation, every test layer and the qualit
 
 ```bash
 make infra-up          # PostgreSQL, Valkey and ClickHouse for the test suite
-make generate          # protobuf and the root sqlc config, if you changed .proto or .sql
+make generate          # protobuf and every sqlc config, if you changed .proto or .sql
 make test              # Go tests
 make test-race         # Go tests with the race detector, which is what CI runs
 make lint              # go vet + golangci-lint
@@ -28,10 +28,11 @@ make e2e               # the Compose end-to-end suite
 ```
 
 `make help` lists everything. Run at least `make test` and `make lint` before you push. CI runs the
-equivalent of all of it except `make e2e`, and two of its checks are stricter than the targets
-above: it regenerates every `sqlc.yaml`, not only the root one, and it lints with
-`--build-tags e2e`. The guide's [Before you push](documents/en/20-contributing.md#before-you-push)
-list runs both the way CI does. CI will not merge a change that does not pass.
+equivalent of all of it except `make e2e`, over the same scope as the targets: `make generate`
+regenerates the protobuf code and every `sqlc.yaml`, which is what CI regenerates before it fails
+on any `git diff -- gen internal`, and `make lint` lints with `--build-tags e2e`, so `test/e2e` is
+checked as it is in CI. The guide's [Before you push](documents/en/20-contributing.md#before-you-push)
+list is the whole gate. CI will not merge a change that does not pass.
 
 ## House rules
 
@@ -80,7 +81,7 @@ By contributing you agree that your contribution is licensed under the
 
 ```bash
 make infra-up          # 拉起测试用的 PostgreSQL、Valkey 和 ClickHouse
-make generate          # 改过 .proto 或 .sql 之后重新生成 protobuf 与根目录的 sqlc 配置
+make generate          # 改过 .proto 或 .sql 之后重新生成 protobuf 与每一份 sqlc 配置
 make test              # Go 测试
 make test-race         # 带竞态检测的 Go 测试，CI 跑的是这个
 make lint              # go vet + golangci-lint
@@ -89,9 +90,10 @@ make e2e               # Compose 端到端测试
 ```
 
 `make help` 会列出全部目标。推送前至少跑 `make test` 和 `make lint`。除 `make e2e` 外，上面每一项
-CI 都会跑等价的检查，其中两项比上面的目标更严：它会重新生成每一份 `sqlc.yaml`，而不只是根目录那份，
-lint 时也带上 `--build-tags e2e`。指南里的[推送之前](documents/zh/20-contributing.md#推送之前)按 CI
-的方式跑这两项。不通过不合并。
+CI 都会跑等价的检查，范围也和这些目标相同：`make generate` 会重新生成 protobuf 代码和每一份
+`sqlc.yaml`，这正是 CI 先重新生成、再在 `git diff -- gen internal` 有任何差异时判失败的那些内容；
+`make lint` 带上了 `--build-tags e2e`，所以和 CI 一样也会检查 `test/e2e`。指南里的
+[推送之前](documents/zh/20-contributing.md#推送之前)列出了完整的门禁。不通过不合并。
 
 ## 项目约定
 

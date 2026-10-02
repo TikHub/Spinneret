@@ -296,38 +296,35 @@ package that owns queries (`internal/auth`, `internal/proxy`, `internal/policysv
 in total), each with its own output directory: the root one writes `internal/store/postgres/db`,
 `internal/auth/sqlc.yaml` writes `internal/auth/authdb`, and so on.
 
-**`make sqlc` regenerates only one of the sixteen.** `scripts/sqlc-generate.sh` runs a bare
-`sqlc generate` from the repository root, which reads the root `sqlc.yaml` and nothing else, so it
-covers `internal/store/postgres/db` alone. CI loops over every config instead. After editing a query
-file, or a migration that changes a column a query selects, run the loop CI runs:
+**`make sqlc` regenerates all sixteen.** `scripts/sqlc-generate.sh` takes its lock and runs
+`sqlc generate -f` for every `sqlc.yaml` outside `web/`, which is exactly the set CI regenerates.
+Run it after editing a query file, or a migration that changes a column a query selects:
 
 ```bash
-# Only internal/store/postgres/db — the root sqlc.yaml
+# All sixteen — what CI regenerates
 make sqlc           # = ./scripts/sqlc-generate.sh
 
-# All sixteen — what CI does, and what you want whenever you touched a package's queries
-for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done
+# One package: arguments go to a single `sqlc generate` instead
+./scripts/sqlc-generate.sh -f internal/auth/sqlc.yaml
 ```
 
 Each `sqlc.yaml` pins the shape of its output: `pgx/v5`, JSON tags, empty slices instead of nil,
 pointers for nullable columns, `timestamptz` as `time.Time`, `jsonb` as `json.RawMessage`. Only the
 package name differs — `db` at the root, `<area>db` per package.
 
-`make generate` runs the protobuf step and `make sqlc`, so it inherits the same one-of-sixteen scope;
-`make all` runs generation and then builds both binaries.
+`make generate` runs the protobuf step and then `make sqlc`, so it regenerates everything CI
+regenerates; `make all` runs generation and then builds both binaries.
 
 ### Verifying
 
 ```bash
-make proto
-for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done
+make generate
 (cd web && pnpm gen)
 git diff --exit-code -- gen internal web/src/gen
 ```
 
-CI performs the `gen internal` half of this check itself, with the same loop. Running `make generate`
-in its place is not equivalent: fifteen of the sixteen sqlc outputs go unregenerated, so the local
-check passes and CI's `git diff --exit-code -- gen internal` fails.
+CI performs the `gen internal` half of this check itself: it regenerates the same protobuf and sqlc
+output that `make generate` does and fails on any difference. The `web/src/gen` half is yours alone.
 
 ---
 
@@ -354,8 +351,7 @@ To add one:
    contains semicolons goose cannot split — a function body, a `DO` block — in
    `-- +goose StatementBegin` / `-- +goose StatementEnd`, as `00002_partitioned.sql` does.
 3. Regenerate sqlc if the change touches a table a query reads, and commit the regenerated `db` and
-   `<area>db` packages. Use the loop, not `make sqlc`:
-   `for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done`.
+   `<area>db` packages. `make sqlc` regenerates all of them.
 4. Apply it locally against the infra database and run the Go tests: `internal/testutil` clones every
    test database from a freshly migrated template, so a broken migration fails a large part of the
    suite immediately.
@@ -500,16 +496,16 @@ run-to-run drift of identical code is about ±8 %.
 | --- | --- |
 | `make help` | the default goal: every task, grouped, one line each |
 | `make all` | `generate` then `build` |
-| `make generate` | `proto` and `sqlc` |
+| `make generate` | `proto` and `sqlc`: everything CI regenerates |
 | `make proto` | `./scripts/buf-generate.sh` — `buf lint` and `buf generate` |
-| `make sqlc` | `./scripts/sqlc-generate.sh` — `sqlc generate` from the root, so only `internal/store/postgres/db` |
+| `make sqlc` | `./scripts/sqlc-generate.sh` — `sqlc generate -f` for every `sqlc.yaml` outside `web/`, as CI does |
 | `make build` | static `bin/spinneret-server` and `bin/spnr` with the version stamped in |
 | `make test` | `go test -count=1 ./...` |
 | `make test-short` | `go test -short -count=1 ./...` — integration fixtures skip themselves |
 | `make test-race` | `go test -race -count=1 ./...` |
 | `make cover` | coverage over `./internal/...` into `coverage.out`, printing the total |
 | `make vet` | `go vet ./...` |
-| `make lint` | `golangci-lint run ./...` |
+| `make lint` | `golangci-lint run --build-tags e2e ./...`, as CI runs it |
 | `make fmt` | `gofmt -w` over every tracked `.go` file outside `gen/` |
 | `make infra-up` / `make infra-down` | the PostgreSQL + Valkey + ClickHouse test stack, up (waiting for health) or down with its volumes |
 | `make web-install` | `pnpm install --frozen-lockfile` in `web/` |
@@ -550,7 +546,7 @@ Runs with PostgreSQL 17, Valkey 8 and ClickHouse 25.8 as service containers, wit
 
 The skipped tests are the three that exercise the testcontainers fallback in `internal/testutil`;
 CI provides the services directly, so they have nothing to start. Note that the lint step includes
-the `e2e` build tag, so `test/e2e` is linted too — run it that way locally.
+the `e2e` build tag, so `test/e2e` is linted too; `make lint` passes the same tag.
 
 ### `web`
 
@@ -596,11 +592,10 @@ break, locally, and say so in the pull request.
 ### Before you push
 
 ```bash
-make proto
-for f in $(find . -name sqlc.yaml -not -path './web/*'); do sqlc generate -f "$f"; done
+make generate
 (cd web && pnpm gen) && git diff --exit-code -- gen internal web/src/gen
 make vet
-golangci-lint run --build-tags e2e ./...
+make lint
 make test-race
 make web-install web-test web
 (cd sdk/python && . .venv/bin/activate && ruff check . && ruff format --check . && mypy src && pytest -q)
