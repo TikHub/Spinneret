@@ -29,10 +29,12 @@ make e2e               # the Compose end-to-end suite
 
 `make help` lists everything. Run at least `make test` and `make lint` before you push. CI runs the
 equivalent of all of it except `make e2e`, over the same scope as the targets: `make generate`
-regenerates the protobuf code and every `sqlc.yaml`, which is what CI regenerates before it fails
-on any `git diff -- gen internal`, and `make lint` lints with `--build-tags e2e`, so `test/e2e` is
-checked as it is in CI. The guide's [Before you push](documents/en/20-contributing.md#before-you-push)
-list is the whole gate. CI will not merge a change that does not pass.
+regenerates the protobuf code and the query code of every `sqlc.yaml`, which is what CI regenerates
+before it fails on any `git diff -- gen internal`, and `make lint` checks `.golangci.yml` and lints
+with `--build-tags e2e`, as CI does, so `test/e2e` is checked too. The guide's
+[Before you push](documents/en/20-contributing.md#before-you-push) list runs the checks of CI's `go`,
+`web` and `python-sdk` jobs; the fourth job, `image`, builds the container image, which `make docker`
+does locally. CI will not merge a change that does not pass.
 
 ## House rules
 
@@ -91,9 +93,10 @@ make e2e               # Compose 端到端测试
 
 `make help` 会列出全部目标。推送前至少跑 `make test` 和 `make lint`。除 `make e2e` 外，上面每一项
 CI 都会跑等价的检查，范围也和这些目标相同：`make generate` 会重新生成 protobuf 代码和每一份
-`sqlc.yaml`，这正是 CI 先重新生成、再在 `git diff -- gen internal` 有任何差异时判失败的那些内容；
-`make lint` 带上了 `--build-tags e2e`，所以和 CI 一样也会检查 `test/e2e`。指南里的
-[推送之前](documents/zh/20-contributing.md#推送之前)列出了完整的门禁。不通过不合并。
+`sqlc.yaml` 对应的查询代码，这正是 CI 先重新生成、再在 `git diff -- gen internal` 有任何差异时判失败的
+那些内容；`make lint` 和 CI 一样，先校验 `.golangci.yml`，再带上 `--build-tags e2e` 做 lint，所以也会
+检查 `test/e2e`。指南里的[推送之前](documents/zh/20-contributing.md#推送之前)跑的是 CI 的 `go`、`web`、
+`python-sdk` 三个 job 的检查；第四个 job `image` 构建容器镜像，本地对应的是 `make docker`。不通过不合并。
 
 ## 项目约定
 

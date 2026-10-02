@@ -566,7 +566,9 @@ In `sdk/python/`, on Python 3.10, 3.12 and 3.13: `pip install -e '.[dev]'`, `pyt
 ### `image`
 
 After `go` and `web` pass: builds `deploy/docker/Dockerfile` with buildx, tagged `spinneret:ci`,
-without pushing.
+without pushing. Nothing in [Before you push](#before-you-push) builds the image; `make docker` runs
+the same build locally, and is worth running before you push a change to the Dockerfile or
+`.dockerignore`.
 
 Publishing is a separate workflow. `.github/workflows/release.yml` triggers on a `v*` tag, builds the
 same Dockerfile for amd64 and arm64 and pushes it to `ghcr.io/tikhub/spinneret` and to `tikhubio/spinneret` on Docker Hub; it is

@@ -537,6 +537,8 @@ go test -tags perf -timeout 60m ./test/perf/ -run XXX -bench BenchmarkAcquire \
 ### `image`
 
 在 `go` 和 `web` 通过之后：用 buildx 构建 `deploy/docker/Dockerfile`，打标签 `spinneret:ci`，不推送。
+[推送之前](#推送之前)里没有哪一步会构建镜像；`make docker` 在本地跑的是同样的构建，改了 Dockerfile 或
+`.dockerignore` 的话，推送前值得先跑一次。
 
 发布是另一个工作流。`.github/workflows/release.yml` 由 `v*` 标签触发，用同一份 Dockerfile 构建
 amd64 与 arm64 两个架构，并推送到 `ghcr.io/tikhub/spinneret` 和 Docker Hub 的 `tikhubio/spinneret`；仓库里只有它会发布镜像。
