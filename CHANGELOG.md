@@ -21,21 +21,23 @@ npm require. One release, two spellings, decided by where the string lives.
 
 - **Trace attributes follow OpenTelemetry's current RPC conventions, so saved trace queries need
   updating.** This only concerns a deployment that sets `OTEL_EXPORTER_OTLP_ENDPOINT`. otelconnect 0.10
-  moved the server's RPC spans from the 1.21 semantic conventions to the current 1.43 ones:
-  `rpc.system=connect_rpc` becomes `rpc.system.name` with `connectrpc` (or `grpc` for gRPC and gRPC-Web
-  calls); `rpc.service` is gone and `rpc.method` holds the fully qualified method, such as
-  `spinneret.v1.LeaseService/Acquire`; and `rpc.connect_rpc.error_code` and `rpc.grpc.status_code` give
-  way to `rpc.response.status_code`, an upper-case code that reads `OK` on success, plus `error.type` on
-  a failed call. Server spans no longer record the client's address (`net.peer.*`) or an event per
-  message. Span names, kinds and status, and trace propagation, are unchanged, but dashboards and saved
-  queries that filter on the old attributes stop matching.
+  moved the server's RPC spans from the 1.21 semantic conventions to the 1.43 ones: `rpc.system` becomes
+  `rpc.system.name`, and Connect calls report `connectrpc` instead of `connect_rpc` (gRPC and gRPC-Web
+  calls still report `grpc`); `rpc.service` is gone and `rpc.method` holds the fully qualified method,
+  such as `spinneret.v1.LeaseService/Acquire`; and `rpc.connect_rpc.error_code` and
+  `rpc.grpc.status_code` give way to `rpc.response.status_code`, an upper-case code that reads `OK` on
+  success, plus `error.type` on a failed call. Server spans no longer record the client's address
+  (`net.peer.*`) or an event per message. Span names, kinds and status, and trace propagation, are
+  unchanged, but dashboards and saved queries that filter on the old attributes stop matching.
 
-  Go SDK users: the SDK ships in the server's Go module, so upgrading it moves a node that also imports
-  otelconnect to v0.10.0. That release removed `WithoutServerPeerAttributes` (its behaviour is now the
-  default) and `WithoutTraceEvents`, so a node that passes either no longer compiles. It also replaced
-  its metrics: `rpc.server.duration` and `rpc.client.duration`, in milliseconds, became
-  `rpc.server.call.duration` and `rpc.client.call.duration`, in seconds, and the size and per-RPC message
-  count metrics are gone.
+- **A Go node that also imports otelconnect may need code and dashboard changes after upgrading the
+  SDK.** The Go SDK ships in the server's Go module, so upgrading it moves such a node to otelconnect
+  v0.10.0, whether or not the server exports traces. That release removed `WithoutServerPeerAttributes`
+  (its behaviour is now the default) and `WithoutTraceEvents`, so a node that passes either no longer
+  compiles. The node's own spans change as above, except that a client span's `net.peer.*` becomes
+  `server.address` and `server.port` rather than disappearing. otelconnect also replaced its metrics:
+  `rpc.server.duration` and `rpc.client.duration`, in milliseconds, became `rpc.server.call.duration`
+  and `rpc.client.call.duration`, in seconds, and the size and per-RPC message count metrics are gone.
 
 - **The console's tables run on TanStack Table v9, and small client-sorted tables now sort like large
   ones.** In a table the browser sorts, a text column with ten rows or fewer now orders naturally and
