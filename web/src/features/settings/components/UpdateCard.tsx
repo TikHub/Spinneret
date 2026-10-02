@@ -24,8 +24,9 @@ import { CHANGELOG_URL } from '@/lib/project';
  *
  * Nothing here runs on a timer: the deployment reaches out only when an operator
  * presses the button, and an operator who wants no outbound call at all sets
- * SPINNERET_UPDATE_CHECK_URL to the empty string, after which the server answers
- * "disabled" and the button is gone.
+ * SPINNERET_UPDATE_CHECK_ENABLED=false, after which the server answers
+ * "disabled" and the button is gone. An empty SPINNERET_UPDATE_CHECK_URL does
+ * not do this: it reads as unset and selects the built-in feed.
  */
 export function UpdateCard() {
   const { t } = useTranslation();

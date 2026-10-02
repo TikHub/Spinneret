@@ -656,7 +656,9 @@ docker compose -f docker-compose.yml -f compose.image.yml -f compose.host.yml -f
 
 出方向上，服务端需要访问：PostgreSQL、Redis、可选的 ClickHouse、`SPINNERET_PROXY_CHECK_URL` 指向的地址
 （代理健康检查会**通过每个代理**去抓它 —— 在没有外网的机器上，要么把它指到可达的地方，要么每个代理都会被
-标成死的）、你的通知渠道端点，除此之外没有别的。它自己从不访问目标站点。
+标成死的）、你的通知渠道端点、运维点「检查更新」时的发布源（`SPINNERET_UPDATE_CHECK_ENABLED=false` 可以关掉
+它），以及只有你设置了才会访问的 `SPINNERET_PROXY_EXIT_IP_URL`（同样通过每个代理去抓）和
+`OTEL_EXPORTER_OTLP_ENDPOINT` 指向的 OTLP 收集器。除此之外没有别的。它自己从不访问目标站点。
 
 ---
 

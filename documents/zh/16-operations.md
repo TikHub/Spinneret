@@ -400,7 +400,7 @@ load dedupe_pepper system key (is the KEK the one used to initialize this databa
 
 **怎么知道有新版本。** 控制台的**设置 → 系统**页面会显示你正在运行的构建；按下按钮后，它会给出最新的发布版本和
 发布说明的链接。它只在你问的时候才问——没有任何轮询——不允许对外连接的部署可以用
-`SPINNERET_UPDATE_CHECK_URL=""` 关掉它，改为关注
+`SPINNERET_UPDATE_CHECK_ENABLED=false` 关掉它，改为关注
 [Releases](https://github.com/TikHub/Spinneret/releases)。命令行上 `spnr version` 报告的是同一个字符串，
 控制台用来初始化自己的登录响应里也带着它。
 

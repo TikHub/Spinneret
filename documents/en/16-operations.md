@@ -425,8 +425,8 @@ The safe alternative when you are unsure: restore into a **separate** stack with
 
 **Finding out there is one.** **Settings → System** in the console shows the build you are running and,
 when you press the button, the latest published release with a link to its notes. It asks only when
-asked — nothing polls — and `SPINNERET_UPDATE_CHECK_URL=""` switches it off on a deployment that must
-make no outbound connection; watch [Releases](https://github.com/TikHub/Spinneret/releases) instead.
+asked — nothing polls — and `SPINNERET_UPDATE_CHECK_ENABLED=false` switches it off on a deployment that
+must make no outbound connection; watch [Releases](https://github.com/TikHub/Spinneret/releases) instead.
 `spnr version` reports the same string from the command line, and so does the login reply the console
 seeds itself from.
 

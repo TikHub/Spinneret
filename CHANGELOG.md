@@ -29,6 +29,14 @@ npm require. One release, two spellings, decided by where the string lives.
   suggested `pip install 'spinneret[crypto]'`. It now suggests `pip install cryptography`, or installing
   the SDK with its `crypto` extra.
 
+- **The console and the manual still said an empty `SPINNERET_UPDATE_CHECK_URL` turns the update check
+  off.** It never did: an empty value reads as unset and selects the built-in feed. The switch is
+  `SPINNERET_UPDATE_CHECK_ENABLED=false`, added in 0.1.4, and Settings → System's message for a disabled
+  check, its introduction card, the `CheckForUpdate` API comment and the configuration, console and
+  operations pages now name it. The configuration reference now lists the variable, and the installation
+  page's list of the server's outbound connections, which ended in "nothing else", now includes the
+  release feed, the exit-IP lookup and the OTLP collector.
+
 ## [0.1.5] — 2026-10-01
 
 Dependency upgrades across the console, the server and the Python SDK, a

@@ -503,7 +503,8 @@ loopback，用 SSH 隧道访问。
 | --- | --- | --- | --- |
 | `SPINNERET_UI_ENABLED` | `true` | 从主监听提供内嵌的控制台。`false` 则只保留 API 和健康检查端点。 | 只服务节点的实例上设 `false`，让控制台只在一个你能保护的地址上可达。 |
 | `SPINNERET_ALLOWED_ORIGINS` | 空 | CORS 允许的来源列表，例如 `http://localhost:5173`。留空则完全不装 CORS 中间件。`*` 也接受，表示允许任意来源。 | 只在要把控制台的开发服务器指向这个实例时用。生产环境留空。 |
-| `SPINNERET_UPDATE_CHECK_URL` | `https://api.github.com/repos/TikHub/Spinneret/releases/latest` | **设置 → 系统**页面点「检查更新」时读取的发布源。没有任何轮询；成功的结果缓存 1 小时，失败缓存 1 分钟。留空即关闭检查，控制台会隐藏按钮并说明原因。 | 内网隔离的部署、或者任何不允许对外发起连接的主机上留空。如果你自己发布内部构建，就指向自己的镜像地址。 |
+| `SPINNERET_UPDATE_CHECK_URL` | `https://api.github.com/repos/TikHub/Spinneret/releases/latest` | **设置 → 系统**页面点「检查更新」时读取的发布源。没有任何轮询；成功的结果缓存 1 小时，失败缓存 1 分钟。和所有变量一样，留空等于未设置，所以留空会用回这个默认值，而不是关闭检查；关闭检查靠的是 `SPINNERET_UPDATE_CHECK_ENABLED`。 | 如果你自己发布内部构建，就指向自己的镜像地址。 |
+| `SPINNERET_UPDATE_CHECK_ENABLED` | `true` | 设为 `false` 即关闭更新检查，不管 `SPINNERET_UPDATE_CHECK_URL` 是什么：点「检查更新」不会发出任何外部请求，服务端回答检查已关闭，控制台随即隐藏按钮并说明原因。 | 内网隔离的部署、或者任何不允许对外发起连接的主机上设为 `false`。 |
 
 `worker` 角色的实例不管 `SPINNERET_UI_ENABLED` 怎么设都不提供控制台，因为它不提供 API。控制台里有什么、
 哪个页面对应哪篇文档：见[控制台总览](./05-console-overview.md)。

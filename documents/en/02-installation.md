@@ -698,7 +698,10 @@ Two more listeners exist and are off by default:
 Outbound, the server needs: PostgreSQL, Redis, optionally ClickHouse, whatever
 `SPINNERET_PROXY_CHECK_URL` points at (the proxy health checker fetches it *through* every proxy — on a
 host with no internet access, point it somewhere reachable or every proxy is marked dead), your
-notification channel endpoints, and nothing else. It never contacts a target site itself.
+notification channel endpoints, the release feed when an operator presses *Check for updates*
+(`SPINNERET_UPDATE_CHECK_ENABLED=false` turns that off), and, only when you set them,
+`SPINNERET_PROXY_EXIT_IP_URL` (also fetched through every proxy) and the OTLP collector in
+`OTEL_EXPORTER_OTLP_ENDPOINT`. Nothing else. It never contacts a target site itself.
 
 ---
 
