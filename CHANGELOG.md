@@ -12,7 +12,21 @@ npm require. One release, two spellings, decided by where the string lives.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **The Python SDK's install instructions installed someone else's package.** The SDK has never been
+  published to PyPI, and the `spinneret` project there is an unrelated web spider from 2013, so the
+  README's `pip install spinneret` fetched that instead. The SDK's README and the SDK manual now install
+  from GitHub at a release tag,
+  `pip install "spinneret @ git+https://github.com/TikHub/Spinneret@<tag>#subdirectory=sdk/python"`, or
+  from a checkout with `pip install ./sdk/python`. A node that runs today got the SDK some other way and
+  needs no change. If you mirror the SDK to a private index, install from it with `--index-url` rather
+  than `--extra-index-url`: pip takes the highest `spinneret` version any of its indexes offers, and the
+  name on PyPI is not this project's.
+
+  `cache_secrets=True` without `cryptography` installed gave the same advice: its `ConfigurationError`
+  suggested `pip install 'spinneret[crypto]'`. It now suggests `pip install cryptography`, or installing
+  the SDK with its `crypto` extra.
 
 ## [0.1.5] — 2026-10-01
 
