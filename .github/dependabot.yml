@@ -53,6 +53,11 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 3
+    # The SDK is a library, so a floor in pyproject.toml is the oldest version it supports, not
+    # the newest one released: raising it only narrows what users may install, and CI installs
+    # the newest anyway (there is no lockfile). Touch a requirement only when a release falls
+    # outside it.
+    versioning-strategy: increase-if-necessary
     commit-message:
       prefix: "chore"
       include: scope
